@@ -1,10 +1,15 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { RegisterRequest } from './dto/register.dto';
 import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { StringValue } from 'jws';
+import { LoginRequest } from './dto/login.dto';
+import  type { Response } from 'express';
+import { isDev } from '../utils/is-dev.utils';
+
+
 
 
 
@@ -18,6 +23,8 @@ export class AuthService {
     private readonly JWT_ACCESS_TOKEN_TTL:string;
     private readonly JWT_REFRESH_TOKEN_TTL:string;
 
+    private readonly COOKIE_DOMAIN:string;
+
     constructor(
         private readonly prisma: PrismaService,
         private readonly configService: ConfigService,
@@ -26,9 +33,11 @@ export class AuthService {
         this.JWT_SECRET = this.configService.getOrThrow<string>('JWT_SECRET');
         this.JWT_ACCESS_TOKEN_TTL = this.configService.getOrThrow<string>('JWT_ACCESS_TOKEN_TTL');
         this.JWT_REFRESH_TOKEN_TTL = this.configService.getOrThrow<string>('JWT_REFRESH_TOKEN_TTL');
+
+        this.COOKIE_DOMAIN = configService.getOrThrow<string>('COOKIE_DOMAIN');
     }
 
-    async register(dto: RegisterRequest) {
+    async register(res:Response, dto: RegisterRequest) {
         const { name, email, password } = dto;
 
         const existUser = await this.prisma.user.findUnique({
@@ -47,9 +56,38 @@ export class AuthService {
             },
         });
 
-        return this.generateTokens(user.id);
-        
+        return this.auth(res, user.id);
+    }
+
+    async login( res:Response, dto: LoginRequest) {
+        const { email, password } = dto;
+
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+            select: { id: true, password: true },
+        });
+
+        if (!user) {
+            throw new NotFoundException('Пользователь не найден');
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            throw new NotFoundException('Пользователь не найден');
+        }
+        return this.auth(res, user.id);
+    }
+
+
+private auth(res: Response, userId: string) {
+    const { accessToken, refreshToken } = this.generateTokens(userId);
+
+    this.setCookie(res, refreshToken, new Date(60*60*24*7));
+
+    return { accessToken };
 }
+
 private generateTokens(userId: string) {
     const payload = { sub: userId };
 
@@ -62,4 +100,15 @@ private generateTokens(userId: string) {
     });
 
     return { accessToken, refreshToken };
-}}
+}
+
+private setCookie(res: Response, value: string, expires: Date) {
+    res.cookie('refreshToken', value, {
+        httpOnly: true,
+        domain: this.COOKIE_DOMAIN,
+        expires,
+        secure: !isDev(this.configService),
+        sameSite: isDev(this.configService) ? 'none' : 'lax',
+    });
+    }
+}
