@@ -91,7 +91,7 @@ async refresh(req: Request, res: Response) {
 
     if (payload) {
         const user = await this.prisma.user.findUnique({
-            where: { id: payload.id },
+            where: { id: payload.sub },
             select: { id: true },
             }
     );
@@ -110,7 +110,8 @@ async logout(res: Response) {
 private auth(res: Response, userId: string) {
     const { accessToken, refreshToken } = this.generateTokens(userId);
 
-    this.setCookie(res, refreshToken, new Date(60*60*24*7));
+    const sevenDaysInMs = new Date(Date.now() + 60 * 60 * 24 * 7 * 1000);
+    this.setCookie(res, refreshToken, sevenDaysInMs);
 
     return { accessToken };
 }
