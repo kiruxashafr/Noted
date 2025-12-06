@@ -1,6 +1,6 @@
 import { IsNotEmpty, MaxLength, IsString, IsEmail, MinLength } from "class-validator";
-
-export class RegisterRequest {
+import { RegisterPayload } from "@noted/types/auth/register.types"
+export class RegisterRequest implements RegisterPayload {
     @IsString({message: 'Имя должно быть строкой'})
     @IsNotEmpty({message: 'Имя не должно быть пустым'})
     @MaxLength(50, {message: 'Имя не должно превышать 50 символов'})

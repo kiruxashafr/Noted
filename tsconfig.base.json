@@ -15,7 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@my-workspace/shared": ["libs/shared/src/index.ts"]
+      "@noted/types": ["libs/shared/types/src/index.ts"],
+      "@noted/types/*": ["libs/shared/types/src/lib/*"],
     }
   },
   "exclude": ["node_modules", "tmp"]

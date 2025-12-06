@@ -1,6 +1,7 @@
 import { IsNotEmpty, MaxLength, IsString, IsEmail, MinLength } from "class-validator";
+import { LoginPayload } from "@noted/types/auth/login.types"
 
-export class LoginRequest {
+export class LoginRequest implements LoginPayload{
     @IsString({message: 'Email должен быть строкой'})
     @IsNotEmpty({message: 'Почта обязательна для заполнения'})
     @IsEmail({}, {message: 'Некорректный формат email'})
