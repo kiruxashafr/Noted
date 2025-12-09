@@ -1,14 +1,16 @@
 import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { PrismaService } from "../prisma.service";
-import { RegisterRequest } from "./dto/register.dto";
 import { ConfigService } from "@nestjs/config";
-import bcrypt from "bcrypt";
 import { JwtService } from "@nestjs/jwt";
+import bcrypt from "bcrypt";
 import { StringValue } from "jws";
+
+import { PrismaService } from "../prisma.service";
 import { LoginRequest } from "./dto/login.dto";
-import type { Request, Response } from "express";
+import { RegisterRequest } from "./dto/register.dto";
 import { isDev } from "../utils/is-dev.utils";
 import { JwtPayload } from "./interfaces/jwt.interface";
+
+import type { Request, Response } from "express";
 
 @Injectable()
 export class AuthService {

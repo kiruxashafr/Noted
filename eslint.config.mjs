@@ -1,120 +1,66 @@
-// eslint.config.mjs
-import eslint from "@eslint/js";
-import globals from "globals";
-import tseslint from "typescript-eslint";
-import prettier from "eslint-plugin-prettier";
-import importPlugin from "eslint-plugin-import";
+import js from '@eslint/js';
+import nxPlugin from '@nx/eslint-plugin';
+import typescriptPlugin from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
 
-export default tseslint.config(
+export default [
+  // Базовые конфиги JavaScript
+  js.configs.recommended,
+  
+  // Конфиги TypeScript
   {
-    ignores: [
-      "**/dist",
-      "**/node_modules",
-      "**/coverage",
-      "**/.nx",
-      "**/tmp",
-      "eslint.config.*", // Исправлено - убрали .js
-    ],
-  },
-  eslint.configs.recommended,
-  ...tseslint.configs.recommended,
-  {
+    files: ['**/*.ts', '**/*.tsx'],
     plugins: {
-      prettier: prettier,
+      '@typescript-eslint': typescriptPlugin,
     },
-    rules: {
-      "prettier/prettier": [
-        "error",
-        {
-          endOfLine: "auto",
-        },
-      ],
-    },
-  },
-  {
     languageOptions: {
+      parser: typescriptParser,
       parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
-      globals: {
-        ...globals.node,
-        ...globals.es2022,
-      },
-    },
-  },
-  {
-    plugins: {
-      import: importPlugin,
-    },
-    settings: {
-      "import/resolver": {
-        typescript: {
-          project: "./tsconfig.base.json", // Добавьте путь к вашему tsconfig
-        },
+        project: './tsconfig.base.json',
       },
     },
     rules: {
-      "import/no-self-import": "error",
-      "import/no-duplicates": "error",
-      "@typescript-eslint/no-unsafe-assignment": "off",
-      "@typescript-eslint/no-unsafe-argument": "off",
-      "@typescript-eslint/no-unsafe-member-access": "off",
-      "@typescript-eslint/no-unsafe-call": "off",
-      "@typescript-eslint/no-unsafe-return": "off",
-      "import/newline-after-import": ["error", { count: 1 }],
-      "@typescript-eslint/no-explicit-any": [
-        "warn", // Изменил с error на warn для гибкости
-        { ignoreRestArgs: true },
-      ],
-      "import/order": [
-        "error",
+      ...typescriptPlugin.configs.recommended.rules,
+      '@typescript-eslint/no-unused-vars': ['error', { 
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+      }],
+    },
+  },
+  
+  // Конфиги Nx
+  ...nxPlugin.configs['flat/base'],
+  ...nxPlugin.configs['flat/typescript'],
+  
+  // Правило границ модулей Nx
+  {
+    files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
+    rules: {
+      '@nx/enforce-module-boundaries': [
+        'error',
         {
-          groups: ["builtin", "external", "internal", ["parent", "sibling", "index"], "type"],
-          "newlines-between": "always",
-          alphabetize: {
-            order: "asc",
-            caseInsensitive: true,
-          },
-          pathGroups: [
+          enforceBuildableLibDependency: true,
+          allow: [],
+          depConstraints: [
             {
-              pattern: "@nestjs/**",
-              group: "external",
-              position: "before",
+              sourceTag: '*',
+              onlyDependOnLibsWithTags: ['*'],
             },
           ],
         },
       ],
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-        },
-      ],
-      "no-console": ["warn", { allow: ["warn", "error", "info"] }],
     },
   },
+  
+  // Игнорируемые файлы
   {
-    files: ["apps/athena-api/**/*.ts"],
-    rules: {
-      "@typescript-eslint/no-floating-promises": "warn",
-      "@typescript-eslint/require-await": "warn",
-    },
+    ignores: [
+      '**/*.spec.ts',
+      '**/*.test.ts',
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      '.nx/**',
+    ],
   },
-  {
-    files: ["apps/*/src/main.ts"],
-    rules: {
-      "@typescript-eslint/no-floating-promises": "off",
-    },
-  },
-  {
-    files: ["**/*.spec.ts", "**/*.test.ts", "**/*.e2e-spec.ts", "**/*.e2e-test.ts"],
-    rules: {
-      "@typescript-eslint/unbound-method": "off",
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unsafe-*": "off",
-      "no-console": "off",
-    },
-  },
-);
+];
