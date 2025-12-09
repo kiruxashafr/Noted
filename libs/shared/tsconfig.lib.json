@@ -14,10 +14,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src/**/*.ts", "../../apps/Noted/src/app/prisma.service.ts"],
-  "exclude": [
-    "jest.config.ts",
-    "jest.config.cts",
-    "src/**/*.spec.ts",
-    "src/**/*.test.ts"
-  ]
+  "exclude": ["jest.config.ts", "jest.config.cts", "src/**/*.spec.ts", "src/**/*.test.ts"]
 }
