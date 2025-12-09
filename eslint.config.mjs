@@ -2,10 +2,7 @@ import js from '@eslint/js';
 import nxPlugin from '@nx/eslint-plugin';
 import typescriptPlugin from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
-<<<<<<< HEAD
-=======
 import globals from 'globals';
->>>>>>> 450f27c (style: добавлен eslint)
 
 export default [
   // Базовые конфиги JavaScript
@@ -25,6 +22,7 @@ export default [
     },
     rules: {
       ...typescriptPlugin.configs.recommended.rules,
+      '@typescript-eslint/no-explicit-any': 'error', 
       '@typescript-eslint/no-unused-vars': ['error', { 
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
@@ -32,19 +30,16 @@ export default [
     },
   },
   
-<<<<<<< HEAD
-=======
-  // КОНФИГ ДЛЯ NODE.JS ФАЙЛОВ - ДОБАВЬ ЭТО
+
   {
     files: ['**/webpack.config.js', '**/*.config.js', '**/*.config.cjs'],
     languageOptions: {
       globals: {
-        ...globals.node, // Добавляет все глобальные переменные Node.js
+        ...globals.node,
       },
     },
   },
   
->>>>>>> 450f27c (style: добавлен eslint)
   // Конфиги Nx
   ...nxPlugin.configs['flat/base'],
   ...nxPlugin.configs['flat/typescript'],
