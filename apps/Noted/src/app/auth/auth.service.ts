@@ -1,7 +1,6 @@
 import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import * as bcrypt from "bcrypt";
 import { StringValue } from "jws";
 import { PrismaService } from "../prisma.service";
 import { LoginRequest } from "./dto/login.dto";
@@ -10,6 +9,7 @@ import { isDev } from "../utils/is-dev.utils";
 import { JwtPayload } from "./interfaces/jwt.interface";
 
 import type { Request, Response } from "express";
+import * as argon2 from "argon2";
 
 @Injectable()
 export class AuthService {
@@ -42,11 +42,13 @@ export class AuthService {
       throw new ConflictException("Пользователь с таким email уже существует");
     }
 
+    const hashPassword = await argon2.hash(password);
+
     const user = await this.prisma.user.create({
       data: {
         name,
         email,
-        password: await bcrypt.hash(password, 10),
+        password: hashPassword,
       },
     });
 
@@ -65,7 +67,7 @@ export class AuthService {
       throw new NotFoundException("Пользователь не найден");
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await argon2.verify(user.password, password);
 
     if (!isPasswordValid) {
       throw new NotFoundException("Пользователь не найден");

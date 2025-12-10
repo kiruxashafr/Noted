@@ -5,6 +5,7 @@ import { PrismaService } from "../prisma.service";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { ConflictException, NotFoundException } from "@nestjs/common";
+import { verify } from "node:crypto";
 
 // 🔹 СОЗДАЁМ ПОЛНЫЙ МОК ДЛЯ ВСЕХ ЗАВИСИМОСТЕЙ
 const mockPrismaService = {
@@ -32,9 +33,9 @@ const mockConfigService = {
 };
 
 // 🔹 МОК bcrypt - ДОЛЖЕН БЫТЬ ПЕРЕД describe!
-jest.mock("bcrypt", () => ({
+jest.mock("argon2", () => ({
   hash: jest.fn().mockResolvedValue("hashed-password-123"),
-  compare: jest.fn().mockResolvedValue(true),
+  verify: jest.fn().mockResolvedValue(true),
 }));
 
 // 🔹 МОК PrismaService - САМОЕ ВАЖНОЕ!

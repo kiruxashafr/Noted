@@ -38,7 +38,7 @@ jobs:
         run: npm run typecheck
 
       - name: Format Check
-        run: npx prettier --check.
+        run: npx prettier --check .
 
       - name: Lint All
         run: npx nx run-many --target=lint --all
