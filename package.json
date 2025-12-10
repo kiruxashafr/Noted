@@ -9,7 +9,11 @@
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
     "lint:nx": "nx run-many --target=lint --all",
-    "lint:nx:fix": "nx run-many --target=lint --all --fix"
+    "lint:nx:fix": "nx run-many --target=lint --all --fix",
+    "audit": "npm audit --audit-level=moderate",
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.base.json",
+    "test": "npx nx run-many --target=test --all --passWithNoTests",
+    "ci": "npm run audit && npm run typecheck && npm run format:check && npm run lint:nx && npm run test"
   },
   "private": true,
   "dependencies": {
