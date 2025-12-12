@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { StringValue } from "jws";
@@ -8,7 +14,8 @@ import { RegisterRequest } from "./dto/register.dto";
 import { JwtPayload } from "./interfaces/jwt.interface";
 
 import * as argon2 from "argon2";
-
+import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
+import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 @Injectable()
 export class AuthService {
   private readonly JWT_SECRET: string;
@@ -32,30 +39,27 @@ export class AuthService {
   async register(dto: RegisterRequest) {
     const { name, email, password } = dto;
 
-    const existUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existUser) {
-      throw new ConflictException("Пользователь с таким email уже существует");
-    }
-
     const hashPassword = await argon2.hash(password);
 
-    const user = await this.prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashPassword,
-      },
-    });
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashPassword,
+        },
+      });
 
-    const tokens = this.generateTokens(user.id);
+      const tokens = this.generateTokens(user.id);
 
-    return {
-      ...tokens,
-      userId: user.id,
-    };
+      return {
+        ...tokens,
+        userId: user.id,
+      };
+    } catch (error) {
+      // ВЫЗЫВАЕМ ОБРАБОТЧИК ОШИБОК
+      this.handleAccountConstraintError(error);
+    }
   }
 
   async login(dto: LoginRequest) {
@@ -126,5 +130,17 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  private handleAccountConstraintError(error: unknown): never {
+    if (!isPrismaConstraintError(error)) {
+      throw new BadRequestException("Failed to persist user");
+    }
+
+    if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "User") {
+      throw new ConflictException("Email already in use");
+    }
+
+    throw new ConflictException("Duplicate value not allowed");
   }
 }
