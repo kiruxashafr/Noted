@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { StringValue } from "jws";
@@ -18,6 +12,7 @@ import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { ReadAuthDto } from "./dto/readAuth.dto";
 import { plainToInstance } from "class-transformer";
+import { ApiException } from "@noted/common/errors/api-exception";
 
 @Injectable()
 export class AuthService {
@@ -78,13 +73,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException("Пользователь не найден");
+      throw new ApiException("INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED);
     }
 
     const isPasswordValid = await argon2.verify(user.password, password);
 
     if (!isPasswordValid) {
-      throw new NotFoundException("Пользователь не найден");
+      throw new ApiException("INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED);
     }
 
     const tokens = this.generateTokens(user.id);
@@ -102,14 +97,14 @@ export class AuthService {
 
   async refresh(refreshToken: string) {
     if (!refreshToken) {
-      throw new UnauthorizedException("Токен не найден");
+      throw new ApiException("REFRESH_TOKEN_MISSING", HttpStatus.UNAUTHORIZED);
     }
 
     let payload: JwtPayload;
     try {
       payload = await this.jwtService.verifyAsync(refreshToken);
     } catch {
-      throw new UnauthorizedException("Невалидный токен");
+      throw new ApiException("INVALID_REFRESH_TOKEN", HttpStatus.UNAUTHORIZED);
     }
 
     const user = await this.prisma.user.findUnique({
@@ -118,7 +113,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException("Пользователь не найден");
+      throw new ApiException("USER_NOT_FOUND", HttpStatus.UNAUTHORIZED);
     }
 
     const tokens = this.generateTokens(user.id);
@@ -150,13 +145,13 @@ export class AuthService {
 
   private handleAccountConstraintError(error: unknown): never {
     if (!isPrismaConstraintError(error)) {
-      throw new BadRequestException("Failed to persist user");
+      throw new ApiException("REGISTRATION_FAILED", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "User") {
-      throw new ConflictException("Email already in use");
+      throw new ApiException("EMAIL_ALREADY_EXISTS", HttpStatus.CONFLICT);
     }
 
-    throw new ConflictException("Duplicate value not allowed");
+    throw new ApiException("DUPLICATE_VALUE", HttpStatus.CONFLICT);
   }
 }

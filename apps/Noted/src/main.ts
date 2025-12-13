@@ -6,6 +6,7 @@
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app/app.module";
+import { ApiExceptionFilter } from "@noted/common/errors/api-exception.filter";
 const cookieParser = require("cookie-parser");
 
 async function bootstrap() {
@@ -21,6 +22,7 @@ async function bootstrap() {
       },
     }),
   );
+  app.useGlobalFilters(new ApiExceptionFilter());
   app.use(cookieParser());
   app.setGlobalPrefix(globalPrefix);
   const port = process.env.PORT || 3000;

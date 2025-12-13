@@ -1,19 +1,20 @@
 import { IsNotEmpty, MaxLength, IsString, IsEmail, MinLength } from "class-validator";
 import { RegisterPayload } from "@noted/types/auth/register.types";
+
 export class RegisterRequest implements RegisterPayload {
-  @IsString({ message: "Имя должно быть строкой" })
-  @IsNotEmpty({ message: "Имя не должно быть пустым" })
-  @MaxLength(50, { message: "Имя не должно превышать 50 символов" })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
   name: string;
 
-  @IsString({ message: "Email должен быть строкой" })
-  @IsNotEmpty({ message: "Почта обязательна для заполнения" })
-  @IsEmail({}, { message: "Некорректный формат email" })
+  @IsString()
+  @IsNotEmpty()
+  @IsEmail()
   email: string;
 
-  @IsString({ message: "Пароль должен быть строкой" })
-  @IsNotEmpty({ message: "Пароль не должен быть пустым" })
-  @MinLength(6, { message: "Пароль должен быть не менее 6 символов" })
-  @MaxLength(64, { message: "Пароль не должен превышать 32 символа" })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(64)
   password: string;
 }
