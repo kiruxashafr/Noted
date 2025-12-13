@@ -18,9 +18,9 @@ import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 @Injectable()
 export class AuthService {
-  private readonly JWT_SECRET: string;
-  private readonly JWT_ACCESS_TOKEN_TTL: string;
-  private readonly JWT_REFRESH_TOKEN_TTL: string;
+  private readonly jwtSecret: string;
+  private readonly jwtAccessTokenTTL: string;
+  private readonly jwtRefreshTokenTTL: string;
 
   private readonly COOKIE_DOMAIN: string;
 
@@ -29,9 +29,9 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {
-    this.JWT_SECRET = this.configService.getOrThrow<string>("JWT_SECRET");
-    this.JWT_ACCESS_TOKEN_TTL = this.configService.getOrThrow<string>("JWT_ACCESS_TOKEN_TTL");
-    this.JWT_REFRESH_TOKEN_TTL = this.configService.getOrThrow<string>("JWT_REFRESH_TOKEN_TTL");
+    this.jwtSecret = this.configService.getOrThrow<string>("JWT_SECRET");
+    this.jwtAccessTokenTTL = this.configService.getOrThrow<string>("JWT_ACCESS_TOKEN_TTL");
+    this.jwtRefreshTokenTTL = this.configService.getOrThrow<string>("JWT_REFRESH_TOKEN_TTL");
 
     this.COOKIE_DOMAIN = configService.getOrThrow<string>("COOKIE_DOMAIN");
   }
@@ -122,11 +122,11 @@ export class AuthService {
     const payload = { sub: userId };
 
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: this.JWT_ACCESS_TOKEN_TTL as StringValue, // импортируй из jws
+      expiresIn: this.jwtAccessTokenTTL as StringValue, // импортируй из jws
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: this.JWT_REFRESH_TOKEN_TTL as StringValue,
+      expiresIn: this.jwtRefreshTokenTTL as StringValue,
     });
 
     return { accessToken, refreshToken };
