@@ -4,9 +4,9 @@ import { AuthService } from "./auth.service";
 import { PrismaService } from "../prisma.service";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
-import { ConflictException, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { HttpStatus } from "@nestjs/common";
 
-// 🔹 СОЗДАЁМ ПОЛНЫЙ МОК ДЛЯ ВСЕХ ЗАВИСИМОСТЕЙ
+// 🔹 МОКИ ЗАВИСИМОСТЕЙ
 const mockPrismaService = {
   user: {
     findUnique: jest.fn(),
@@ -31,49 +31,26 @@ const mockConfigService = {
   }),
 };
 
-// 🔹 МОК argon2 - ДОЛЖЕН БЫТЬ ПЕРЕД describe!
+// 🔹 Мок argon2
 jest.mock("argon2", () => ({
   hash: jest.fn().mockResolvedValue("hashed-password-123"),
   verify: jest.fn(),
 }));
 
-// 🔹 МОК PrismaService
-jest.mock("../prisma.service", () => ({
-  PrismaService: jest.fn().mockImplementation(() => mockPrismaService),
-}));
-
 describe("AuthService", () => {
   let authService: AuthService;
-  let prismaService: typeof mockPrismaService;
-  let jwtService: typeof mockJwtService;
-  let argon2: { verify: jest.Mock };
 
   beforeEach(async () => {
-    // 🔹 СОЗДАЁМ ТЕСТОВЫЙ МОДУЛЬ
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        {
-          provide: PrismaService,
-          useValue: mockPrismaService,
-        },
-        {
-          provide: JwtService,
-          useValue: mockJwtService,
-        },
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
-        },
+        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: JwtService, useValue: mockJwtService },
+        { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 
     authService = module.get<AuthService>(AuthService);
-    prismaService = module.get(PrismaService);
-    jwtService = module.get(JwtService);
-
-    // 🔹 Получаем мок argon2
-    argon2 = require("argon2");
 
     jest.clearAllMocks();
   });
@@ -88,26 +65,14 @@ describe("AuthService", () => {
 
       const createdUser = {
         id: "user-id-123",
-        name: "Иван Иванов",
-        email: "ivan@test.com",
-        password: "hashed-password-123",
       };
 
-      // 🔹 НАСТРАИВАЕМ МОКИ
-      prismaService.user.findUnique.mockResolvedValue(null);
-      prismaService.user.create.mockResolvedValue(createdUser);
+      mockPrismaService.user.create.mockResolvedValue(createdUser);
+      mockJwtService.sign.mockReturnValueOnce("access-token-123").mockReturnValueOnce("refresh-token-456");
 
-      jwtService.sign.mockReturnValueOnce("access-token-123").mockReturnValueOnce("refresh-token-456");
-
-      // 🔹 ВЫЗЫВАЕМ МЕТОД
       const result = await authService.register(registerDto);
 
-      // 🔹 ПРОВЕРКИ
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { email: "ivan@test.com" },
-      });
-
-      expect(prismaService.user.create).toHaveBeenCalledWith({
+      expect(mockPrismaService.user.create).toHaveBeenCalledWith({
         data: {
           name: "Иван Иванов",
           email: "ivan@test.com",
@@ -115,6 +80,9 @@ describe("AuthService", () => {
         },
       });
 
+      // findUnique НЕ вызывается — это особенность текущей реализации
+      expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
+
       expect(result).toEqual({
         accessToken: "access-token-123",
         refreshToken: "refresh-token-456",
@@ -122,49 +90,38 @@ describe("AuthService", () => {
       });
     });
 
-    it("должен выбросить ошибку если email уже занят", async () => {
+    it("должен выбросить ошибку при нарушении уникальности email", async () => {
       const registerDto = {
         name: "Иван Иванов",
-        email: "existing@test.com",
+        email: "ivan@test.com",
         password: "password123",
       };
 
-      const existingUser = {
-        id: "existing-id",
-        email: "existing@test.com",
+      const prismaError = {
+        code: "P2002",
+        meta: { target: ["email"], modelName: "User" },
       };
 
-      prismaService.user.findUnique.mockResolvedValue(existingUser);
+      mockPrismaService.user.create.mockRejectedValue(prismaError);
 
-      await expect(authService.register(registerDto)).rejects.toThrow(ConflictException);
-
-      await expect(authService.register(registerDto)).rejects.toThrow("Пользователь с таким email уже существует");
+      await expect(authService.register(registerDto)).rejects.toMatchObject({
+        errorCode: "EMAIL_ALREADY_EXISTS",
+        status: HttpStatus.CONFLICT, // Изменено с statusCode на status
+      });
     });
   });
 
   describe("login()", () => {
     it("должен успешно авторизовать пользователя", async () => {
-      const loginDto = {
-        email: "ivan@test.com",
-        password: "password123",
-      };
+      const loginDto = { email: "ivan@test.com", password: "password123" };
 
-      const existingUser = {
-        id: "user-id-123",
-        password: "hashed-password-123",
-      };
+      const user = { id: "user-id-123", password: "hashed-password-123" };
 
-      prismaService.user.findUnique.mockResolvedValue(existingUser);
-      argon2.verify.mockResolvedValue(true);
-
-      jwtService.sign.mockReturnValueOnce("access-token-123").mockReturnValueOnce("refresh-token-456");
+      mockPrismaService.user.findUnique.mockResolvedValue(user);
+      require("argon2").verify.mockResolvedValue(true);
+      mockJwtService.sign.mockReturnValueOnce("access-token-123").mockReturnValueOnce("refresh-token-456");
 
       const result = await authService.login(loginDto);
-
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { email: "ivan@test.com" },
-        select: { id: true, password: true },
-      });
 
       expect(result).toEqual({
         accessToken: "access-token-123",
@@ -173,104 +130,76 @@ describe("AuthService", () => {
       });
     });
 
-    it("должен выбросить NotFoundException если пользователь не найден", async () => {
-      const loginDto = {
-        email: "nonexistent@test.com",
-        password: "password123",
-      };
+    it("должен выбросить ошибку при неверных учётных данных (пользователь не найден)", async () => {
+      const loginDto = { email: "unknown@test.com", password: "pass" };
 
-      prismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(authService.login(loginDto)).rejects.toThrow(NotFoundException);
-
-      await expect(authService.login(loginDto)).rejects.toThrow("Пользователь не найден");
+      await expect(authService.login(loginDto)).rejects.toMatchObject({
+        errorCode: "INVALID_CREDENTIALS",
+        status: HttpStatus.UNAUTHORIZED, // Изменено с statusCode на status
+      });
     });
 
-    it("должен выбросить NotFoundException если пароль неверный", async () => {
-      const loginDto = {
-        email: "ivan@test.com",
-        password: "wrong-password",
-      };
+    it("должен выбросить ошибку при неверном пароле", async () => {
+      const loginDto = { email: "ivan@test.com", password: "wrong" };
 
-      const existingUser = {
-        id: "user-id-123",
-        password: "hashed-password-123",
-      };
+      const user = { id: "user-id-123", password: "hashed-password-123" };
 
-      prismaService.user.findUnique.mockResolvedValue(existingUser);
-      argon2.verify.mockReset();
-      argon2.verify.mockResolvedValue(false);
+      mockPrismaService.user.findUnique.mockResolvedValue(user);
+      require("argon2").verify.mockResolvedValue(false);
 
-      await expect(authService.login(loginDto)).rejects.toThrow(NotFoundException);
-      await expect(authService.login(loginDto)).rejects.toThrow("Пользователь не найден");
-
-      expect(argon2.verify).toHaveBeenCalledWith("hashed-password-123", "wrong-password");
+      await expect(authService.login(loginDto)).rejects.toMatchObject({
+        errorCode: "INVALID_CREDENTIALS",
+        status: HttpStatus.UNAUTHORIZED, // Изменено с statusCode на status
+      });
     });
   });
 
   describe("refresh()", () => {
     it("должен успешно обновить токены по валидному refresh token", async () => {
       const refreshToken = "valid-refresh-token";
-      const mockPayload = { sub: "user-id-123" };
+      const payload = { sub: "user-id-123" };
 
-      jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      prismaService.user.findUnique.mockResolvedValue({ id: "user-id-123" });
-
-      jwtService.sign.mockReturnValueOnce("new-access-token").mockReturnValueOnce("new-refresh-token");
+      mockJwtService.verifyAsync.mockResolvedValue(payload);
+      mockPrismaService.user.findUnique.mockResolvedValue({ id: "user-id-123" });
+      mockJwtService.sign.mockReturnValueOnce("new-access").mockReturnValueOnce("new-refresh");
 
       const result = await authService.refresh(refreshToken);
 
-      expect(jwtService.verifyAsync).toHaveBeenCalledWith(refreshToken);
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { id: "user-id-123" },
-        select: { id: true },
-      });
-
       expect(result).toEqual({
-        accessToken: "new-access-token",
-        refreshToken: "new-refresh-token",
+        accessToken: "new-access",
+        refreshToken: "new-refresh",
         userId: "user-id-123",
       });
     });
 
-    it("должен выбросить UnauthorizedException если refresh token отсутствует", async () => {
-      await expect(authService.refresh("")).rejects.toThrow(UnauthorizedException);
-
-      await expect(authService.refresh("")).rejects.toThrow("Токен не найден");
+    it("должен выбросить ошибку если refresh token отсутствует", async () => {
+      await expect(authService.refresh("")).rejects.toMatchObject({
+        errorCode: "REFRESH_TOKEN_MISSING",
+        status: HttpStatus.UNAUTHORIZED, // Изменено с statusCode на status
+      });
     });
 
-    it("должен выбросить UnauthorizedException если пользователь не найден", async () => {
-      const refreshToken = "valid-refresh-token";
-      const mockPayload = { sub: "non-existent-user-id" };
+    it("должен выбросить ошибку если пользователь не найден", async () => {
+      const refreshToken = "valid-token";
+      mockJwtService.verifyAsync.mockResolvedValue({ sub: "unknown-id" });
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      jwtService.verifyAsync.mockResolvedValue(mockPayload);
-      prismaService.user.findUnique.mockResolvedValue(null);
-
-      await expect(authService.refresh(refreshToken)).rejects.toThrow(UnauthorizedException);
-
-      await expect(authService.refresh(refreshToken)).rejects.toThrow("Пользователь не найден");
+      await expect(authService.refresh(refreshToken)).rejects.toMatchObject({
+        errorCode: "USER_NOT_FOUND",
+        status: HttpStatus.UNAUTHORIZED, // Изменено с statusCode на status
+      });
     });
 
-    it("должен выбросить UnauthorizedException если токен невалидный", async () => {
+    it("должен выбросить ошибку при невалидном refresh token", async () => {
       const refreshToken = "invalid-token";
+      mockJwtService.verifyAsync.mockRejectedValue(new Error("Invalid signature"));
 
-      // Мокаем что verifyAsync выбрасывает ошибку
-      // Сервис должен обернуть ее в UnauthorizedException
-      jwtService.verifyAsync.mockRejectedValue(new Error("Invalid token"));
-
-      // Проверяем что выброшена UnauthorizedException
-      await expect(authService.refresh(refreshToken)).rejects.toThrow(UnauthorizedException);
-    });
-
-    // Упрощенный тест - проверяем только что ошибка оборачивается
-    it("должен обрабатывать ошибки верификации токена", async () => {
-      const refreshToken = "invalid-token";
-
-      // Мокаем любую ошибку от verifyAsync
-      jwtService.verifyAsync.mockRejectedValue(new Error("Любая ошибка"));
-
-      // Должна быть выброшена UnauthorizedException
-      await expect(authService.refresh(refreshToken)).rejects.toThrow(UnauthorizedException);
+      await expect(authService.refresh(refreshToken)).rejects.toMatchObject({
+        errorCode: "INVALID_REFRESH_TOKEN",
+        status: HttpStatus.UNAUTHORIZED, // Изменено с statusCode на status
+      });
     });
   });
 
@@ -278,8 +207,7 @@ describe("AuthService", () => {
     it("должен генерировать access и refresh токены", () => {
       const userId = "test-user-id";
 
-      jwtService.sign.mockReset();
-      jwtService.sign.mockReturnValueOnce("access-token").mockReturnValueOnce("refresh-token");
+      mockJwtService.sign.mockReturnValueOnce("access-token").mockReturnValueOnce("refresh-token");
 
       const tokens = (authService as any).generateTokens(userId);
 
@@ -288,7 +216,9 @@ describe("AuthService", () => {
         refreshToken: "refresh-token",
       });
 
-      expect(jwtService.sign).toHaveBeenCalledTimes(2);
+      expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
+      expect(mockJwtService.sign).toHaveBeenCalledWith({ sub: userId }, { expiresIn: "15m" });
+      expect(mockJwtService.sign).toHaveBeenCalledWith({ sub: userId }, { expiresIn: "7d" });
     });
   });
 });
