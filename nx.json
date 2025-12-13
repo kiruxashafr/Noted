@@ -14,6 +14,17 @@
     ],
     "sharedGlobals": []
   },
+  "targetDefaults": {
+    "typecheck": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "noEmit": true
+      },
+      "cache": true,
+      "inputs": ["default", "^default"],
+      "outputs": []
+    }
+  },
   "plugins": [
     {
       "plugin": "@nx/webpack/plugin",

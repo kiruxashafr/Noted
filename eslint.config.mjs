@@ -1,42 +1,73 @@
-import nx from '@nx/eslint-plugin';
+import js from "@eslint/js";
+import nxPlugin from "@nx/eslint-plugin";
+import typescriptPlugin from "@typescript-eslint/eslint-plugin";
+import typescriptParser from "@typescript-eslint/parser";
+import globals from "globals";
 
 export default [
-  ...nx.configs['flat/base'],
-  ...nx.configs['flat/typescript'],
-  ...nx.configs['flat/javascript'],
+  // Базовые конфиги JavaScript
+  js.configs.recommended,
+
+  // Конфиги TypeScript
   {
-    ignores: ['**/dist'],
-  },
-  {
-    files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
+    files: ["**/*.ts", "**/*.tsx"],
+    plugins: {
+      "@typescript-eslint": typescriptPlugin,
+    },
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        project: "./tsconfig.base.json",
+      },
+    },
     rules: {
-      '@nx/enforce-module-boundaries': [
-        'error',
+      ...typescriptPlugin.configs.recommended.rules,
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+
+  {
+    files: ["**/webpack.config.js", "**/*.config.js", "**/*.config.cjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+
+  // Конфиги Nx
+  ...nxPlugin.configs["flat/base"],
+  ...nxPlugin.configs["flat/typescript"],
+
+  // Правило границ модулей Nx
+  {
+    files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+    rules: {
+      "@nx/enforce-module-boundaries": [
+        "error",
         {
           enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          allow: [],
           depConstraints: [
             {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
+              sourceTag: "*",
+              onlyDependOnLibsWithTags: ["*"],
             },
           ],
         },
       ],
     },
   },
+
+  // Игнорируемые файлы
   {
-    files: [
-      '**/*.ts',
-      '**/*.tsx',
-      '**/*.cts',
-      '**/*.mts',
-      '**/*.js',
-      '**/*.jsx',
-      '**/*.cjs',
-      '**/*.mjs',
-    ],
-    // Override or add rules here
-    rules: {},
+    ignores: ["**/*.spec.ts", "**/*.test.ts", "dist/**", "node_modules/**", "coverage/**", ".nx/**"],
   },
 ];
