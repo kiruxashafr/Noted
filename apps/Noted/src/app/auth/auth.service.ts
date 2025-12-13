@@ -16,6 +16,9 @@ import { JwtPayload } from "./interfaces/jwt.interface";
 import * as argon2 from "argon2";
 import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
+import { ReadAuthDto } from "./dto/readAuth.dto";
+import { plainToInstance } from "class-transformer";
+
 @Injectable()
 export class AuthService {
   private readonly jwtSecret: string;
@@ -52,17 +55,21 @@ export class AuthService {
 
       const tokens = this.generateTokens(user.id);
 
-      return {
-        ...tokens,
+      const registerData = {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
         userId: user.id,
       };
+
+      return plainToInstance(ReadAuthDto, registerData, {
+        excludeExtraneousValues: true,
+      });
     } catch (error) {
-      // ВЫЗЫВАЕМ ОБРАБОТЧИК ОШИБОК
       this.handleAccountConstraintError(error);
     }
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto): Promise<ReadAuthDto> {
     const { email, password } = dto;
 
     const user = await this.prisma.user.findUnique({
@@ -82,10 +89,15 @@ export class AuthService {
 
     const tokens = this.generateTokens(user.id);
 
-    return {
-      ...tokens,
+    const authData = {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       userId: user.id,
     };
+
+    return plainToInstance(ReadAuthDto, authData, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async refresh(refreshToken: string) {
@@ -97,7 +109,6 @@ export class AuthService {
     try {
       payload = await this.jwtService.verifyAsync(refreshToken);
     } catch {
-      // Обрабатываем ошибку верификации токена
       throw new UnauthorizedException("Невалидный токен");
     }
 
@@ -112,17 +123,22 @@ export class AuthService {
 
     const tokens = this.generateTokens(user.id);
 
-    return {
-      ...tokens,
+    const authData = {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       userId: user.id,
     };
+
+    return plainToInstance(ReadAuthDto, authData, {
+      excludeExtraneousValues: true,
+    });
   }
 
   private generateTokens(userId: string) {
     const payload = { sub: userId };
 
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: this.jwtAccessTokenTTL as StringValue, // импортируй из jws
+      expiresIn: this.jwtAccessTokenTTL as StringValue,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
