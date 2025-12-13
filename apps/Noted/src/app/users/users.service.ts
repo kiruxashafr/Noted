@@ -5,7 +5,4 @@ import { PrismaService } from "../prisma.service";
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.user.findMany();
-  }
 }

@@ -9,7 +9,7 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { StringValue } from "jws";
 import { PrismaService } from "../prisma.service";
-import { LoginRequest } from "./dto/login.dto";
+import { LoginDto } from "./dto/login.dto";
 import { RegisterRequest } from "./dto/register.dto";
 import { JwtPayload } from "./interfaces/jwt.interface";
 
@@ -62,7 +62,7 @@ export class AuthService {
     }
   }
 
-  async login(dto: LoginRequest) {
+  async login(dto: LoginDto) {
     const { email, password } = dto;
 
     const user = await this.prisma.user.findUnique({
