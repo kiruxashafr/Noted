@@ -13,6 +13,7 @@ import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { ReadAuthDto } from "./dto/readAuth.dto";
 import { plainToInstance } from "class-transformer";
 import { ApiException } from "@noted/common/errors/api-exception";
+import { AccessTokenPayload, RefreshTokenPayload } from "@noted/types";
 
 @Injectable()
 export class AuthService {
@@ -116,17 +117,7 @@ export class AuthService {
       throw new ApiException("USER_NOT_FOUND", HttpStatus.UNAUTHORIZED);
     }
 
-    const tokens = this.generateTokens(user.id);
-
-    const authData = {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      userId: user.id,
-    };
-
-    return plainToInstance(ReadAuthDto, authData, {
-      excludeExtraneousValues: true,
-    });
+    return this.generateAccessToken(user.id);
   }
 
   private generateTokens(userId: string) {
@@ -141,6 +132,26 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  async generateRefreshToken(userId: string): Promise<string> {
+    const payload: RefreshTokenPayload = {
+      sub: userId,
+    };
+    return this.jwtService.signAsync(payload, {
+      expiresIn: this.jwtRefreshTokenTTL as StringValue,
+      secret: this.jwtSecret,
+    });
+  }
+
+  async generateAccessToken(userId: string): Promise<string> {
+    const payload: AccessTokenPayload = {
+      sub: userId,
+    };
+    return this.jwtService.signAsync(payload, {
+      expiresIn: this.jwtAccessTokenTTL as StringValue,
+      secret: this.jwtSecret,
+    });
   }
 
   private handleAccountConstraintError(error: unknown): never {
