@@ -6,17 +6,22 @@ import { RegisterRequest } from "./dto/register.dto";
 
 import type { Request, Response } from "express";
 import { ConfigService } from "@nestjs/config";
-import { isDev } from "../utils/is-dev.utils";
+import { isDev } from "@noted/common/utils/is-dev";
+import { ApiException } from "@noted/common/errors/api-exception";
 
 @Controller("auth")
 export class AuthController {
-  private readonly COOKIE_DOMAIN: string;
+  private readonly cookieDomain: string;
+  private readonly refreshTtl: number;
+  private readonly accessTtl: number;
 
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
   ) {
-    this.COOKIE_DOMAIN = configService.getOrThrow<string>("COOKIE_DOMAIN");
+    this.cookieDomain = configService.getOrThrow<string>("COOKIE_DOMAIN");
+    this.refreshTtl = configService.getOrThrow<number>("JWT_REFRESH_TTL_SECONDS", 604800);
+    this.accessTtl = configService.getOrThrow<number>("JWT_ACCESS_TTL_SECONDS", 900);
   }
 
   @Post("register")
@@ -44,6 +49,10 @@ export class AuthController {
   async refresh(@Req() req: Request) {
     const refreshToken = req.cookies["refreshToken"];
 
+    if (!refreshToken) {
+      throw new ApiException("REFRESH_TOKEN_MISSING", HttpStatus.UNAUTHORIZED);
+    }
+
     const accessToken = await this.authService.refresh(refreshToken);
 
     return { accessToken };
@@ -58,12 +67,12 @@ export class AuthController {
   }
 
   private setRefreshTokenCookie(res: Response, refreshToken: string): void {
-    const expires = new Date(Date.now() + 60 * 60 * 24 * 7 * 1000); // 7 дней
+    const refreshMaxAge = this.refreshTtl * 1000;
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      domain: this.COOKIE_DOMAIN,
-      expires,
+      domain: this.cookieDomain,
+      maxAge: refreshMaxAge,
       secure: !isDev(this.configService),
       sameSite: isDev(this.configService) ? "none" : "lax",
     });
@@ -72,7 +81,7 @@ export class AuthController {
   private clearRefreshTokenCookie(res: Response): void {
     res.cookie("refreshToken", "", {
       httpOnly: true,
-      domain: this.COOKIE_DOMAIN,
+      domain: this.cookieDomain,
       expires: new Date(0),
       secure: !isDev(this.configService),
       sameSite: isDev(this.configService) ? "none" : "lax",

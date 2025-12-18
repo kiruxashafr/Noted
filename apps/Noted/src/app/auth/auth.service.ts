@@ -1,25 +1,24 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { StringValue } from "jws";
 import { PrismaService } from "../prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterRequest } from "./dto/register.dto";
-import { JwtPayload } from "./interfaces/jwt.interface";
-
+import { AccessTokenPayload, RefreshTokenPayload } from "./interfaces/jwt.interface";
 import * as argon2 from "argon2";
 import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { ReadAuthDto } from "./dto/readAuth.dto";
 import { plainToInstance } from "class-transformer";
 import { ApiException } from "@noted/common/errors/api-exception";
-import { AccessTokenPayload, RefreshTokenPayload } from "@noted/types";
+import { ReadRefreshDto } from "./dto/readRefresh.dto";
 
 @Injectable()
 export class AuthService {
-  private readonly jwtSecret: string;
-  private readonly jwtAccessTokenTTL: string;
-  private readonly jwtRefreshTokenTTL: string;
+  private readonly accessSecret: string;
+  private readonly refreshSecret: string;
+  private readonly jwtAccessTokenTTL: number;
+  private readonly jwtRefreshTokenTTL: number;
 
   private readonly COOKIE_DOMAIN: string;
 
@@ -28,9 +27,10 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {
-    this.jwtSecret = this.configService.getOrThrow<string>("JWT_SECRET");
-    this.jwtAccessTokenTTL = this.configService.getOrThrow<string>("JWT_ACCESS_TOKEN_TTL");
-    this.jwtRefreshTokenTTL = this.configService.getOrThrow<string>("JWT_REFRESH_TOKEN_TTL");
+    this.accessSecret = this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
+    this.refreshSecret = this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
+    this.jwtAccessTokenTTL = +this.configService.getOrThrow<number>("JWT_ACCESS_TTL_SECONDS");
+    this.jwtRefreshTokenTTL = +this.configService.getOrThrow<number>("JWT_REFRESH_TTL_SECONDS");
 
     this.COOKIE_DOMAIN = configService.getOrThrow<string>("COOKIE_DOMAIN");
   }
@@ -49,7 +49,10 @@ export class AuthService {
         },
       });
 
-      const tokens = this.generateTokens(user.id);
+      const tokens = {
+        accessToken: await this.generateAccessToken(user.id),
+        refreshToken: await this.generateRefreshToken(user.id),
+      };
 
       const registerData = {
         accessToken: tokens.accessToken,
@@ -83,7 +86,10 @@ export class AuthService {
       throw new ApiException("INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED);
     }
 
-    const tokens = this.generateTokens(user.id);
+    const tokens = {
+      accessToken: await this.generateAccessToken(user.id),
+      refreshToken: await this.generateRefreshToken(user.id),
+    };
 
     const authData = {
       accessToken: tokens.accessToken,
@@ -97,13 +103,9 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string) {
-    if (!refreshToken) {
-      throw new ApiException("REFRESH_TOKEN_MISSING", HttpStatus.UNAUTHORIZED);
-    }
-
-    let payload: JwtPayload;
+    let payload: RefreshTokenPayload;
     try {
-      payload = await this.jwtService.verifyAsync(refreshToken);
+      payload = await this.jwtService.verifyAsync(refreshToken, { secret: this.refreshSecret });
     } catch {
       throw new ApiException("INVALID_REFRESH_TOKEN", HttpStatus.UNAUTHORIZED);
     }
@@ -117,30 +119,25 @@ export class AuthService {
       throw new ApiException("USER_NOT_FOUND", HttpStatus.UNAUTHORIZED);
     }
 
-    return this.generateAccessToken(user.id);
-  }
+    const accessToken = await this.generateAccessToken(user.id);
 
-  private generateTokens(userId: string) {
-    const payload = { sub: userId };
-
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: this.jwtAccessTokenTTL as StringValue,
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: this.jwtRefreshTokenTTL as StringValue,
-    });
-
-    return { accessToken, refreshToken };
+    return plainToInstance(
+      ReadRefreshDto,
+      { accessToken },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
   async generateRefreshToken(userId: string): Promise<string> {
     const payload: RefreshTokenPayload = {
       sub: userId,
     };
+
     return this.jwtService.signAsync(payload, {
-      expiresIn: this.jwtRefreshTokenTTL as StringValue,
-      secret: this.jwtSecret,
+      expiresIn: this.jwtRefreshTokenTTL,
+      secret: this.refreshSecret,
     });
   }
 
@@ -148,9 +145,10 @@ export class AuthService {
     const payload: AccessTokenPayload = {
       sub: userId,
     };
+
     return this.jwtService.signAsync(payload, {
-      expiresIn: this.jwtAccessTokenTTL as StringValue,
-      secret: this.jwtSecret,
+      expiresIn: this.jwtAccessTokenTTL,
+      secret: this.accessSecret,
     });
   }
 

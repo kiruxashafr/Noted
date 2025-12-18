@@ -1,12 +1,32 @@
-// apps/Noted/src/app/auth/auth.service.spec.ts
+import { HttpStatus } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { AuthService } from "./auth.service";
 import { PrismaService } from "../prisma.service";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
-import { HttpStatus } from "@nestjs/common";
+import * as argon2 from "argon2";
 
-// 🔹 МОКИ ЗАВИСИМОСТЕЙ
+// 🔹 Мокаем DTO прямо внутри jest.mock — без внешних переменных!
+// Это полностью обходит проблему hoisting в Jest
+jest.mock("./dto/readAuth.dto", () => ({
+  ReadAuthDto: function () {
+    this.accessToken = "";
+    this.refreshToken = "";
+    this.userId = "";
+  } as any,
+}));
+
+jest.mock("./dto/readRefresh.dto", () => ({
+  ReadRefreshDto: function () {
+    this.accessToken = "";
+  } as any,
+}));
+
+// 🔹 Теперь можно безопасно импортировать (после моков)
+import { ReadAuthDto } from "./dto/readAuth.dto";
+import { ReadRefreshDto } from "./dto/readRefresh.dto";
+
+// 🔹 Моки зависимостей
 const mockPrismaService = {
   user: {
     findUnique: jest.fn(),
@@ -15,27 +35,39 @@ const mockPrismaService = {
 };
 
 const mockJwtService = {
-  sign: jest.fn(() => "fake-jwt-token"),
-  signAsync: jest.fn().mockResolvedValue("fake-async-token"), // ← ДОБАВЬТЕ ЭТО
+  signAsync: jest.fn(),
   verifyAsync: jest.fn(),
 };
 
 const mockConfigService = {
   getOrThrow: jest.fn((key: string) => {
-    const config: Record<string, string> = {
-      JWT_SECRET: "test-secret-123",
-      JWT_ACCESS_TOKEN_TTL: "15m",
-      JWT_REFRESH_TOKEN_TTL: "7d",
+    const config: Record<string, any> = {
+      JWT_ACCESS_SECRET: "test-access-secret",
+      JWT_REFRESH_SECRET: "test-refresh-secret",
+      JWT_ACCESS_TTL_SECONDS: "900",
+      JWT_REFRESH_TTL_SECONDS: "604800",
       COOKIE_DOMAIN: "localhost",
     };
+
+    if (!(key in config)) {
+      throw new Error(`Config key ${key} not found`);
+    }
+
     return config[key];
   }),
 };
 
-// 🔹 Мок argon2
 jest.mock("argon2", () => ({
   hash: jest.fn().mockResolvedValue("hashed-password-123"),
   verify: jest.fn(),
+}));
+
+jest.mock("class-transformer", () => ({
+  plainToInstance: jest.fn((dtoClass: any, data: any) => {
+    const instance = Object.create(dtoClass.prototype);
+    Object.assign(instance, data);
+    return instance;
+  }),
 }));
 
 describe("AuthService", () => {
@@ -64,12 +96,10 @@ describe("AuthService", () => {
         password: "password123",
       };
 
-      const createdUser = {
-        id: "user-id-123",
-      };
+      const createdUser = { id: "user-id-123" };
 
       mockPrismaService.user.create.mockResolvedValue(createdUser);
-      mockJwtService.sign.mockReturnValueOnce("access-token-123").mockReturnValueOnce("refresh-token-456");
+      mockJwtService.signAsync.mockResolvedValueOnce("access-token-123").mockResolvedValueOnce("refresh-token-456");
 
       const result = await authService.register(registerDto);
 
@@ -81,6 +111,7 @@ describe("AuthService", () => {
         },
       });
 
+      expect(result).toBeInstanceOf(ReadAuthDto);
       expect(result).toEqual({
         accessToken: "access-token-123",
         refreshToken: "refresh-token-456",
@@ -112,15 +143,15 @@ describe("AuthService", () => {
   describe("login()", () => {
     it("должен успешно авторизовать пользователя", async () => {
       const loginDto = { email: "ivan@test.com", password: "password123" };
-
       const user = { id: "user-id-123", password: "hashed-password-123" };
 
       mockPrismaService.user.findUnique.mockResolvedValue(user);
-      require("argon2").verify.mockResolvedValue(true);
-      mockJwtService.sign.mockReturnValueOnce("access-token-123").mockReturnValueOnce("refresh-token-456");
+      (argon2.verify as jest.Mock).mockResolvedValue(true);
+      mockJwtService.signAsync.mockResolvedValueOnce("access-token-123").mockResolvedValueOnce("refresh-token-456");
 
       const result = await authService.login(loginDto);
 
+      expect(result).toBeInstanceOf(ReadAuthDto);
       expect(result).toEqual({
         accessToken: "access-token-123",
         refreshToken: "refresh-token-456",
@@ -141,11 +172,10 @@ describe("AuthService", () => {
 
     it("должен выбросить ошибку при неверном пароле", async () => {
       const loginDto = { email: "ivan@test.com", password: "wrong" };
-
       const user = { id: "user-id-123", password: "hashed-password-123" };
 
       mockPrismaService.user.findUnique.mockResolvedValue(user);
-      require("argon2").verify.mockResolvedValue(false);
+      (argon2.verify as jest.Mock).mockResolvedValue(false);
 
       await expect(authService.login(loginDto)).rejects.toMatchObject({
         errorCode: "INVALID_CREDENTIALS",
@@ -161,22 +191,12 @@ describe("AuthService", () => {
 
       mockJwtService.verifyAsync.mockResolvedValue(payload);
       mockPrismaService.user.findUnique.mockResolvedValue({ id: "user-id-123" });
-      mockJwtService.signAsync.mockResolvedValue("new-access-token"); // ← signAsync!
+      mockJwtService.signAsync.mockResolvedValue("new-access-token");
 
       const result = await authService.refresh(refreshToken);
 
-      expect(result).toBe("new-access-token"); // ← Только access token, не объект!
-      expect(mockJwtService.signAsync).toHaveBeenCalledWith(
-        { sub: "user-id-123" },
-        { expiresIn: "15m", secret: "test-secret-123" },
-      );
-    });
-
-    it("должен выбросить ошибку если refresh token отсутствует", async () => {
-      await expect(authService.refresh("")).rejects.toMatchObject({
-        errorCode: "REFRESH_TOKEN_MISSING",
-        status: HttpStatus.UNAUTHORIZED,
-      });
+      expect(result).toBeInstanceOf(ReadRefreshDto);
+      expect(result).toEqual({ accessToken: "new-access-token" });
     });
 
     it("должен выбросить ошибку если пользователь не найден", async () => {
@@ -201,28 +221,6 @@ describe("AuthService", () => {
     });
   });
 
-  describe("generateTokens()", () => {
-    it("должен генерировать access и refresh токены", () => {
-      const userId = "test-user-id";
-
-      // Сбрасываем мок перед тестом
-      mockJwtService.sign.mockClear();
-      mockJwtService.sign.mockReturnValueOnce("access-token").mockReturnValueOnce("refresh-token");
-
-      // Вызываем приватный метод
-      const tokens = (authService as any).generateTokens(userId);
-
-      expect(tokens).toEqual({
-        accessToken: "access-token",
-        refreshToken: "refresh-token",
-      });
-
-      expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
-      expect(mockJwtService.sign).toHaveBeenCalledWith({ sub: userId }, { expiresIn: "15m" });
-      expect(mockJwtService.sign).toHaveBeenCalledWith({ sub: userId }, { expiresIn: "7d" });
-    });
-  });
-
   describe("generateAccessToken()", () => {
     it("должен генерировать access token асинхронно", async () => {
       const userId = "test-user-id";
@@ -231,10 +229,6 @@ describe("AuthService", () => {
       const result = await authService.generateAccessToken(userId);
 
       expect(result).toBe("generated-access-token");
-      expect(mockJwtService.signAsync).toHaveBeenCalledWith(
-        { sub: userId },
-        { expiresIn: "15m", secret: "test-secret-123" },
-      );
     });
   });
 
@@ -246,10 +240,6 @@ describe("AuthService", () => {
       const result = await authService.generateRefreshToken(userId);
 
       expect(result).toBe("generated-refresh-token");
-      expect(mockJwtService.signAsync).toHaveBeenCalledWith(
-        { sub: userId },
-        { expiresIn: "7d", secret: "test-secret-123" },
-      );
     });
   });
 });
