@@ -6,6 +6,8 @@ import { LoginDto } from "./dto/login.dto";
 import { RegisterRequest } from "./dto/register.dto";
 import type { Request, Response } from "express";
 import { ApiException } from "@noted/common/errors/api-exception";
+import { JwtModule } from "@nestjs/jwt";
+import { JwtAuthGuard } from "./guards/jwt.guards";
 
 const mockAuthService = {
   register: jest.fn(),
@@ -52,6 +54,14 @@ describe("AuthController", () => {
 
         throw new Error(`Unknown config key in test: ${key}`);
       }),
+      // ← ДОБАВЬТЕ ЭТОТ МЕТОД
+      get: jest.fn((key: string, defaultValue?: any) => {
+        try {
+          return mockConfigService.getOrThrow(key);
+        } catch {
+          return defaultValue;
+        }
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -60,8 +70,12 @@ describe("AuthController", () => {
         { provide: AuthService, useValue: mockAuthService },
         { provide: ConfigService, useValue: mockConfigService },
       ],
+      imports: [
+        JwtModule.register({
+          secret: "dummy", // значение не важно
+        }),
+      ],
     }).compile();
-
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
 
@@ -226,9 +240,17 @@ describe("AuthController", () => {
         getOrThrow: jest.fn((key: string) => {
           if (key === "COOKIE_DOMAIN") return "localhost";
           if (key === "NODE_ENV") return "development";
-          if (key === "JWT_REFRESH_TTL_SECONDS") return "604800"; // ← добавьте
-          if (key === "JWT_ACCESS_TTL_SECONDS") return "900"; // ← добавьте
+          if (key === "JWT_REFRESH_TTL_SECONDS") return "604800";
+          if (key === "JWT_ACCESS_TTL_SECONDS") return "900";
           throw new Error(`Unknown config key: ${key}`);
+        }),
+        // Добавляем get на всякий случай (если guard всё же создаётся)
+        get: jest.fn((key: string, defaultValue?: any) => {
+          try {
+            return mockConfigService.getOrThrow(key);
+          } catch {
+            return defaultValue;
+          }
         }),
       };
 
@@ -238,25 +260,28 @@ describe("AuthController", () => {
           { provide: AuthService, useValue: mockAuthService },
           { provide: ConfigService, useValue: mockConfigService },
         ],
-      }).compile();
+        imports: [
+          JwtModule.register({
+            secret: "dummy-secret", // обязательно добавляем!
+          }),
+        ],
+      })
+        .overrideGuard(JwtAuthGuard) // ← опционально, но рекомендуется
+        .useValue({ canActivate: () => true })
+        .compile();
 
       const devController = module.get<AuthController>(AuthController);
       const response = createMockResponse();
       const refreshToken = "test-token";
 
-      // Вызываем приватный метод
       (devController as any).setRefreshTokenCookie(response as Response, refreshToken);
 
-      // Для NODE_ENV="development":
-      // isDev() вернет true
-      // secure: !isDev() → false
-      // sameSite: isDev() ? "none" : "lax" → "none"
       expect(response.cookie).toHaveBeenCalledWith(
         "refreshToken",
         refreshToken,
         expect.objectContaining({
-          secure: false, // !isDev() = false
-          sameSite: "none", // isDev() ? "none" : "lax" = "none"
+          secure: false,
+          sameSite: "none",
         }),
       );
     });

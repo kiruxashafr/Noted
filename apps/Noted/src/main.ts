@@ -8,44 +8,44 @@ const cookieParser = require("cookie-parser");
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = "api";
-  
+
   // Устанавливаем глобальный префикс ПЕРЕД настройкой Swagger
   app.setGlobalPrefix(globalPrefix);
 
   // Swagger настройка
   const config = new DocumentBuilder()
-    .setTitle('Noted API')
-    .setDescription('API для системы заметок Noted')
-    .setVersion('1.0')
-    .addTag('Authentication')
-    .addCookieAuth('refreshToken', {
-      type: 'http',
-      in: 'Cookie',
-      name: 'refreshToken',
-      description: 'Refresh Token для аутентификации'
+    .setTitle("Noted API")
+    .setDescription("API для системы заметок Noted")
+    .setVersion("1.0")
+    .addTag("Authentication")
+    .addCookieAuth("refreshToken", {
+      type: "http",
+      in: "Cookie",
+      name: "refreshToken",
+      description: "Refresh Token для аутентификации",
     })
     .addBearerAuth(
       {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'Authorization',
-        description: 'Enter JWT access token',
-        in: 'header',
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        name: "Authorization",
+        description: "Enter JWT access token",
+        in: "header",
       },
-      'access-token',
+      "access-token",
     )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  
+
   // Настраиваем Swagger UI с правильным префиксом
-  SwaggerModule.setup('docs', app, document, {
+  SwaggerModule.setup("docs", app, document, {
     swaggerOptions: {
       persistAuthorization: true,
-      tagsSorter: 'alpha',
-      operationsSorter: 'alpha',
-      docExpansion: 'none',
+      tagsSorter: "alpha",
+      operationsSorter: "alpha",
+      docExpansion: "none",
       defaultModelsExpandDepth: -1,
       tryItOutEnabled: true,
     },
@@ -61,21 +61,21 @@ async function bootstrap() {
       },
     }),
   );
-  
+
   app.useGlobalFilters(new ApiExceptionFilter());
   app.use(cookieParser());
-  
+
   // Включим CORS для Swagger UI и фронтенда
   app.enableCors({
     origin: true,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   });
-  
+
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  
+
   Logger.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`);
   Logger.log(`📚 Swagger documentation available at: http://localhost:${port}/docs`);
 }

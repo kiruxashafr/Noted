@@ -4,8 +4,8 @@ import { ApiProperty } from "@nestjs/swagger";
 
 export class RegisterRequest implements RegisterPayload {
   @ApiProperty({
-    description: 'User name',
-    example: 'user'
+    description: "User name",
+    example: "user",
   })
   @IsString()
   @IsNotEmpty()
@@ -13,8 +13,8 @@ export class RegisterRequest implements RegisterPayload {
   name: string;
 
   @ApiProperty({
-    description: 'User email address',
-    example: 'user@example.com'
+    description: "User email address",
+    example: "user@example.com",
   })
   @IsString()
   @IsNotEmpty()
@@ -22,8 +22,8 @@ export class RegisterRequest implements RegisterPayload {
   email: string;
 
   @ApiProperty({
-    description: 'User password',
-    example: 'Password123'
+    description: "User password",
+    example: "Password123",
   })
   @IsString()
   @IsNotEmpty()

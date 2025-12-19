@@ -8,10 +8,11 @@ import { AccessTokenPayload, RefreshTokenPayload } from "./interfaces/jwt.interf
 import * as argon2 from "argon2";
 import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
-import { ReadAuthDto } from "./dto/readAuth.dto";
+import { ReadAuthDto } from "./dto/read-auth.dto";
 import { plainToInstance } from "class-transformer";
 import { ApiException } from "@noted/common/errors/api-exception";
-import { ReadRefreshDto } from "./dto/readRefresh.dto";
+import { ReadRefreshDto } from "./dto/read-refresh.dto";
+import { ReadUserProfileDto } from "./dto/read-user-profile.dto";
 
 @Injectable()
 export class AuthService {
@@ -130,6 +131,26 @@ export class AuthService {
     );
   }
 
+  async getUserProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new ApiException("USER_NOT_FOUND", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    return plainToInstance(ReadUserProfileDto, user, {
+      excludeExtraneousValues: true,
+    });
+  }
   async generateRefreshToken(userId: string): Promise<string> {
     const payload: RefreshTokenPayload = {
       sub: userId,

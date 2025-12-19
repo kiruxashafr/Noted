@@ -8,7 +8,7 @@ import * as argon2 from "argon2";
 
 // 🔹 Мокаем DTO прямо внутри jest.mock — без внешних переменных!
 // Это полностью обходит проблему hoisting в Jest
-jest.mock("./dto/readAuth.dto", () => ({
+jest.mock("./dto/read-auth.dto", () => ({
   ReadAuthDto: function () {
     this.accessToken = "";
     this.refreshToken = "";
@@ -16,15 +16,15 @@ jest.mock("./dto/readAuth.dto", () => ({
   } as any,
 }));
 
-jest.mock("./dto/readRefresh.dto", () => ({
+jest.mock("./dto/read-refresh.dto", () => ({
   ReadRefreshDto: function () {
     this.accessToken = "";
   } as any,
 }));
 
 // 🔹 Теперь можно безопасно импортировать (после моков)
-import { ReadAuthDto } from "./dto/readAuth.dto";
-import { ReadRefreshDto } from "./dto/readRefresh.dto";
+import { ReadAuthDto } from "./dto/read-auth.dto";
+import { ReadRefreshDto } from "./dto/read-refresh.dto";
 
 // 🔹 Моки зависимостей
 const mockPrismaService = {
@@ -68,6 +68,9 @@ jest.mock("class-transformer", () => ({
     Object.assign(instance, data);
     return instance;
   }),
+  Expose: jest.fn(() => () => {}), // ← добавляем мок декоратора
+  Transform: jest.fn(() => () => {}), // на всякий случай, если где-то используется
+  Type: jest.fn(() => () => {}),
 }));
 
 describe("AuthService", () => {
