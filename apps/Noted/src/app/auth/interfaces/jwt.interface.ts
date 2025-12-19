@@ -1,9 +1,11 @@
-export interface RefreshTokenPayload {
+import { ApiProperty } from "@nestjs/swagger";
+
+export class RefreshTokenPayload {
+  @ApiProperty({ description: 'User id' })
   sub: string;
-  iat?: number;
-  exp?: number;
 }
 
-export interface AccessTokenPayload extends RefreshTokenPayload {
+export class AccessTokenPayload {
+  @ApiProperty({ description: 'User id'})
   sub: string;
 }

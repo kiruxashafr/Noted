@@ -8,7 +8,11 @@ import type { Request, Response } from "express";
 import { ConfigService } from "@nestjs/config";
 import { isDev } from "@noted/common/utils/is-dev";
 import { ApiException } from "@noted/common/errors/api-exception";
+import { ApiBody, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ReadAuthDto } from "./dto/readAuth.dto";
+import { ReadRefreshDto } from "./dto/readRefresh.dto";
 
+@ApiTags('Authentication')
 @Controller("auth")
 export class AuthController {
   private readonly cookieDomain: string;
@@ -26,6 +30,21 @@ export class AuthController {
 
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register new user' })
+  @ApiBody({ type: RegisterRequest })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'User registered successfully',
+    type: ReadAuthDto 
+  })
+  @ApiResponse({ 
+    status: 409, 
+    description: 'Email already exists' 
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Validation error' 
+  })
   async register(@Res({ passthrough: true }) res: Response, @Body() dto: RegisterRequest) {
     const authResult = await this.authService.register(dto);
 
@@ -36,6 +55,21 @@ export class AuthController {
 
   @Post("login")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login user' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Login successful',
+    type: ReadAuthDto 
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Invalid credentials' 
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Validation error' 
+  })
   async login(@Res({ passthrough: true }) res: Response, @Body() dto: LoginDto) {
     const authResult = await this.authService.login(dto);
 
@@ -46,6 +80,17 @@ export class AuthController {
 
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Token refreshed successfully',
+    type: ReadRefreshDto
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Invalid or missing refresh token' 
+  })
+  @ApiCookieAuth('refreshToken') 
   async refresh(@Req() req: Request) {
     const refreshToken = req.cookies["refreshToken"];
 
@@ -60,6 +105,17 @@ export class AuthController {
 
   @Post("logout")
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Logout successful',
+    schema: {
+      example: {
+        message: "Logged out successfully"
+      }
+    }
+  })
+  @ApiCookieAuth('refreshToken')
   async logout(@Res({ passthrough: true }) res: Response) {
     this.clearRefreshTokenCookie(res);
 
