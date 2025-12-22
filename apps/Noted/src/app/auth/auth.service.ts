@@ -13,6 +13,8 @@ import { plainToInstance } from "class-transformer";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ReadRefreshDto } from "./dto/read-refresh.dto";
 import { ReadUserProfileDto } from "./dto/read-user-profile.dto";
+import { isDev } from "@noted/common/utils/is-dev";
+import type { Response } from "express";
 
 @Injectable()
 export class AuthService {
@@ -20,8 +22,7 @@ export class AuthService {
   private readonly refreshSecret: string;
   private readonly jwtAccessTokenTTL: number;
   private readonly jwtRefreshTokenTTL: number;
-
-  private readonly COOKIE_DOMAIN: string;
+  private readonly cookieDomain: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -32,8 +33,7 @@ export class AuthService {
     this.refreshSecret = this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
     this.jwtAccessTokenTTL = +this.configService.getOrThrow<number>("JWT_ACCESS_TTL_SECONDS");
     this.jwtRefreshTokenTTL = +this.configService.getOrThrow<number>("JWT_REFRESH_TTL_SECONDS");
-
-    this.COOKIE_DOMAIN = configService.getOrThrow<string>("COOKIE_DOMAIN");
+    this.cookieDomain = configService.getOrThrow<string>("COOKIE_DOMAIN");
   }
 
   async register(dto: RegisterRequest) {
@@ -170,6 +170,28 @@ export class AuthService {
     return this.jwtService.signAsync(payload, {
       expiresIn: this.jwtAccessTokenTTL,
       secret: this.accessSecret,
+    });
+  }
+
+  setRefreshTokenCookie(res: Response, refreshToken: string): void {
+    const refreshMaxAge = this.jwtRefreshTokenTTL;
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      domain: this.cookieDomain,
+      maxAge: refreshMaxAge,
+      secure: !isDev(this.configService),
+      sameSite: isDev(this.configService) ? "none" : "lax",
+    });
+  }
+
+  clearRefreshTokenCookie(res: Response): void {
+    res.cookie("refreshToken", "", {
+      httpOnly: true,
+      domain: this.cookieDomain,
+      expires: new Date(0),
+      secure: !isDev(this.configService),
+      sameSite: isDev(this.configService) ? "none" : "lax",
     });
   }
 

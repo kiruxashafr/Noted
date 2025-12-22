@@ -6,7 +6,6 @@ import { RegisterRequest } from "./dto/register.dto";
 
 import type { Request, Response } from "express";
 import { ConfigService } from "@nestjs/config";
-import { isDev } from "@noted/common/utils/is-dev";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ApiBearerAuth, ApiBody, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ReadAuthDto } from "./dto/read-auth.dto";
@@ -50,7 +49,7 @@ export class AuthController {
   async register(@Res({ passthrough: true }) res: Response, @Body() dto: RegisterRequest) {
     const authResult = await this.authService.register(dto);
 
-    this.setRefreshTokenCookie(res, authResult.refreshToken);
+    this.authService.setRefreshTokenCookie(res, authResult.refreshToken);
 
     return { accessToken: authResult.accessToken };
   }
@@ -75,7 +74,7 @@ export class AuthController {
   async login(@Res({ passthrough: true }) res: Response, @Body() dto: LoginDto) {
     const authResult = await this.authService.login(dto);
 
-    this.setRefreshTokenCookie(res, authResult.refreshToken);
+    this.authService.setRefreshTokenCookie(res, authResult.refreshToken);
 
     return { accessToken: authResult.accessToken };
   }
@@ -100,9 +99,7 @@ export class AuthController {
       throw new ApiException("REFRESH_TOKEN_MISSING", HttpStatus.UNAUTHORIZED);
     }
 
-    const accessToken = await this.authService.refresh(refreshToken);
-
-    return { accessToken };
+    return await this.authService.refresh(refreshToken);
   }
 
   @Post("logout")
@@ -119,7 +116,7 @@ export class AuthController {
   })
   @ApiCookieAuth("refreshToken")
   async logout(@Res({ passthrough: true }) res: Response) {
-    this.clearRefreshTokenCookie(res);
+    this.authService.clearRefreshTokenCookie(res);
 
     return { message: "Logged out successfully" };
   }
@@ -135,27 +132,5 @@ export class AuthController {
   })
   async getCurrentUser(@Req() req: Request) {
     return this.authService.getUserProfile(req.user.sub);
-  }
-
-  private setRefreshTokenCookie(res: Response, refreshToken: string): void {
-    const refreshMaxAge = this.refreshTtl * 1000;
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      domain: this.cookieDomain,
-      maxAge: refreshMaxAge,
-      secure: !isDev(this.configService),
-      sameSite: isDev(this.configService) ? "none" : "lax",
-    });
-  }
-
-  private clearRefreshTokenCookie(res: Response): void {
-    res.cookie("refreshToken", "", {
-      httpOnly: true,
-      domain: this.cookieDomain,
-      expires: new Date(0),
-      secure: !isDev(this.configService),
-      sameSite: isDev(this.configService) ? "none" : "lax",
-    });
   }
 }
