@@ -6,8 +6,6 @@ import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import * as argon2 from "argon2";
 
-// 🔹 Мокаем DTO прямо внутри jest.mock — без внешних переменных!
-// Это полностью обходит проблему hoisting в Jest
 jest.mock("./dto/read-auth.dto", () => ({
   ReadAuthDto: function () {
     this.accessToken = "";
@@ -22,11 +20,9 @@ jest.mock("./dto/read-refresh.dto", () => ({
   } as any,
 }));
 
-// 🔹 Теперь можно безопасно импортировать (после моков)
 import { ReadAuthDto } from "./dto/read-auth.dto";
 import { ReadRefreshDto } from "./dto/read-refresh.dto";
 
-// 🔹 Моки зависимостей
 const mockPrismaService = {
   user: {
     findUnique: jest.fn(),
@@ -68,8 +64,8 @@ jest.mock("class-transformer", () => ({
     Object.assign(instance, data);
     return instance;
   }),
-  Expose: jest.fn(() => () => {}), // ← добавляем мок декоратора
-  Transform: jest.fn(() => () => {}), // на всякий случай, если где-то используется
+  Expose: jest.fn(() => () => {}),
+  Transform: jest.fn(() => () => {}),
   Type: jest.fn(() => () => {}),
 }));
 
@@ -87,12 +83,11 @@ describe("AuthService", () => {
     }).compile();
 
     authService = module.get<AuthService>(AuthService);
-
     jest.clearAllMocks();
   });
 
   describe("register()", () => {
-    it("должен создать нового пользователя и вернуть токены", async () => {
+    it("should create new user and return tokens", async () => {
       const registerDto = {
         name: "Иван Иванов",
         email: "ivan@test.com",
@@ -122,7 +117,7 @@ describe("AuthService", () => {
       });
     });
 
-    it("должен выбросить ошибку при нарушении уникальности email", async () => {
+    it("should throw error when email already exists", async () => {
       const registerDto = {
         name: "Иван Иванов",
         email: "ivan@test.com",
@@ -144,7 +139,7 @@ describe("AuthService", () => {
   });
 
   describe("login()", () => {
-    it("должен успешно авторизовать пользователя", async () => {
+    it("should authenticate user with valid credentials", async () => {
       const loginDto = { email: "ivan@test.com", password: "password123" };
       const user = { id: "user-id-123", password: "hashed-password-123" };
 
@@ -162,7 +157,7 @@ describe("AuthService", () => {
       });
     });
 
-    it("должен выбросить ошибку при неверных учётных данных (пользователь не найден)", async () => {
+    it("should throw error when user not found", async () => {
       const loginDto = { email: "unknown@test.com", password: "pass" };
 
       mockPrismaService.user.findUnique.mockResolvedValue(null);
@@ -173,7 +168,7 @@ describe("AuthService", () => {
       });
     });
 
-    it("должен выбросить ошибку при неверном пароле", async () => {
+    it("should throw error when password is incorrect", async () => {
       const loginDto = { email: "ivan@test.com", password: "wrong" };
       const user = { id: "user-id-123", password: "hashed-password-123" };
 
@@ -188,7 +183,7 @@ describe("AuthService", () => {
   });
 
   describe("refresh()", () => {
-    it("должен успешно вернуть новый access token по валидному refresh token", async () => {
+    it("should return new access token for valid refresh token", async () => {
       const refreshToken = "valid-refresh-token";
       const payload = { sub: "user-id-123" };
 
@@ -202,7 +197,7 @@ describe("AuthService", () => {
       expect(result).toEqual({ accessToken: "new-access-token" });
     });
 
-    it("должен выбросить ошибку если пользователь не найден", async () => {
+    it("should throw error when user not found during refresh", async () => {
       const refreshToken = "valid-token";
       mockJwtService.verifyAsync.mockResolvedValue({ sub: "unknown-id" });
       mockPrismaService.user.findUnique.mockResolvedValue(null);
@@ -213,7 +208,7 @@ describe("AuthService", () => {
       });
     });
 
-    it("должен выбросить ошибку при невалидном refresh token", async () => {
+    it("should throw error for invalid refresh token", async () => {
       const refreshToken = "invalid-token";
       mockJwtService.verifyAsync.mockRejectedValue(new Error("Invalid signature"));
 
@@ -225,7 +220,7 @@ describe("AuthService", () => {
   });
 
   describe("generateAccessToken()", () => {
-    it("должен генерировать access token асинхронно", async () => {
+    it("should generate access token asynchronously", async () => {
       const userId = "test-user-id";
       mockJwtService.signAsync.mockResolvedValue("generated-access-token");
 
@@ -236,7 +231,7 @@ describe("AuthService", () => {
   });
 
   describe("generateRefreshToken()", () => {
-    it("должен генерировать refresh token асинхронно", async () => {
+    it("should generate refresh token asynchronously", async () => {
       const userId = "test-user-id";
       mockJwtService.signAsync.mockResolvedValue("generated-refresh-token");
 

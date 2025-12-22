@@ -5,7 +5,6 @@ import { ConfigService } from "@nestjs/config";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterRequest } from "./dto/register.dto";
 import type { Request, Response } from "express";
-import { ApiException } from "@noted/common/errors/api-exception";
 import { JwtModule } from "@nestjs/jwt";
 import { JwtAuthGuard } from "./guards/jwt.guards";
 
@@ -54,7 +53,6 @@ describe("AuthController", () => {
 
         throw new Error(`Unknown config key in test: ${key}`);
       }),
-      // ← ДОБАВЬТЕ ЭТОТ МЕТОД
       get: jest.fn((key: string, defaultValue?: any) => {
         try {
           return mockConfigService.getOrThrow(key);
@@ -72,18 +70,18 @@ describe("AuthController", () => {
       ],
       imports: [
         JwtModule.register({
-          secret: "dummy", // значение не важно
+          secret: "dummy",
         }),
       ],
     }).compile();
+    
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
-
     jest.clearAllMocks();
   });
 
   describe("POST /auth/register", () => {
-    it("должен регистрировать пользователя и устанавливать cookie", async () => {
+    it("should register user and set refresh token cookie", async () => {
       const registerDto: RegisterRequest = {
         name: "Иван",
         email: "ivan@test.com",
@@ -118,7 +116,7 @@ describe("AuthController", () => {
   });
 
   describe("POST /auth/login", () => {
-    it("должен авторизовывать пользователя и устанавливать cookie", async () => {
+    it("should authenticate user and set refresh token cookie", async () => {
       const loginDto: LoginDto = {
         email: "ivan@test.com",
         password: "password123",
@@ -152,10 +150,8 @@ describe("AuthController", () => {
   });
 
   describe("POST /auth/refresh", () => {
-    it("должен возвращать новый access token", async () => {
+    it("should return new access token using refresh token from cookies", async () => {
       const request = createMockRequest({ refreshToken: "valid-refresh-token" });
-
-      // Сервис возвращает ИНСТАНС ReadRefreshDto (из plainToInstance)
       const refreshDtoInstance = { accessToken: "new-access-token" };
 
       mockAuthService.refresh.mockResolvedValue(refreshDtoInstance);
@@ -163,8 +159,6 @@ describe("AuthController", () => {
       const result = await controller.refresh(request);
 
       expect(authService.refresh).toHaveBeenCalledWith("valid-refresh-token");
-
-      // Контроллер делает return { accessToken } → { accessToken: instance }
       expect(result).toEqual({
         accessToken: {
           accessToken: "new-access-token",
@@ -174,7 +168,7 @@ describe("AuthController", () => {
   });
 
   describe("POST /auth/logout", () => {
-    it("должен очищать cookie и возвращать сообщение", async () => {
+    it("should clear refresh token cookie and return success message", async () => {
       const response = createMockResponse();
 
       const result = await controller.logout(response);
@@ -195,12 +189,11 @@ describe("AuthController", () => {
     });
   });
 
-  describe("Вспомогательные методы", () => {
-    it("setRefreshTokenCookie должен устанавливать cookie", () => {
+  describe("Helper methods", () => {
+    it("setRefreshTokenCookie should set cookie with proper attributes", () => {
       const response = createMockResponse();
       const refreshToken = "test-refresh-token";
 
-      // Вызываем приватный метод
       (controller as any).setRefreshTokenCookie(response as Response, refreshToken);
 
       expect(response.cookie).toHaveBeenCalledWith(
@@ -211,12 +204,12 @@ describe("AuthController", () => {
           domain: "localhost",
           secure: true,
           sameSite: "lax",
-          maxAge: expect.any(Number), // ← вместо expires
+          maxAge: expect.any(Number),
         }),
       );
     });
 
-    it("clearRefreshTokenCookie должен очищать cookie", () => {
+    it("clearRefreshTokenCookie should clear cookie with expired date", () => {
       const response = createMockResponse();
 
       (controller as any).clearRefreshTokenCookie(response as Response);
@@ -234,8 +227,7 @@ describe("AuthController", () => {
       );
     });
 
-    it("должен работать с NODE_ENV=development для isDev=true", async () => {
-      // Пересоздаем модуль с другим моком ConfigService
+    it("should use insecure cookie settings in development environment", async () => {
       const mockConfigService = {
         getOrThrow: jest.fn((key: string) => {
           if (key === "COOKIE_DOMAIN") return "localhost";
@@ -244,7 +236,6 @@ describe("AuthController", () => {
           if (key === "JWT_ACCESS_TTL_SECONDS") return "900";
           throw new Error(`Unknown config key: ${key}`);
         }),
-        // Добавляем get на всякий случай (если guard всё же создаётся)
         get: jest.fn((key: string, defaultValue?: any) => {
           try {
             return mockConfigService.getOrThrow(key);
@@ -262,11 +253,11 @@ describe("AuthController", () => {
         ],
         imports: [
           JwtModule.register({
-            secret: "dummy-secret", // обязательно добавляем!
+            secret: "dummy-secret",
           }),
         ],
       })
-        .overrideGuard(JwtAuthGuard) // ← опционально, но рекомендуется
+        .overrideGuard(JwtAuthGuard)
         .useValue({ canActivate: () => true })
         .compile();
 
