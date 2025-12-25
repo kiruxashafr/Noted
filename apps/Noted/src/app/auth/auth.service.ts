@@ -9,12 +9,12 @@ import * as argon2 from "argon2";
 import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { ReadAuthDto } from "./dto/read-auth.dto";
-import { plainToInstance } from "class-transformer";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ReadRefreshDto } from "./dto/read-refresh.dto";
 import { ReadUserProfileDto } from "./dto/read-user-profile.dto";
 import { isDev } from "@noted/common/utils/is-dev";
 import type { Response } from "express";
+import { toDto } from "../utils/to-dto";
 
 @Injectable()
 export class AuthService {
@@ -61,9 +61,7 @@ export class AuthService {
         userId: user.id,
       };
 
-      return plainToInstance(ReadAuthDto, registerData, {
-        excludeExtraneousValues: true,
-      });
+      return toDto(registerData, ReadAuthDto);
     } catch (error) {
       this.handleAccountConstraintError(error);
     }
@@ -98,9 +96,7 @@ export class AuthService {
       userId: user.id,
     };
 
-    return plainToInstance(ReadAuthDto, authData, {
-      excludeExtraneousValues: true,
-    });
+    return toDto(authData, ReadAuthDto);
   }
 
   async refresh(refreshToken: string) {
@@ -122,13 +118,7 @@ export class AuthService {
 
     const accessToken = await this.generateAccessToken(user.id);
 
-    return plainToInstance(
-      ReadRefreshDto,
-      { accessToken },
-      {
-        excludeExtraneousValues: true,
-      },
-    );
+    return toDto({ accessToken }, ReadRefreshDto);
   }
 
   async getUserProfile(userId: string) {
@@ -147,9 +137,7 @@ export class AuthService {
       throw new ApiException("USER_NOT_FOUND", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    return plainToInstance(ReadUserProfileDto, user, {
-      excludeExtraneousValues: true,
-    });
+    return toDto(user, ReadUserProfileDto);
   }
   async generateRefreshToken(userId: string): Promise<string> {
     const payload: RefreshTokenPayload = {
