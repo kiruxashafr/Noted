@@ -1,19 +1,17 @@
 // src/app.module.ts
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { UsersModule } from './users/users.module';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { PrismaService } from './prisma.service';
-import { UsersMiddleware } from './conception/users/users.middleware';
+import { Module, NestModule } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { UsersModule } from "./users/users.module";
+import { PrismaService } from "./prisma.service";
+import { AuthModule } from "./auth/auth.module";
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), UsersModule],
-  controllers: [AppController],
-  providers: [AppService, PrismaService],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), UsersModule, AuthModule],
+  controllers: [],
+  providers: [PrismaService],
 })
 export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(UsersMiddleware).forRoutes('users');
+  configure() {
+    // Configure middleware here if needed
   }
 }
