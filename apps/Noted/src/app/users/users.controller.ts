@@ -4,9 +4,6 @@ import {
   Post,
   UseInterceptors,
   UploadedFile,
-  ParseFilePipe,
-  MaxFileSizeValidator,
-  FileTypeValidator,
   UseGuards,
   Req,
 } from "@nestjs/common";
@@ -14,6 +11,8 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { UsersService } from "./users.service";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
 import { Request } from "express";
+import { ImageValidationPipe } from "../pipes/image-validation.pipe";
+import { ImageConverterPipe } from "../pipes/image-converter.pipe";
 
 @Controller("users")
 export class UsersController {
@@ -24,14 +23,7 @@ export class UsersController {
   @UseInterceptors(FileInterceptor("avatar"))
   async uploadAvatar(
     @Req() req: Request,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
-          new FileTypeValidator({ fileType: "image/jpeg|image/png" }),
-        ],
-      }),
-    )
+    @UploadedFile( ImageConverterPipe, ImageValidationPipe)
     avatar: Express.Multer.File,
   ) {
     return this.usersService.uploadAvatar(req.user.sub, avatar);
