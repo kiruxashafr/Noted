@@ -1,10 +1,12 @@
-import { Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import { randomUUID } from "crypto";
 import * as Minio from "minio";
 import { InjectMinio } from "../minio/minio.decorator";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Multer } from "multer";
 import path from "path";
+import { ApiException } from "@noted/common/errors/api-exception";
+import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 
 @Injectable()
 export class FilesService {
@@ -22,4 +24,20 @@ export class FilesService {
     });
     return { filePath };
   }
+
+  async deleteFile(filePath: string): Promise<void> {
+    try {
+      await this.minioService.statObject(this.bucketName, filePath);
+    
+      this.minioService.removeObject(this.bucketName, filePath);
+    } catch (error) {
+      if (error.code === 'NotFound') {
+        throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND);
+      }
+      throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND, [error])
+    }
+  }
+
+  
+  
 }

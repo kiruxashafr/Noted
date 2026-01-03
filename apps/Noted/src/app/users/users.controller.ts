@@ -11,7 +11,7 @@ import { ImageConverterPipe } from "../pipes/image-converter.pipe";
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post("avatar")
+  @Post("me/avatar")
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor("avatar"))
   async uploadAvatar(
