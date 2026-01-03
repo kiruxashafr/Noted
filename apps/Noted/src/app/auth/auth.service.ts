@@ -15,6 +15,7 @@ import { ReadRefreshDto } from "./dto/read-refresh.dto";
 import { ReadUserProfileDto } from "./dto/read-user-profile.dto";
 import { isDev } from "@noted/common/utils/is-dev";
 import type { Response } from "express";
+import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 
 @Injectable()
 export class AuthService {
@@ -78,13 +79,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new ApiException("INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED);
+      throw new ApiException(ErrorCodes.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
     }
 
     const isPasswordValid = await argon2.verify(user.password, password);
 
     if (!isPasswordValid) {
-      throw new ApiException("INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED);
+      throw new ApiException(ErrorCodes.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
     }
 
     const tokens = {
@@ -108,7 +109,7 @@ export class AuthService {
     try {
       payload = await this.jwtService.verifyAsync(refreshToken, { secret: this.refreshSecret });
     } catch {
-      throw new ApiException("INVALID_REFRESH_TOKEN", HttpStatus.UNAUTHORIZED);
+      throw new ApiException(ErrorCodes.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
     }
 
     const user = await this.prisma.user.findUnique({
@@ -117,7 +118,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new ApiException("USER_NOT_FOUND", HttpStatus.UNAUTHORIZED);
+      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.UNAUTHORIZED);
     }
 
     const accessToken = await this.generateAccessToken(user.id);
@@ -144,7 +145,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new ApiException("USER_NOT_FOUND", HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     return plainToInstance(ReadUserProfileDto, user, {
@@ -197,13 +198,13 @@ export class AuthService {
 
   private handleAccountConstraintError(error: unknown): never {
     if (!isPrismaConstraintError(error)) {
-      throw new ApiException("REGISTRATION_FAILED", HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new ApiException(ErrorCodes.REGISTRATION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "User") {
-      throw new ApiException("EMAIL_ALREADY_EXISTS", HttpStatus.CONFLICT);
+      throw new ApiException(ErrorCodes.EMAIL_ALREADY_EXISTS, HttpStatus.CONFLICT);
     }
 
-    throw new ApiException("DUPLICATE_VALUE", HttpStatus.CONFLICT);
+    throw new ApiException(ErrorCodes.DUPLICATE_VALUE, HttpStatus.CONFLICT);
   }
 }
