@@ -28,16 +28,13 @@ export class FilesService {
   async deleteFile(filePath: string): Promise<void> {
     try {
       await this.minioService.statObject(this.bucketName, filePath);
-    
+
       this.minioService.removeObject(this.bucketName, filePath);
     } catch (error) {
-      if (error.code === 'NotFound') {
+      if (error.code === "NotFound") {
         throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND);
       }
-      throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND, [error])
+      throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND, [error]);
     }
   }
-
-  
-  
 }

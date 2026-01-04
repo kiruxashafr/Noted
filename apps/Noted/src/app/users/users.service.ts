@@ -4,17 +4,21 @@ import { PrismaService } from "../prisma.service";
 import { FilesService } from "../files/files.service";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
+import { UploadAvatarDto } from "./dto/upload-avatar.dto";
+import { toDto } from "@noted/common/utils/to-dto";
+import { ReadUploadAvatarDto } from "./dto/read-upload-avatar.dto";
 
 @Injectable()
 export class UsersService {
-  private readonly logger = new Logger(UsersService.name)
+  private readonly logger = new Logger(UsersService.name);
   constructor(
     private readonly prisma: PrismaService,
 
     private readonly filesService: FilesService,
   ) {}
 
-  async uploadAvatar(userId: string, file: Express.Multer.File) {
+  async uploadAvatar(dto: UploadAvatarDto): Promise<ReadUploadAvatarDto> {
+    const { userId, file } = dto;
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -36,7 +40,7 @@ export class UsersService {
         }
       }
     }
-    
+
     const uploadResult = await this.filesService.uploadPhoto(userId, file);
 
     const updatedUser = await this.prisma.user.update({
@@ -46,13 +50,13 @@ export class UsersService {
       },
     });
 
-
-    
-    return {
+    const updateData = {
       userId: updatedUser.id,
       avatarUrl: updatedUser.avatarUrl,
       originalName: file.originalname,
       size: file.size,
     };
+
+    return toDto(updateData, ReadUploadAvatarDto);
   }
 }

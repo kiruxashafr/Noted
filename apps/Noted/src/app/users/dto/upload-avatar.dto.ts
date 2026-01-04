@@ -1,16 +1,9 @@
-// src/users/dto/upload-avatar.dto.ts
-import { ApiProperty } from "@nestjs/swagger";
+import { Expose } from "class-transformer";
 
-export class UploadAvatarResponseDto {
-  @ApiProperty({ description: "ID пользователя" })
+export class UploadAvatarDto {
+  @Expose()
   userId: string;
 
-  @ApiProperty({ description: "URL загруженного аватара" })
-  avatarUrl: string;
-
-  @ApiProperty({ description: "Оригинальное имя файла" })
-  originalName: string;
-
-  @ApiProperty({ description: "Размер файла в байтах" })
-  size: number;
+  @Expose()
+  file: Express.Multer.File;
 }

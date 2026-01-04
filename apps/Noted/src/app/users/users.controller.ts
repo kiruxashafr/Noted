@@ -17,8 +17,12 @@ export class UsersController {
   async uploadAvatar(
     @Req() req: Request,
     @UploadedFile(ImageConverterPipe, ImageValidationPipe)
-    avatar: Express.Multer.File,
+    file: Express.Multer.File,
   ) {
-    return this.usersService.uploadAvatar(req.user.sub, avatar);
+    const uploadData = {
+      userId: req.user.sub,
+      file,
+    };
+    return this.usersService.uploadAvatar(uploadData);
   }
 }
