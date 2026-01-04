@@ -59,4 +59,24 @@ export class UsersService {
 
     return toDto(updateData, ReadUploadAvatarDto);
   }
+
+  async deleteUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+
+    await this.prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
+    const result = await this.filesService.deleteAllFile(userId);
+    if (result.deletedCount == 0) {
+      this.logger.log("User had no files to delete");
+    }
+  }
 }
