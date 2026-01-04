@@ -1,9 +1,25 @@
-# docker-compose.yaml
-version: "3.7"
-
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: noted-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: noted
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   minio:
     image: minio/minio:latest
+    container_name: noted-minio
     command: server --console-address ":9001" /data/
     ports:
       - "9000:9000"
@@ -18,5 +34,7 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+
 volumes:
+  postgres-data:
   minio-storage:

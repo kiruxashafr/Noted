@@ -4,6 +4,8 @@
   "type": "commonjs",
   "license": "MIT",
   "scripts": {
+    "start": "nx serve Noted",
+    "build": "npm install && docker-compose up -d && npx prisma db push && npx prisma generate client",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
