@@ -1,6 +1,6 @@
 // src/users/users.service.ts
 import { HttpStatus, Injectable, Logger } from "@nestjs/common";
-import { PrismaService } from "../prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
