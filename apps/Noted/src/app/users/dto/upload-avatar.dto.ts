@@ -1,4 +1,3 @@
-
 export class UploadAvatarDto {
   userId: string;
 

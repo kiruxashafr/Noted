@@ -1,8 +1,8 @@
-import { IsNotEmpty, MaxLength, IsString, IsEmail, Length, Matches, NotContains } from "class-validator";
-import { RegisterPayload } from "@noted/types/auth/register.types";
+import { IsNotEmpty, MaxLength, IsString, IsEmail, Matches } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
+import { PASSWORD_REGEX } from "@noted/common/constants";
 
-export class RegisterRequest implements RegisterPayload {
+export class RegisterRequest implements RegisterRequest {
   @ApiProperty({
     description: "User name",
     example: "user",
@@ -27,25 +27,7 @@ export class RegisterRequest implements RegisterPayload {
     minLength: 8,
     maxLength: 64,
   })
-  @IsString({ message: "Password must be a string" })
-  @IsNotEmpty({ message: "Password is required" })
-  @Length(8, 64, {
-    message: "Password must be between 8 and 64 characters",
-  })
-  @Matches(/(?=.*[a-z])/, {
-    message: "Password must contain at least one lowercase letter",
-  })
-  @Matches(/(?=.*[A-Z])/, {
-    message: "Password must contain at least one uppercase letter",
-  })
-  @Matches(/(?=.*\d)/, {
-    message: "Password must contain at least one number",
-  })
-  @Matches(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>?]/, {
-    message: "Password must contain at least one special character",
-  })
-  @NotContains(" ", {
-    message: "Password must not contain spaces",
-  })
+  @IsString()
+  @Matches(PASSWORD_REGEX)
   password: string;
 }

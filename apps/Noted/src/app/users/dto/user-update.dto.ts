@@ -1,7 +1,9 @@
-import {  MaxLength, IsString, IsEmail, Length, Matches, NotContains, IsOptional } from "class-validator";
-import {  ApiPropertyOptional } from "@nestjs/swagger";
+import { MaxLength, IsString, IsEmail, Matches, IsOptional } from "class-validator";
+import { ApiPropertyOptional } from "@nestjs/swagger";
+import { UpdateUserRequest } from "@noted/types";
+import { PASSWORD_REGEX } from "@noted/common/constants";
 
-export class UpdateUserDto  {
+export class UpdateUserDto implements UpdateUserRequest {
   @ApiPropertyOptional({
     description: "User name",
     example: "user",
@@ -28,23 +30,6 @@ export class UpdateUserDto  {
   })
   @IsOptional()
   @IsString({ message: "Password must be a string" })
-  @Length(8, 64, {
-    message: "Password must be between 8 and 64 characters",
-  })
-  @Matches(/(?=.*[a-z])/, {
-    message: "Password must contain at least one lowercase letter",
-  })
-  @Matches(/(?=.*[A-Z])/, {
-    message: "Password must contain at least one uppercase letter",
-  })
-  @Matches(/(?=.*\d)/, {
-    message: "Password must contain at least one number",
-  })
-  @Matches(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>?]/, {
-    message: "Password must contain at least one special character",
-  })
-  @NotContains(" ", {
-    message: "Password must not contain spaces",
-  })
+  @Matches(PASSWORD_REGEX)
   password?: string;
 }

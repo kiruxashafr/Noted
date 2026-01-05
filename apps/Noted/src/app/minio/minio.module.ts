@@ -12,7 +12,7 @@ import { MINIO_TOKEN } from "./minio.decorator";
       inject: [ConfigService],
       provide: MINIO_TOKEN,
       useFactory: async (configService: ConfigService): Promise<Minio.Client> => {
-        const logger = new Logger(MinioModule.name)
+        const logger = new Logger(MinioModule.name);
         const client = new Minio.Client({
           endPoint: configService.getOrThrow("MINIO_ENDPOINT"),
           port: +configService.getOrThrow("MINIO_PORT"),
@@ -21,8 +21,10 @@ import { MINIO_TOKEN } from "./minio.decorator";
           useSSL: false,
         });
         try {
-          await client.listBuckets()
-        } catch(error){logger.error(`false connection to Minio ${error.message}`)}
+          await client.listBuckets();
+        } catch (error) {
+          logger.error(`false connection to Minio ${error.message}`);
+        }
         return client;
       },
     },

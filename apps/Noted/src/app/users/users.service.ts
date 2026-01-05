@@ -63,11 +63,11 @@ export class UsersService {
     return toDto(updateData, ReadUploadAvatarDto);
   }
 
-  async updateUser(userId: string, dto: UpdateUserDto) { 
+  async updateUser(userId: string, dto: UpdateUserDto) {
     try {
       const user = await this.prisma.user.findUnique({
-        where: { id: userId }
-      })
+        where: { id: userId },
+      });
       if (!user) throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
       if (dto.name && dto.name !== user.name) {
         await this.prisma.user.update({
@@ -97,9 +97,9 @@ export class UsersService {
     } catch (error: unknown) {
       this.logger.error(`error in ${(error as Error).message}`, (error as Error).stack);
       if (error instanceof ApiException) {
-        throw error
+        throw error;
       }
-      throw new ApiException(ErrorCodes.FAILED_TO_CREATE_ACCOUNT, HttpStatus.BAD_REQUEST)
+      throw new ApiException(ErrorCodes.FAILED_TO_CREATE_ACCOUNT, HttpStatus.BAD_REQUEST);
     }
   }
 
