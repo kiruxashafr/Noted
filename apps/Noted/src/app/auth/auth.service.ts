@@ -105,7 +105,7 @@ export class AuthService {
     try {
       payload = await this.jwtService.verifyAsync(refreshToken, { secret: this.refreshSecret });
     } catch {
-      throw new ApiException(ErrorCodes.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+      throw new ApiException(ErrorCodes.INVALID_REFRESH_TOKEN, HttpStatus.UNAUTHORIZED);
     }
 
     const user = await this.prisma.user.findUnique({
@@ -130,7 +130,6 @@ export class AuthService {
         email: true,
         name: true,
         createdAt: true,
-        updatedAt: true,
       },
     });
 

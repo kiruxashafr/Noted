@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Expose } from "class-transformer";
 
-export class ReadUserProfileDto {
+export class ReadUserDto {
   @ApiProperty({
     description: "User id",
     example: "user_123",

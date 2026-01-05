@@ -7,6 +7,9 @@ import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import { UploadAvatarDto } from "./dto/upload-avatar.dto";
 import { toDto } from "@noted/common/utils/to-dto";
 import { ReadUploadAvatarDto } from "./dto/read-upload-avatar.dto";
+import * as argon2 from "argon2";
+import { ReadUserDto } from "./dto/read-user.dto";
+import { UpdateUserDto } from "./dto/user-update.dto";
 
 @Injectable()
 export class UsersService {
@@ -58,6 +61,46 @@ export class UsersService {
     };
 
     return toDto(updateData, ReadUploadAvatarDto);
+  }
+
+  async updateUser(userId: string, dto: UpdateUserDto) { 
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId }
+      })
+      if (!user) throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+      if (dto.name && dto.name !== user.name) {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { name: dto.name },
+        });
+      }
+      if (dto.email && dto.email !== user.email) {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { email: dto.email },
+        });
+      }
+      if (dto.password) {
+        const hashPassword = await argon2.hash(dto.password);
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { password: hashPassword },
+        });
+      }
+
+      const updatedUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      return toDto(updatedUser, ReadUserDto);
+    } catch (error: unknown) {
+      this.logger.error(`error in ${(error as Error).message}`, (error as Error).stack);
+      if (error instanceof ApiException) {
+        throw error
+      }
+      throw new ApiException(ErrorCodes.FAILED_TO_CREATE_ACCOUNT, HttpStatus.BAD_REQUEST)
+    }
   }
 
   async deleteUser(userId: string) {
