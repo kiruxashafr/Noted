@@ -4,12 +4,12 @@ import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
-import { UploadAvatarDto } from "./dto/upload-avatar.dto";
 import { toDto } from "@noted/common/utils/to-dto";
 import { ReadUploadAvatarDto } from "./dto/read-upload-avatar.dto";
 import * as argon2 from "argon2";
 import { ReadUserDto } from "./dto/read-user.dto";
 import { UpdateUserDto } from "./dto/user-update.dto";
+import { FileAccess } from "generated/prisma/enums";
 
 @Injectable()
 export class UsersService {
@@ -20,8 +20,11 @@ export class UsersService {
     private readonly filesService: FilesService,
   ) {}
 
-  async uploadAvatar(dto: UploadAvatarDto): Promise<ReadUploadAvatarDto> {
-    const { userId, file } = dto;
+  async uploadAvatar(     file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    userId: string ,
+    access: FileAccess = FileAccess.PRIVATE,
+  ): Promise<ReadUploadAvatarDto> {
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -30,13 +33,13 @@ export class UsersService {
       throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
-    if (user.avatarUrl) {
+    if (user.avatarKey) {
       try {
-        await this.filesService.deleteFile(user.avatarUrl);
+        await this.filesService.deleteFile(user.avatarKey);
       } catch (error) {
         if (error instanceof ApiException && error.getStatus() === HttpStatus.NOT_FOUND) {
           this.logger.warn(
-            `Avatar file ${user.avatarUrl} not found in MinIO for user ${userId}, ` + `but continuing upload process`,
+            `Avatar file ${user.avatarKey} not found in MinIO for user ${userId}, ` + `but continuing upload process`,
           );
         } else {
           this.logger.error(`Error deleting old avatar for user ${userId}:`, error.message || error);
@@ -44,18 +47,18 @@ export class UsersService {
       }
     }
 
-    const uploadResult = await this.filesService.uploadPhoto(userId, file);
+    const uploadResult = await this.filesService.uploadFile(userId, access, file);
 
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {
-        avatarUrl: uploadResult.filePath,
+        avatarKey: uploadResult.key,
       },
     });
 
     const updateData = {
       userId: updatedUser.id,
-      avatarUrl: updatedUser.avatarUrl,
+      avatarUrl: uploadResult.url,
       originalName: file.originalname,
       size: file.size,
     };
@@ -103,23 +106,23 @@ export class UsersService {
     }
   }
 
-  async deleteUser(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+  // async deleteUser(userId: string) {
+  //   const user = await this.prisma.user.findUnique({
+  //     where: { id: userId },
+  //   });
 
-    if (!user) {
-      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
+  //   if (!user) {
+  //     throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+  //   }
 
-    await this.prisma.user.delete({
-      where: {
-        id: userId,
-      },
-    });
-    const result = await this.filesService.deleteAllFile(userId);
-    if (result.deletedCount == 0) {
-      this.logger.log("User had no files to delete");
-    }
-  }
+  //   await this.prisma.user.delete({
+  //     where: {
+  //       id: userId,
+  //     },
+  //   });
+  //   const result = await this.filesService.deleteAllFile(userId);
+  //   if (result.deletedCount == 0) {
+  //     this.logger.log("User had no files to delete");
+  //   }
+  // }
 }

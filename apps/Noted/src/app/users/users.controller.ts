@@ -1,4 +1,3 @@
-// src/users/users.controller.ts
 import { Controller, Post, UseInterceptors, UploadedFile, UseGuards, Req, Delete, Patch, Body } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { UsersService } from "./users.service";
@@ -7,6 +6,8 @@ import { Request } from "express";
 import { ImageValidationPipe } from "../pipes/image-validation.pipe";
 import { ImageConverterPipe } from "../pipes/image-converter.pipe";
 import { UpdateUserDto } from "./dto/user-update.dto";
+import { UploadFileDto } from "../files/dto/upload-file.dto";
+import { Multer } from "multer";
 
 @Controller("users")
 export class UsersController {
@@ -19,19 +20,22 @@ export class UsersController {
     @Req() req: Request,
     @UploadedFile(ImageConverterPipe, ImageValidationPipe)
     file: Express.Multer.File,
+    @Body() dto: UploadFileDto
   ) {
     const uploadData = {
-      userId: req.user.sub,
-      file,
+      buffer: file.buffer,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size:file.size
     };
-    return this.usersService.uploadAvatar(uploadData);
+    return this.usersService.uploadAvatar(uploadData, req.user.sub, dto.access);
   }
 
-  @Delete("me/delete")
-  @UseGuards(JwtAuthGuard)
-  async deleteUser(@Req() req: Request) {
-    return this.usersService.deleteUser(req.user.sub);
-  }
+  // @Delete("me/delete")
+  // @UseGuards(JwtAuthGuard)
+  // async deleteUser(@Req() req: Request) {
+  //   return this.usersService.deleteUser(req.user.sub);
+  // }
 
   @Patch("me")
   @UseGuards(JwtAuthGuard)
