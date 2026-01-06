@@ -3,7 +3,7 @@ import { v4 as uuid } from "uuid";
 import { Upload } from "@aws-sdk/lib-storage";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
-import { CreateBucketCommand, DeleteObjectCommand, HeadBucketCommand, PutBucketPolicyCommand, S3Client } from "@aws-sdk/client-s3";
+import { CreateBucketCommand, DeleteObjectCommand, DeleteObjectsCommand, HeadBucketCommand, PutBucketPolicyCommand, S3Client } from "@aws-sdk/client-s3";
 import { ConfigService } from "@nestjs/config";
 import { ReadFileDto } from "./dto/read-file.dto";
 import { PrismaService } from "../prisma/prisma.service";
@@ -103,54 +103,79 @@ export class FilesService implements OnModuleInit{
       }
   } 
 
-  async deleteFile(fileId: string): Promise<void> {
+
+  async deleteFile(fileId: string) {
     const file = await this.prisma.mediaFile.findUnique({
-      where: {
-        id: fileId
-      }
+      where:{id:fileId}
     })
+    if (!file) { throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND) }
     
     try {
-      await this.s3.send(
+      this.s3.send(
         new DeleteObjectCommand({
           Bucket: file.bucket,
           Key: file.key
         })
-      )
-    } catch {
-      this.logger.warn(`delete() | Failed to delete from S3 (orphan possible) | key=${file.key}`);
+      )  
+    } catch  {
+      this.logger.warn(`Failed to delete from S3 | key=${file.key}`)
     }
   }
 
-  // async deleteAllFile(prefix: string) {
-  //   try {
-  //     const objectList: string[] = [];
-  //     const srteam = this.minioService.listObjectsV2(this.bucketName, prefix, true);
+async deleteAllUserFiles(userId: string) {
+  const userFiles = await this.prisma.mediaFile.findMany({
+    where: { ownerId: userId },
+    select: { 
+      key: true, 
+    }
+  });
 
-  //     for await (const obj of srteam) {
-  //       objectList.push(obj.name);
-  //     }
+  if (userFiles.length === 0) {
+    this.logger.log(`User ${userId} has no files to delete`);
+    return { deletedCount: 0 };
+  }
 
-  //     if (objectList.length === 0) {
-  //       this.logger.log(`No files found with prefix: "${prefix}"`);
-  //       return {
-  //         deletedCount: 0,
-  //         files: [],
-  //       };
-  //     }
+  // 2. Все файлы в одном бакете
+  const bucket = this.bucket;
+  const keys = userFiles.map(file => file.key);
 
-  //     await this.minioService.removeObjects(this.bucketName, objectList);
+  try {
+    let totalDeleted = 0;
+    
+    for (let i = 0; i < keys.length; i += 1000) {
+      const chunk = keys.slice(i, i + 1000);
+      
+      const deleteResult = await this.s3.send(
+        new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: {
+            Objects: chunk.map(key => ({ Key: key })),
+            Quiet: false 
+          }
+        })
+      );
+      if (deleteResult.Errors && deleteResult.Errors.length > 0) {
+        deleteResult.Errors.forEach(error => {
+          this.logger.error(`Failed to delete ${error.Key}: ${error.Code} - ${error.Message}`);
+        });
+      }
 
-  //     this.logger.log(`saccessfully deleted ${objectList.length} files`);
-  //     return {
-  //       deletedCount: objectList.length,
-  //       files: objectList,
-  //     };
-  //   } catch (error) {
-  //     throw new ApiException(ErrorCodes.DELETE_FILE_ERROR, HttpStatus.INTERNAL_SERVER_ERROR, error.message);
-  //   }
-  // }
+      if (deleteResult.Deleted) {
+        totalDeleted += deleteResult.Deleted.length;
+      }
+    }
+    await this.prisma.mediaFile.deleteMany({
+      where: { ownerId: userId }
+    });
 
+    this.logger.log(`Deleted ${totalDeleted} files for user ${userId} from bucket ${bucket}`);
+    return { deletedCount: totalDeleted };
+
+  } catch (error) {
+    this.logger.error(`Failed to delete files from S3 for user ${userId}`, error);
+    throw error;
+  }
+}
     private async checkQuota(ownerId: string, newFileSize: number): Promise<void> {
     const { usedBytes, limitBytes } = await this.getUsage(ownerId);
     const available = limitBytes - usedBytes;

@@ -20,7 +20,6 @@ export class UsersController {
     @Req() req: Request,
     @UploadedFile(ImageConverterPipe, ImageValidationPipe)
     file: Express.Multer.File,
-    @Body() dto: UploadFileDto
   ) {
     const uploadData = {
       buffer: file.buffer,
@@ -28,14 +27,14 @@ export class UsersController {
       mimetype: file.mimetype,
       size:file.size
     };
-    return this.usersService.uploadAvatar(uploadData, req.user.sub, dto.access);
+    return this.usersService.uploadAvatar(uploadData, req.user.sub);
   }
 
-  // @Delete("me/delete")
-  // @UseGuards(JwtAuthGuard)
-  // async deleteUser(@Req() req: Request) {
-  //   return this.usersService.deleteUser(req.user.sub);
-  // }
+  @Delete("me/delete")
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Req() req: Request) {
+    return this.usersService.deleteUser(req.user.sub);
+  }
 
   @Patch("me")
   @UseGuards(JwtAuthGuard)

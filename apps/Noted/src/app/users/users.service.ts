@@ -22,9 +22,8 @@ export class UsersService {
 
   async uploadAvatar(     file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
     userId: string ,
-    access: FileAccess = FileAccess.PRIVATE,
   ): Promise<ReadUploadAvatarDto> {
-
+    const access = FileAccess.PUBLIC
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -33,13 +32,13 @@ export class UsersService {
       throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 
-    if (user.avatarKey) {
+    if (user.avatarFileId) {
       try {
-        await this.filesService.deleteFile(user.avatarKey);
+        await this.filesService.deleteFile(user.avatarFileId);
       } catch (error) {
         if (error instanceof ApiException && error.getStatus() === HttpStatus.NOT_FOUND) {
           this.logger.warn(
-            `Avatar file ${user.avatarKey} not found in MinIO for user ${userId}, ` + `but continuing upload process`,
+            `Avatar file ${user.avatarFileId} not found in MinIO for user ${userId}, ` + `but continuing upload process`,
           );
         } else {
           this.logger.error(`Error deleting old avatar for user ${userId}:`, error.message || error);
@@ -52,7 +51,7 @@ export class UsersService {
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {
-        avatarKey: uploadResult.key,
+        avatarFileId: uploadResult.id,
       },
     });
 
@@ -106,23 +105,24 @@ export class UsersService {
     }
   }
 
-  // async deleteUser(userId: string) {
-  //   const user = await this.prisma.user.findUnique({
-  //     where: { id: userId },
-  //   });
+  async deleteUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
 
-  //   if (!user) {
-  //     throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-  //   }
+    if (!user) {
+      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
 
-  //   await this.prisma.user.delete({
-  //     where: {
-  //       id: userId,
-  //     },
-  //   });
-  //   const result = await this.filesService.deleteAllFile(userId);
-  //   if (result.deletedCount == 0) {
-  //     this.logger.log("User had no files to delete");
-  //   }
-  // }
+    const result = await this.filesService.deleteAllUserFiles(userId);
+    if (result.deletedCount == 0) {
+      this.logger.log("User had no files to delete");
+    }
+    await this.prisma.user.delete({
+      where: {
+        id: userId,
+      },
+    });
+
+  }
 }
