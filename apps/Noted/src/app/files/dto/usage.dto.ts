@@ -1,6 +1,6 @@
 import { Expose } from "class-transformer";
 
-export class StorageUsageDto{
+export class StorageUsageDto {
   @Expose()
   usedBytes!: number;
 

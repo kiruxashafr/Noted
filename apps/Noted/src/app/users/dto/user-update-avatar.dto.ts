@@ -1,3 +1,1 @@
-export class UpdateAvatarDto  {
-    
-}
+export class UpdateAvatarDto {}

@@ -1,4 +1,3 @@
-// src/users/users.service.ts
 import { HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
@@ -20,10 +19,11 @@ export class UsersService {
     private readonly filesService: FilesService,
   ) {}
 
-  async uploadAvatar(     file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
-    userId: string ,
+  async uploadAvatar(
+    file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    userId: string,
   ): Promise<ReadUploadAvatarDto> {
-    const access = FileAccess.PUBLIC
+    const access = FileAccess.PUBLIC;
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -34,11 +34,12 @@ export class UsersService {
 
     if (user.avatarFileId) {
       try {
-        await this.filesService.deleteFile(user.avatarFileId);
+        await this.filesService.deleteFile(user.avatarFileId, userId);
       } catch (error) {
         if (error instanceof ApiException && error.getStatus() === HttpStatus.NOT_FOUND) {
           this.logger.warn(
-            `Avatar file ${user.avatarFileId} not found in MinIO for user ${userId}, ` + `but continuing upload process`,
+            `Avatar file ${user.avatarFileId} not found in MinIO for user ${userId}, ` +
+              `but continuing upload process`,
           );
         } else {
           this.logger.error(`Error deleting old avatar for user ${userId}:`, error.message || error);
@@ -123,6 +124,5 @@ export class UsersService {
         id: userId,
       },
     });
-
   }
 }

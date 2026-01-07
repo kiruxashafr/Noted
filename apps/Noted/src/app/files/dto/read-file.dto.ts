@@ -1,7 +1,7 @@
 import { Expose } from "class-transformer";
 import { FileAccess } from "generated/prisma/enums";
 
-export class ReadFileDto{
+export class ReadFileDto {
   @Expose()
   id!: string;
 
@@ -13,13 +13,13 @@ export class ReadFileDto{
 
   @Expose()
   mimeType!: string;
- 
+
   @Expose()
-  access!: FileAccess
-    
+  access!: FileAccess;
+
   @Expose()
   size!: number;
-    
+
   @Expose()
   key!: string;
 

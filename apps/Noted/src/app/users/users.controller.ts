@@ -25,7 +25,7 @@ export class UsersController {
       buffer: file.buffer,
       originalname: file.originalname,
       mimetype: file.mimetype,
-      size:file.size
+      size: file.size,
     };
     return this.usersService.uploadAvatar(uploadData, req.user.sub);
   }
