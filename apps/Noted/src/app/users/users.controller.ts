@@ -1,12 +1,23 @@
-import { Controller, Post, UseInterceptors, UploadedFile, UseGuards, Req, Delete, Patch, Body } from "@nestjs/common";
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  UseGuards,
+  Req,
+  Delete,
+  Patch,
+  Body,
+  HttpCode,
+  HttpStatus,
+} from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { UsersService } from "./users.service";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
 import { Request } from "express";
 import { ImageValidationPipe } from "../pipes/image-validation.pipe";
-import { ImageConverterPipe } from "../pipes/image-converter.pipe";
 import { UpdateUserDto } from "./dto/user-update.dto";
-import { UploadFileDto } from "../files/dto/upload-file.dto";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Multer } from "multer";
 
 @Controller("users")
@@ -16,9 +27,10 @@ export class UsersController {
   @Post("me/avatar")
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor("avatar"))
+  @HttpCode(HttpStatus.ACCEPTED)
   async uploadAvatar(
     @Req() req: Request,
-    @UploadedFile(ImageConverterPipe, ImageValidationPipe)
+    @UploadedFile(ImageValidationPipe)
     file: Express.Multer.File,
   ) {
     const uploadData = {

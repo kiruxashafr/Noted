@@ -4,9 +4,10 @@ import { UsersService } from "./users.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesModule } from "../files/files.module";
 import { JwtModule } from "@nestjs/jwt";
+import { PhotoQueueModule } from "../queue/queue.module";
 
 @Module({
-  imports: [FilesModule, JwtModule],
+  imports: [FilesModule, JwtModule, PhotoQueueModule],
   controllers: [UsersController],
   providers: [UsersService, PrismaService],
 })

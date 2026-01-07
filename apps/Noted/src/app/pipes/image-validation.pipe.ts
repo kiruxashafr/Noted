@@ -4,7 +4,15 @@ import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 
 @Injectable()
 export class ImageValidationPipe implements PipeTransform {
-  private readonly allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+  private readonly allowedMimeTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
+    "image/heic",
+    "image/heif",
+    "image/heic-sequence",
+    "image/heif-sequence",
+  ];
 
   transform(file: Express.Multer.File) {
     if (!file) {

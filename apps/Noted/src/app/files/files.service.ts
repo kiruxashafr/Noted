@@ -267,7 +267,7 @@ export class FilesService implements OnModuleInit {
   private async ensureBucketExists() {
     try {
       await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.$metadata?.httpStatusCode === 404) {
         this.logger.log(`Bucket "${this.bucket}" not found. Creating...`);
