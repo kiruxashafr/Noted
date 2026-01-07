@@ -9,6 +9,8 @@ import * as argon2 from "argon2";
 import { ReadUserDto } from "./dto/read-user.dto";
 import { UpdateUserDto } from "./dto/user-update.dto";
 import { FileAccess } from "generated/prisma/enums";
+import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
+import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 
 @Injectable()
 export class UsersService {
@@ -68,41 +70,26 @@ export class UsersService {
 
   async updateUser(userId: string, dto: UpdateUserDto) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
-      if (!user) throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-      if (dto.name && dto.name !== user.name) {
-        await this.prisma.user.update({
-          where: { id: userId },
-          data: { name: dto.name },
-        });
+      const updateData: UpdateUserDto = {};
+
+      if (dto.name ) {
+        updateData.name = dto.name;
       }
-      if (dto.email && dto.email !== user.email) {
-        await this.prisma.user.update({
-          where: { id: userId },
-          data: { email: dto.email },
-        });
+      if (dto.email) {
+        updateData.email= dto.email
       }
       if (dto.password) {
-        const hashPassword = await argon2.hash(dto.password);
-        await this.prisma.user.update({
-          where: { id: userId },
-          data: { password: hashPassword },
-        });
+        updateData.password = await argon2.hash(dto.password)
       }
 
-      const updatedUser = await this.prisma.user.findUnique({
+      const updatedUser = await this.prisma.user.update({
         where: { id: userId },
-      });
+        data: updateData
+      })
 
       return toDto(updatedUser, ReadUserDto);
-    } catch (error: unknown) {
-      this.logger.error(`error in ${(error as Error).message}`, (error as Error).stack);
-      if (error instanceof ApiException) {
-        throw error;
-      }
-      throw new ApiException(ErrorCodes.FAILED_TO_CREATE_ACCOUNT, HttpStatus.BAD_REQUEST);
+    } catch (error) {
+      this.handleAccountConstraintError(error)
     }
   }
 
@@ -125,4 +112,16 @@ export class UsersService {
       },
     });
   }
+
+    private handleAccountConstraintError(error: unknown): never {
+      if (!isPrismaConstraintError(error)) {
+        throw new ApiException(ErrorCodes.REGISTRATION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+  
+      if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "User") {
+        throw new ApiException(ErrorCodes.EMAIL_ALREADY_EXISTS, HttpStatus.CONFLICT);
+      }
+  
+      throw new ApiException(ErrorCodes.DUPLICATE_VALUE, HttpStatus.CONFLICT);
+    }
 }

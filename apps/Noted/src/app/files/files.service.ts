@@ -20,7 +20,6 @@ import { StorageUsageDto } from "./dto/usage.dto";
 import { toDto } from "@noted/common/utils/to-dto";
 import { FileAccess } from "generated/prisma/enums";
 import { MediaFile } from "generated/prisma/client";
-import { MediaUtils } from "./utils/media.utils";
 import { Readable } from "stream";
 
 @Injectable()
@@ -34,7 +33,6 @@ export class FilesService implements OnModuleInit {
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
-    private readonly mediaUtils: MediaUtils,
   ) {
     this.bucket = this.config.getOrThrow<string>("STORAGE_BUCKET_NAME");
     this.endpointPublic = this.config.getOrThrow<string>("STORAGE_ENDPOINT_PUBLIC");
@@ -148,7 +146,7 @@ export class FilesService implements OnModuleInit {
     if (!file) {
       throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
-    if (file.ownerId != userId) {
+    if (file.ownerId !== userId) {
       throw new ApiException(ErrorCodes.FILE_ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
     try {
@@ -261,7 +259,7 @@ export class FilesService implements OnModuleInit {
 
   private checkAccess(file: MediaFile, userId: string) {
     if (file.access === "PUBLIC") return;
-    if (file.ownerId != userId) {
+    if (file.ownerId !== userId) {
       throw new ApiException(ErrorCodes.FILE_ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
   }
