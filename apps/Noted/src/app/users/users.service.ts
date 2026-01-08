@@ -12,22 +12,14 @@ import { InjectQueue } from "@nestjs/bullmq";
 import { Queue, QueueEvents } from "bullmq";
 import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
+import { UploadAvatarDto } from "./dto/upload-avatar.dto";
+import { ReadUploadAvatarDto } from "./dto/read-upload-avatar.dto";
+import { AvatarJobData } from "./interface/avatar-job-data.interface";
+import { AvatarConversionResult } from "./interface/avatar-conversion-result.interface";
 
-interface AvatarJobData {
-  fileBufferBase64: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
-}
 
-interface AvatarConversionResult {
-  success: boolean;
-  convertedBuffer: string;
-  fileName: string;
-  mimeType: string;
-  userId: string;
-  convertedSize?: number;
-}
+
+
 
 @Injectable()
 export class UsersService {
@@ -42,7 +34,15 @@ export class UsersService {
     private readonly queueEvents: QueueEvents,
   ) {}
 
-  async uploadAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
+  async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
+
+    if (file.mimetype == "image/heic" || file.mimetype == "image/heif") {
+      this.heicConvertAvatar(file, userId)
+    }
+    
+  }
+
+  async heicConvertAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
     const fileBufferBase64 = file.buffer.toString("base64");
 
     const job = await this.photoQueue.add("avatar-upload", {
@@ -58,7 +58,6 @@ export class UsersService {
       message: "Avatar upload accepted for processing",
     };
   }
-
   private async processAvatarInBackground(jobId: string, userId: string) {
     try {
       const job = await this.photoQueue.getJob(jobId);
@@ -73,14 +72,19 @@ export class UsersService {
         this.logger.error(`No result returned for job ${jobId} for user ${userId}`);
         return;
       }
+      const buffer = Buffer.from(result.convertedBuffer, "base64");
+      const newName = result.fileName
+      const mimeType = result.mimeType
 
-      await this.handleSuccessfulConversion(userId, result.convertedBuffer, result.fileName, result.mimeType);
+      const uploadData = {userId, buffer, newName, mimeType}
+      await this.uploadAvatar(toDto(uploadData, ReadUploadAvatarDto));
     } catch (error) {
       this.logger.error(`Avatar processing error for user ${userId}:`, error);
     }
   }
 
-  private async handleSuccessfulConversion(userId: string, convertedBuffer: string, newName: string, mimeType: string) {
+  private async uploadAvatar(dto: UploadAvatarDto) {
+    const { userId, buffer, newName, mimeType } = dto;
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -89,7 +93,7 @@ export class UsersService {
       if (!user) {
         throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
       }
-      const buffer = Buffer.from(convertedBuffer, "base64");
+
 
       const fileData = {
         buffer: buffer,

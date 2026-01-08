@@ -5,27 +5,7 @@ import { PhotoProcessor } from "./result.processor";
 import { PrismaModule } from "../prisma/prisma.module";
 import { FilesModule } from "../files/files.module";
 import { Queue, QueueEvents } from "bullmq";
-
-// Интерфейс для конфигурации подключения Redis
-interface RedisConnectionConfig {
-  host: string;
-  port: number;
-  password?: string;
-}
-
-// Интерфейс для очереди с пользовательскими настройками
-interface CustomQueueOptions {
-  connection: RedisConnectionConfig;
-  defaultJobOptions: {
-    removeOnComplete: number;
-    removeOnFail: number;
-    attempts: number;
-    backoff: {
-      type: string;
-      delay: number;
-    };
-  };
-}
+import { CustomQueueOptions } from "./interfaces/custom-queue-options.interfaces";
 
 @Module({
   imports: [

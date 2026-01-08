@@ -5,11 +5,11 @@ export class ReadUploadAvatarDto {
   userId: string;
 
   @Expose()
-  avatarUrl: string;
+  buffer: Buffer;
 
   @Expose()
-  originalName: string;
+  newName: string;
 
   @Expose()
-  size: number;
+  mimeType: string;
 }

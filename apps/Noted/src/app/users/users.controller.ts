@@ -39,7 +39,7 @@ export class UsersController {
       mimetype: file.mimetype,
       size: file.size,
     };
-    return this.usersService.uploadAvatar(uploadData, req.user.sub);
+    return this.usersService.updateAvatar(uploadData, req.user.sub);
   }
 
   @Delete("me/delete")
