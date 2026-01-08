@@ -17,10 +17,6 @@ import { ReadUploadAvatarDto } from "./dto/read-upload-avatar.dto";
 import { AvatarJobData } from "./interface/avatar-job-data.interface";
 import { AvatarConversionResult } from "./interface/avatar-conversion-result.interface";
 
-
-
-
-
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -35,14 +31,18 @@ export class UsersService {
   ) {}
 
   async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
-
     if (file.mimetype == "image/heic" || file.mimetype == "image/heif") {
-      this.heicConvertAvatar(file, userId)
+      this.heicConvertAvatar(file, userId);
+    } else {
+      const uploadData = { userId, buffer: file.buffer, newName: file.originalname, mimeType: file.mimetype };
+      this.uploadAvatar(toDto(uploadData, ReadUploadAvatarDto));
     }
-    
   }
 
-  async heicConvertAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
+  async heicConvertAvatar(
+    file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    userId: string,
+  ) {
     const fileBufferBase64 = file.buffer.toString("base64");
 
     const job = await this.photoQueue.add("avatar-upload", {
@@ -73,10 +73,10 @@ export class UsersService {
         return;
       }
       const buffer = Buffer.from(result.convertedBuffer, "base64");
-      const newName = result.fileName
-      const mimeType = result.mimeType
+      const newName = result.fileName;
+      const mimeType = result.mimeType;
 
-      const uploadData = {userId, buffer, newName, mimeType}
+      const uploadData = { userId, buffer, newName, mimeType };
       await this.uploadAvatar(toDto(uploadData, ReadUploadAvatarDto));
     } catch (error) {
       this.logger.error(`Avatar processing error for user ${userId}:`, error);
@@ -93,7 +93,6 @@ export class UsersService {
       if (!user) {
         throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
       }
-
 
       const fileData = {
         buffer: buffer,

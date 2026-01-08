@@ -1,6 +1,8 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Job } from "bullmq";
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { toDto } from "@noted/common/utils/to-dto";
+import { ReadConvertPhotoDto } from "./dto/read-convert-photo.dto";
 
 @Processor("photo-conversion")
 @Injectable()
@@ -32,13 +34,14 @@ export class PhotoProcessor extends WorkerHost implements OnModuleInit {
       });
       const finalMimeType = "image/jpeg";
       const convertedBufferBase64 = await finalBuffer.toString("base64");
-      return {
+
+      const resultData = {
         success: true,
         convertedBuffer: convertedBufferBase64,
         fileName: originalName.replace(/\.(heic|heif)$/i, ".jpg"),
         mimeType: finalMimeType,
-        convertedSize: finalBuffer.length,
-      };
+        convertedSize: finalBuffer.length,}
+      return  toDto(resultData, ReadConvertPhotoDto) ;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       this.logger.error(` Processing failed for job ${job.id}: ${errorMessage}`);
