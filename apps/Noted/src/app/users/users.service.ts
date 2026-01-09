@@ -16,6 +16,7 @@ import { UploadAvatarDto } from "./dto/upload-avatar.dto";
 import { ReadUploadAvatarDto } from "./dto/read-upload-avatar.dto";
 import { AvatarJobData } from "./interface/avatar-job-data.interface";
 import { AvatarConversionResult } from "./interface/avatar-conversion-result.interface";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Injectable()
 export class UsersService {
@@ -28,6 +29,7 @@ export class UsersService {
     private readonly photoQueue: Queue<AvatarJobData, AvatarConversionResult>,
     @Inject("QUEUE_EVENTS")
     private readonly queueEvents: QueueEvents,
+    private readonly eventEmmiter: EventEmitter2
   ) {}
 
   async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
