@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Logger, Inject } from "@nestjs/common";
+import { HttpStatus, Injectable, Logger} from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { ApiException } from "@noted/common/errors/api-exception";
@@ -8,16 +8,14 @@ import * as argon2 from "argon2";
 import { ReadUserDto } from "./dto/read-user.dto";
 import { UpdateUserDto } from "./dto/user-update.dto";
 import { FileAccess } from "generated/prisma/enums";
-import { InjectQueue } from "@nestjs/bullmq";
-import { Queue, QueueEvents } from "bullmq";
 import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { UploadAvatarDto } from "./dto/upload-avatar.dto";
 import { ReadUploadAvatarDto } from "./dto/read-upload-avatar.dto";
-import { AvatarJobData } from "./interface/avatar-job-data.interface";
-import { AvatarConversionResult } from "./interface/avatar-conversion-result.interface";
-import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
-import { AvatarEvent } from "../shared/events/types";
+import { AvatarConversionResult } from "../queue/interface/avatar-conversion-result.interface";
+import {  OnEvent } from "@nestjs/event-emitter";
+import { AvatarConversionFailedEvent, AvatarEvent } from "../shared/events/types";
+import { PhotoQueueService } from "../queue/convert-photo.service";
 
 @Injectable()
 export class UsersService {
@@ -26,11 +24,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly filesService: FilesService,
-    @InjectQueue("photo-conversion")
-    private readonly photoQueue: Queue<AvatarJobData, AvatarConversionResult>,
-    @Inject("QUEUE_EVENTS")
-    private readonly queueEvents: QueueEvents,
-    private readonly eventEmmiter: EventEmitter2
+    private readonly queueService: PhotoQueueService
   ) {}
 
   async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
@@ -48,13 +42,9 @@ export class UsersService {
     fileId: string,
     userId: string,
   ) {
-
-  await this.photoQueue.add("avatar-convert", {
-      fileId: fileId,
-      userId: userId,
-      access: FileAccess.PUBLIC
-    });
-
+   
+    await this.queueService.sendToHeicConvert(fileId, userId, FileAccess.PUBLIC)
+    
   }
 
   @OnEvent(AvatarEvent.AVATAR_CONVERTED)
@@ -69,6 +59,11 @@ export class UsersService {
       this.logger.error(`Avatar processing error for user ${event.userId}:`, error);
     }
   }
+
+  @OnEvent(AvatarEvent.AVATAR_CONVERSION_FAILED)
+  async handleAvatarConversionFail(event: AvatarConversionFailedEvent) {
+    throw new this.logger.error(`heic convert fail for user ${event.userId}`)
+    }
 
   private async uploadAvatar(dto: UploadAvatarDto) {
     const { userId, buffer, newName, mimeType } = dto;

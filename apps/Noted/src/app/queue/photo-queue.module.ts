@@ -1,10 +1,10 @@
-import { BullModule, getQueueToken } from "@nestjs/bullmq";
+import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { PhotoProcessor } from "./convert-photo.processor";
 import { PrismaModule } from "../prisma/prisma.module";
 import { FilesModule } from "../files/files.module";
-import { Queue, QueueEvents } from "bullmq";
+import { PhotoQueueService } from "./convert-photo.service";
 
 @Module({
   imports: [
@@ -21,16 +21,8 @@ import { Queue, QueueEvents } from "bullmq";
   ],
   providers: [
     PhotoProcessor,
-    {
-      provide: "QUEUE_EVENTS",
-      useFactory: (queue: Queue): QueueEvents => {
-        return new QueueEvents(queue.name, {
-          connection: queue.opts.connection
-        });
-      },
-      inject: [getQueueToken("photo-conversion")],
-    },
+    PhotoQueueService
   ],
-  exports: [BullModule, "QUEUE_EVENTS"],
+  exports: [BullModule, PhotoQueueService],
 })
 export class PhotoQueueModule {}
