@@ -3,44 +3,51 @@ import { Job } from "bullmq";
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { toDto } from "@noted/common/utils/to-dto";
 import { ReadConvertPhotoDto } from "./dto/read-convert-photo.dto";
+import { FilesService } from "../files/files.service";
 
 @Processor("photo-conversion")
 @Injectable()
 export class PhotoProcessor extends WorkerHost implements OnModuleInit {
   private readonly logger = new Logger(PhotoProcessor.name);
+  private readonly CONVERT_TYPE = "JPEG"
+  private readonly MIMETYPE = "image/jpeg"
   private heicConvert;
+
+  constructor(
+    private readonly fileService: FilesService,
+  ){super()}
 
   async onModuleInit() {
     await this.initializeConverter();
   }
 
   async process(job: Job): Promise<{
-    success: boolean;
-    convertedBuffer: string;
-    fileName: string;
-    mimeType: string;
-    convertedSize?: number;
+    userId: string;
+    newFileId: string;
   }> {
-    this.logger.log(`Processing photo job: ${job.id}`);
+    const { fileId, userId, access } = job.data;
 
-    const { fileBufferBase64, originalName } = job.data;
-
+    const file = await this.fileService.getFileBuffer(fileId, userId)
+    const fileInfo = await this.fileService.findOne(fileId,userId)
     try {
-      const fileBuffer = Buffer.from(fileBufferBase64, "base64");
-      const finalBuffer = await this.heicConvert({
-        buffer: fileBuffer,
-        format: "JPEG",
-        quality: 0.85,
+      const finalBuffer: Buffer = await this.heicConvert({
+        buffer: file,
+        format: this.CONVERT_TYPE
       });
-      const finalMimeType = "image/jpeg";
-      const convertedBufferBase64 = await finalBuffer.toString("base64");
+
+      const uploadFile = {
+        buffer: finalBuffer,
+        originalname: fileInfo.originalName.replace(/\.(heic|heif)$/i, ".jpg"),
+        mimetype: this.MIMETYPE,
+        size: finalBuffer.length
+      }
+      
+      const convertedFile = await this.fileService.uploadFile(userId, access, uploadFile)
+      this.fileService.deleteFile(fileId, userId)
 
       const resultData = {
-        success: true,
-        convertedBuffer: convertedBufferBase64,
-        fileName: originalName.replace(/\.(heic|heif)$/i, ".jpg"),
-        mimeType: finalMimeType,
-        convertedSize: finalBuffer.length,}
+        userId,
+        newFileID: convertedFile.id}
       return  toDto(resultData, ReadConvertPhotoDto) ;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";

@@ -1,6 +1,7 @@
+import { FileAccess } from "generated/prisma/enums";
+
 export interface AvatarJobData {
-  fileBufferBase64: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
+  fileId: string;
+  userId: string;
+  access: FileAccess
 }

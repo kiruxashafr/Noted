@@ -31,8 +31,10 @@ export class UsersService {
   ) {}
 
   async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
+    const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file)
+
     if (file.mimetype == "image/heic" || file.mimetype == "image/heif") {
-      this.heicConvertAvatar(file, userId);
+      this.heicConvertAvatar(savedFile.id, userId);
     } else {
       const uploadData = { userId, buffer: file.buffer, newName: file.originalname, mimeType: file.mimetype };
       this.uploadAvatar(toDto(uploadData, ReadUploadAvatarDto));
@@ -40,16 +42,14 @@ export class UsersService {
   }
 
   async heicConvertAvatar(
-    file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    fileId: string,
     userId: string,
   ) {
-    const fileBufferBase64 = file.buffer.toString("base64");
 
-    const job = await this.photoQueue.add("avatar-upload", {
-      fileBufferBase64,
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size,
+    const job = await this.photoQueue.add("avatar-convert", {
+      fileId: fileId,
+      userId: userId,
+      access: FileAccess.PUBLIC
     });
 
     this.processAvatarInBackground(job.id, userId);
@@ -72,12 +72,10 @@ export class UsersService {
         this.logger.error(`No result returned for job ${jobId} for user ${userId}`);
         return;
       }
-      const buffer = Buffer.from(result.convertedBuffer, "base64");
-      const newName = result.fileName;
-      const mimeType = result.mimeType;
-
-      const uploadData = { userId, buffer, newName, mimeType };
-      await this.uploadAvatar(toDto(uploadData, ReadUploadAvatarDto));
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {avatarFileId: result.newFileId}
+      })
     } catch (error) {
       this.logger.error(`Avatar processing error for user ${userId}:`, error);
     }
