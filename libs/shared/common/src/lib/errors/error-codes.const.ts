@@ -1,9 +1,9 @@
-// libs/api-common/src/error-codes/error-codes.const.ts
 export const ErrorCodes = {
   // Общие ошибки
   VALIDATION_ERROR: "VALIDATION_ERROR",
   INTERNAL_ERROR: "INTERNAL_ERROR",
   HTTP_ERROR: "HTTP_ERROR",
+  BAD_REQUEST: "BAD_REQUEST",
 
   // Auth ошибки
   REFRESH_TOKEN_MISSING: "REFRESH_TOKEN_MISSING",
@@ -28,6 +28,7 @@ export const ErrorCodes = {
   DELETE_FILE_ERROR: "DELETE_FILE_ERROR",
   FILE_ACCESS_DENIED: "FILE_ACCESS_DENIED",
   FILE_RETRIEVAL_FAILED: "FILE_RETRIEVAL_FAILED",
+  PAILOAD_TOO_LARGE: "PAILOAD_TOO_LARGE",
 
   // Пользователи
   USER_NOT_FOUND: "USER_NOT_FOUND",
