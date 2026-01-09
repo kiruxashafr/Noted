@@ -1,5 +1,4 @@
 export interface AvatarConversionResult {
-  userId: boolean;
+  userId: string;
   newFileId: string;
-
 }

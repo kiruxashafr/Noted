@@ -4,6 +4,8 @@ import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { toDto } from "@noted/common/utils/to-dto";
 import { ReadConvertPhotoDto } from "./dto/read-convert-photo.dto";
 import { FilesService } from "../files/files.service";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { AvatarConversionFailedEvent, AvatarEvent } from "../shared/events/types";
 
 @Processor("photo-conversion")
 @Injectable()
@@ -14,6 +16,7 @@ export class PhotoProcessor extends WorkerHost implements OnModuleInit {
   private heicConvert;
 
   constructor(
+    private eventEmitter: EventEmitter2,
     private readonly fileService: FilesService,
   ){super()}
 
@@ -47,11 +50,23 @@ export class PhotoProcessor extends WorkerHost implements OnModuleInit {
 
       const resultData = {
         userId,
-        newFileID: convertedFile.id}
+        newFileID: convertedFile.id
+      }
+      
+      await this.eventEmitter.emitAsync(AvatarEvent.AVATAR_CONVERTED, resultData);
+
       return  toDto(resultData, ReadConvertPhotoDto) ;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       this.logger.error(` Processing failed for job ${job.id}: ${errorMessage}`);
+      const failedEvent: AvatarConversionFailedEvent = {
+        userId,
+        jobId: job.id,
+        fileId,
+        error: errorMessage
+      };
+      
+      await this.eventEmitter.emitAsync(AvatarEvent.AVATAR_CONVERSION_FAILED, failedEvent);
     }
   }
 

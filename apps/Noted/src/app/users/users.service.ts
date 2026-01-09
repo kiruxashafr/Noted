@@ -16,7 +16,8 @@ import { UploadAvatarDto } from "./dto/upload-avatar.dto";
 import { ReadUploadAvatarDto } from "./dto/read-upload-avatar.dto";
 import { AvatarJobData } from "./interface/avatar-job-data.interface";
 import { AvatarConversionResult } from "./interface/avatar-conversion-result.interface";
-import { EventEmitter2 } from "@nestjs/event-emitter";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { AvatarEvent } from "../shared/events/types";
 
 @Injectable()
 export class UsersService {
@@ -48,38 +49,24 @@ export class UsersService {
     userId: string,
   ) {
 
-    const job = await this.photoQueue.add("avatar-convert", {
+  await this.photoQueue.add("avatar-convert", {
       fileId: fileId,
       userId: userId,
       access: FileAccess.PUBLIC
     });
 
-    this.processAvatarInBackground(job.id, userId);
-
-    return {
-      message: "Avatar upload accepted for processing",
-    };
   }
-  private async processAvatarInBackground(jobId: string, userId: string) {
+
+  @OnEvent(AvatarEvent.AVATAR_CONVERTED)
+  async handleAvatarConverted(event: AvatarConversionResult) {
     try {
-      const job = await this.photoQueue.getJob(jobId);
-      if (!job) {
-        this.logger.error(`Job ${jobId} not found for user ${userId}`);
-        return;
-      }
-
-      const result = await job.waitUntilFinished(this.queueEvents, 30000);
-
-      if (!result) {
-        this.logger.error(`No result returned for job ${jobId} for user ${userId}`);
-        return;
-      }
       await this.prisma.user.update({
-        where: { id: userId },
-        data: {avatarFileId: result.newFileId}
+        where: { id: event.userId },
+        data: { avatarFileId: event.newFileId }
       })
-    } catch (error) {
-      this.logger.error(`Avatar processing error for user ${userId}:`, error);
+    }
+    catch (error) {
+      this.logger.error(`Avatar processing error for user ${event.userId}:`, error);
     }
   }
 
