@@ -7,8 +7,8 @@ import { AvatarConversionFailedEvent, AvatarEvent } from "../shared/events/types
 
 @Processor("photo-conversion")
 @Injectable()
-export class PhotoProcessor extends WorkerHost implements OnModuleInit {
-  private readonly logger = new Logger(PhotoProcessor.name);
+export class PhotoConvertProcessor extends WorkerHost implements OnModuleInit {
+  private readonly logger = new Logger(PhotoConvertProcessor.name);
   private readonly CONVERT_TYPE = "JPEG"
   private readonly MIMETYPE = "image/jpeg"
   private heicConvert;

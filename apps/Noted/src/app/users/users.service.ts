@@ -12,10 +12,10 @@ import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { UploadAvatarDto } from "./dto/upload-avatar.dto";
 import { ReadUploadAvatarDto } from "./dto/read-upload-avatar.dto";
-import { AvatarConversionResult } from "../queue/interface/avatar-conversion-result.interface";
+import { AvatarConversionResult } from "../photo-queue/interface/avatar-conversion-result.interface";
 import {  OnEvent } from "@nestjs/event-emitter";
 import { AvatarConversionFailedEvent, AvatarEvent } from "../shared/events/types";
-import { PhotoQueueService } from "../queue/convert-photo.service";
+import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 
 @Injectable()
 export class UsersService {
@@ -29,23 +29,17 @@ export class UsersService {
 
   async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
     const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file)
-
+    if (file.mimetype == "image/jpeg") {
+      await this.queueService.sendToResizeConvert(savedFile.id, userId, FileAccess.PUBLIC)
+    }
     if (file.mimetype == "image/heic" || file.mimetype == "image/heif") {
-      this.heicConvertAvatar(savedFile.id, userId);
+      await this.queueService.sendToHeicConvert(savedFile.id, userId, FileAccess.PUBLIC)
     } else {
       const uploadData = { userId, buffer: file.buffer, newName: file.originalname, mimeType: file.mimetype };
       this.uploadAvatar(toDto(uploadData, ReadUploadAvatarDto));
     }
   }
 
-  async heicConvertAvatar(
-    fileId: string,
-    userId: string,
-  ) {
-   
-    await this.queueService.sendToHeicConvert(fileId, userId, FileAccess.PUBLIC)
-    
-  }
 
   @OnEvent(AvatarEvent.AVATAR_CONVERTED)
   async handleAvatarConverted(event: AvatarConversionResult) {

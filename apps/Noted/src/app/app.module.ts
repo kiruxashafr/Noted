@@ -5,7 +5,7 @@ import { UsersModule } from "./users/users.module";
 import { AuthModule } from "./auth/auth.module";
 import { FilesModule } from "./files/files.module";
 import { PrismaModule } from "./prisma/prisma.module";
-import { PhotoQueueModule } from "./queue/photo-queue.module";
+import { PhotoQueueModule } from "./photo-queue/photo-queue.module";
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { BullModule } from "@nestjs/bullmq";
 

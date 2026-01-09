@@ -9,14 +9,25 @@ import { FileAccess } from "generated/prisma/enums";
 export class PhotoQueueService {
     private readonly logger = new Logger(PhotoQueueService.name);
 
-    constructor(
+  constructor(
+    @InjectQueue("photo-resize")
+    private readonly photoResizeQueue: Queue<AvatarJobData, AvatarConversionResult>,
     @InjectQueue("photo-conversion")
-    private readonly photoQueue: Queue<AvatarJobData, AvatarConversionResult>,
+    private readonly photoConversionQueue: Queue<AvatarJobData, AvatarConversionResult>,
     ) { }
 
       async sendToHeicConvert(fileId: string, userId: string, access: FileAccess) {
 
-    await this.photoQueue.add("heic-convert", {
+    await this.photoConversionQueue.add("heic-convert", {
+      fileId: fileId,
+      userId: userId,
+      access: access
+    });
+
+      }
+    async sendToResizeConvert(fileId: string, userId: string, access: FileAccess) {
+
+    await this.photoResizeQueue.add("resize-photo", {
       fileId: fileId,
       userId: userId,
       access: access
