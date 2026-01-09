@@ -141,6 +141,40 @@ export class FilesService implements OnModuleInit {
     }
   }
 
+  async getFileBuffer(fileId: string, userId: string) {
+    const file = await this.prisma.mediaFile.findUnique({ where: { id: fileId } });
+    if (!file) {
+      throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND);
+    }
+    if (file.size > 20 * 1024 * 1024) { 
+  throw new ApiException(
+    ErrorCodes.FILE_TOO_LARGE, 
+    HttpStatus.PAYLOAD_TOO_LARGE,
+  );
+}
+    this.checkAccess(file, userId);
+    try {
+      const command = new GetObjectCommand({
+        Bucket: file.bucket,
+        Key: file.key,
+      });
+
+      const response = await this.s3.send(command);
+      const stream = response.Body as Readable;
+
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+      return  Buffer.concat(chunks)
+      ;
+    } catch (error) {
+      this.logger.error(`getFileBuffer() | S3 Error for id=${fileId}`, error);
+      throw new ApiException(ErrorCodes.FILE_RETRIEVAL_FAILED, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+
   async deleteFile(fileId: string, userId: string) {
     const file = await this.prisma.mediaFile.findUnique({
       where: { id: fileId },
