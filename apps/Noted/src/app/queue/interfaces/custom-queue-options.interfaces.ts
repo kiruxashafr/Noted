@@ -5,10 +5,5 @@ export interface CustomQueueOptions {
   defaultJobOptions: {
     removeOnComplete: number;
     removeOnFail: number;
-    attempts: number;
-    backoff: {
-      type: string;
-      delay: number;
-    };
   };
 }

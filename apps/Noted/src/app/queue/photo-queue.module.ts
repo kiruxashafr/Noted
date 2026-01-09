@@ -1,7 +1,7 @@
 import { BullModule, getQueueToken } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { PhotoProcessor } from "./result.processor";
+import { PhotoProcessor } from "./convert-photo.processor";
 import { PrismaModule } from "../prisma/prisma.module";
 import { FilesModule } from "../files/files.module";
 import { Queue, QueueEvents } from "bullmq";
@@ -21,13 +21,8 @@ import { CustomQueueOptions } from "./interfaces/custom-queue-options.interfaces
           password: config.get<string>("REDIS_PASSWORD"),
         },
         defaultJobOptions: {
-          removeOnComplete: 50,
-          removeOnFail: 100,
-          attempts: 3,
-          backoff: {
-            type: "exponential",
-            delay: 1000,
-          },
+          removeOnComplete: 20,
+          removeOnFail: 50,
         },
       }),
       inject: [ConfigService],
