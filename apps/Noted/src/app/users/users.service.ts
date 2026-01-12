@@ -11,11 +11,11 @@ import { FileAccess } from "generated/prisma/enums";
 import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { UploadAvatarDto } from "./dto/upload-avatar.dto";
-import { ReadUploadAvatarDto } from "./dto/read-upload-avatar.dto";
 import { AvatarConversionResult } from "../photo-queue/interface/avatar-conversion-result.interface";
 import {  OnEvent } from "@nestjs/event-emitter";
-import { AvatarConversionFailedEvent, AvatarEvent } from "../shared/events/types";
+import { PhotoConversionFailedEvent, PhotoEvent } from "../shared/events/types";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
+import { error } from "console";
 
 @Injectable()
 export class UsersService {
@@ -27,36 +27,46 @@ export class UsersService {
     private readonly queueService: PhotoQueueService
   ) {}
 
-  async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
-    const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file)
-    if (file.mimetype == "image/jpeg") {
-      await this.queueService.sendToResizeConvert(savedFile.id, userId, FileAccess.PUBLIC)
-    }
-    if (file.mimetype == "image/heic" || file.mimetype == "image/heif") {
-      await this.queueService.sendToHeicConvert(savedFile.id, userId, FileAccess.PUBLIC)
+async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
+  try {
+    const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file);
+    this.logger.log(`updateAvatar() | File uploaded: ${savedFile.id}, mimetype: ${file.mimetype}, size: ${file.size}`);
+
+    if (file.mimetype === "image/jpeg") {
+      this.logger.log(`updateAvatar() |  Photo ${savedFile.id} sending to resize queue`);
+      await this.queueService.sendToResizeConvert(savedFile.id, userId, FileAccess.PUBLIC);
+    } else if (file.mimetype === "image/heic" || file.mimetype === "image/heif") {
+      this.logger.log(`updateAvatar() | Photo ${savedFile.id} sending to HEIC convert queue`);
+      await this.queueService.sendToHeicConvert(savedFile.id, userId, FileAccess.PUBLIC);
     } else {
-      const uploadData = { userId, buffer: file.buffer, newName: file.originalname, mimeType: file.mimetype };
-      this.uploadAvatar(toDto(uploadData, ReadUploadAvatarDto));
-    }
+      this.logger.error(`updateAvatar() | Photo ${savedFile.id} upload the undefined format file`);
+      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST)
+    }    
+  } catch (error) {
+    this.logger.error(`updateAvatar() | Failed to update avatar: ${error.message}`, error.stack);
+    throw error;
   }
+}
 
 
-  @OnEvent(AvatarEvent.AVATAR_CONVERTED)
+  @OnEvent(PhotoEvent.PHOTO_CONVERTED)
   async handleAvatarConverted(event: AvatarConversionResult) {
     try {
       await this.prisma.user.update({
         where: { id: event.userId },
         data: { avatarFileId: event.newFileId }
       })
+      this.logger.log(`handleAvatarConverted() | Avatar updated for user ${event.userId} with new file ${event.newFileId}`);
     }
     catch (error) {
       this.logger.error(`Avatar processing error for user ${event.userId}:`, error);
     }
   }
 
-  @OnEvent(AvatarEvent.AVATAR_CONVERSION_FAILED)
-  async handleAvatarConversionFail(event: AvatarConversionFailedEvent) {
-    throw new this.logger.error(`heic convert fail for user ${event.userId}`)
+  @OnEvent(PhotoEvent.PHOTO_CONVERSION_FAILED)
+  async handleAvatarConversionFail(event: PhotoConversionFailedEvent) {
+    this.logger.error(`handleAvatarConversionFail() | heic convert fail for user ${event.userId}`);
+    throw new error;
     }
 
   private async uploadAvatar(dto: UploadAvatarDto) {

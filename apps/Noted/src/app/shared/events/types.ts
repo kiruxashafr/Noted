@@ -1,17 +1,17 @@
 // events/avatar.events.ts
-export enum AvatarEvent {
-  AVATAR_CONVERTED = 'avatar.converted',
-  AVATAR_CONVERSION_FAILED = 'avatar.conversion.failed',
+export enum PhotoEvent {
+  PHOTO_CONVERTED = 'avatar.converted',
+  PHOTO_CONVERSION_FAILED = 'avatar.conversion.failed',
 }
 
-export interface AvatarConvertedEvent {
+export interface PhotoConvertedEvent {
   userId: string;
   jobId: string;
   originalFileId: string;
   newFileId: string;
 }
 
-export interface AvatarConversionFailedEvent {
+export interface PhotoConversionFailedEvent {
   userId: string;
   jobId: string;
   fileId: string;

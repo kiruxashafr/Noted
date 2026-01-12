@@ -3,7 +3,7 @@ import { Job } from "bullmq";
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { FilesService } from "../files/files.service";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { AvatarConversionFailedEvent, AvatarEvent } from "../shared/events/types";
+import { PhotoConversionFailedEvent, PhotoEvent } from "../shared/events/types";
 
 @Processor("photo-conversion")
 @Injectable()
@@ -11,7 +11,7 @@ export class PhotoConvertProcessor extends WorkerHost implements OnModuleInit {
   private readonly logger = new Logger(PhotoConvertProcessor.name);
   private readonly CONVERT_TYPE = "JPEG"
   private readonly MIMETYPE = "image/jpeg"
-  private heicConvert;
+  private sharp;
 
   constructor(
     private eventEmitter: EventEmitter2,
@@ -19,7 +19,7 @@ export class PhotoConvertProcessor extends WorkerHost implements OnModuleInit {
   ){super()}
 
   async onModuleInit() {
-    await this.initializeConverter();
+    await this.initializeSharp();
   }
 
   async process(job: Job): Promise<void> {
@@ -28,14 +28,13 @@ export class PhotoConvertProcessor extends WorkerHost implements OnModuleInit {
     const file = await this.fileService.getFileBuffer(fileId, userId)
     const fileInfo = await this.fileService.findOne(fileId,userId)
     try {
-      const finalBuffer: Buffer = await this.heicConvert({
-        buffer: file,
-        format: this.CONVERT_TYPE
-      });
+      const finalBuffer: Buffer = await this.sharp(file)
+        .toFormat(this.CONVERT_TYPE)
+        .toBuffer();
 
       const uploadFile = {
         buffer: finalBuffer,
-        originalname: fileInfo.originalName.replace(/\.(heic|heif)$/i, ".jpg"),
+        originalname: fileInfo.originalName.replace(/\.[^.]+$/, '.jpg'),
         mimetype: this.MIMETYPE,
         size: finalBuffer.length
       }
@@ -48,26 +47,26 @@ export class PhotoConvertProcessor extends WorkerHost implements OnModuleInit {
         newFileID: convertedFile.id
       }
       
-      await this.eventEmitter.emitAsync(AvatarEvent.AVATAR_CONVERTED, resultData);
+      await this.eventEmitter.emitAsync(PhotoEvent.PHOTO_CONVERTED, resultData);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       this.logger.error(` Processing failed for job ${job.id}: ${errorMessage}`);
-      const failedEvent: AvatarConversionFailedEvent = {
+      const failedEvent: PhotoConversionFailedEvent = {
         userId,
         jobId: job.id,
         fileId,
         error: errorMessage
       };
       
-      await this.eventEmitter.emitAsync(AvatarEvent.AVATAR_CONVERSION_FAILED, failedEvent);
+      await this.eventEmitter.emitAsync(PhotoEvent.PHOTO_CONVERSION_FAILED, failedEvent);
     }
   }
 
-  private async initializeConverter(): Promise<void> {
+  private async initializeSharp(): Promise<void> {
     try {
-      this.heicConvert = require("heic-convert");
+      this.sharp = require("sharp");
     } catch (error) {
-      this.logger.error(`Failed to initialize heic-convert: ${error.message}`);
+      this.logger.error(`Failed to initialize sharp: ${error.message}`);
     }
   }
 }
