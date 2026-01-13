@@ -70,7 +70,7 @@ export class FilesService implements OnModuleInit {
           Body: file.buffer,
           ContentType: file.mimetype,
           Metadata: {
-            "X-Amz-Meta-Original-Filename": file.originalname,
+            "Original-Filename": file.originalname,
           },
         },
       });

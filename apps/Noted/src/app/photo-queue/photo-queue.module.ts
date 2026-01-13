@@ -6,6 +6,7 @@ import { PrismaModule } from "../prisma/prisma.module";
 import { FilesModule } from "../files/files.module";
 import { PhotoQueueService } from "./photo-queue.service";
 import { PhotoResizeProcessor } from "./resize-photo.processor";
+import { PhotoEditorProcessor } from "./photo-editor.processor";
 
 @Module({
   imports: [
@@ -25,11 +26,19 @@ import { PhotoResizeProcessor } from "./resize-photo.processor";
         name: config.getOrThrow("RESIZE_QUEUE_NAME")
       }),
       inject: [ConfigService],
-    })
+    }),
+    BullModule.registerQueueAsync({
+      name: "photo-editor",
+      useFactory: (config: ConfigService) => ({
+        name: config.getOrThrow("EDITOR_QUEUE_NAME")
+      }),
+      inject: [ConfigService],
+    }),
   ],
   providers: [
     PhotoResizeProcessor,
     PhotoConvertProcessor,
+    PhotoEditorProcessor,
     PhotoQueueService
   ],
   exports: [BullModule, PhotoQueueService],
