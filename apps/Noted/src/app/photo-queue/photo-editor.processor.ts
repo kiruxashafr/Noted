@@ -43,47 +43,59 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
     }
 
     async process(job: Job<PhotoJobData>): Promise<void> {
-        const { fileId, userId, access, convertTo, resizeTo } = job.data;
-
+        const { fileId, userId, access, profile } = job.data;
+      try {
         const originalBuffer = await this.fileService.getFileBuffer(fileId, userId)
         const fileInfo = await this.fileService.findOne(fileId, userId)
 
         let processor = this.sharp(originalBuffer)
 
-        if (convertTo) {
-            processor = processor
-              .toFormat(convertTo)
-          this.logger.log(`photo ${fileId} convert to ${convertTo}`)
+      if (profile.format) {
+
+        processor = processor
+          .toFormat(profile.format)
+        this.logger.log(`photo ${fileId} convert to ${profile.format}`)
+      }
+
+      
+      if (profile.width || profile.height) {
+
+          processor = processor
+            .resize(profile.width, profile.height, {
+              fit: this.sharp.fit.inside,
+              withoutEnlargement: true
+            })
+          this.logger.log(`photo ${fileId} resize to ...`)
         }
-        if (resizeTo) {
-            processor = processor
-                .resize(resizeTo.width, resizeTo.height, {
-                    fit: this.sharp.fit.inside,
-                    withoutEnlargement: true
-                })
-        this.logger.log(`photo ${fileId} resize to ${resizeTo}`)
-        }
+
         const processedBuffer = await processor.toBuffer();
-        const extension = this.EXTENSION_MAP[convertTo]
-        const mimeType = this.MIME_MAP[convertTo]
-              
+
+      let newOriginalName = fileInfo.originalName
+      let mimeType = fileInfo.mimeType
+
+      if (profile.format) {
+        const extension = this.EXTENSION_MAP[profile.format]
+        mimeType = this.MIME_MAP[profile.format]
+        newOriginalName = fileInfo.originalName.replace(/\.[^.]+$/, `.${extension}`)
+      }
         const uploadFile = {
         buffer: processedBuffer,
-        originalname: fileInfo.originalName.replace(/\.[^.]+$/, `.${extension}`),
+        originalname: newOriginalName,
         mimetype: mimeType,
         size: processedBuffer.length
-      }
+        }
+        
       
       const convertedFile = await this.fileService.uploadFile(userId, access, uploadFile)
       this.fileService.deleteFile(fileId, userId)
 
       const resultData = {
         userId,
-        newFileID: convertedFile.id
+        newFileId: convertedFile.id
       }
       
       await this.eventEmitter.emitAsync(PhotoEvent.PHOTO_CONVERTED, resultData);
-    
+          }catch(editError){this.logger.error(`edit is failed ${editError}`)}
     }
 
   private async initializeSharp(): Promise<void> {

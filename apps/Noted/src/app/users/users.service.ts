@@ -17,8 +17,8 @@ import { PhotoConversionFailedEvent, PhotoEvent } from "../shared/events/photo-e
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 
 import { error } from "console";
-import { PhotoConvertFormat, PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
-import { OPTIMIZATION_PROFILES } from "../shared/photo-profiles";
+import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
+import { PHOTO_PROFILES } from "../shared/photo-profiles";
 
 @Injectable()
 export class UsersService {
@@ -35,22 +35,11 @@ async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: strin
     const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file);
     this.logger.log(`updateAvatar() | File uploaded: ${savedFile.id}, mimetype: ${file.mimetype}, size: ${file.size}`);
 
-    // if (file.mimetype === "image/jpeg") {
-    //   this.logger.log(`updateAvatar() |  Photo ${savedFile.id} sending to resize queue`);
-    //   await this.queueService.sendToResizeConvert(savedFile.id, userId, FileAccess.PUBLIC);
-    // } else if (file.mimetype === "image/heic" || file.mimetype === "image/heif") {
-    //   this.logger.log(`updateAvatar() | Photo ${savedFile.id} sending to HEIC convert queue`);
-    //   await this.queueService.sendToHeicConvert(savedFile.id, userId, FileAccess.PUBLIC);
-    // } else {
-    //   this.logger.error(`updateAvatar() | Photo ${savedFile.id} upload the undefined format file`);
-    //   throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST)
-    // } 
     const data: PhotoJobData = {
       fileId: savedFile.id,
       userId: userId,
       access: FileAccess.PUBLIC,
-      convertTo: PhotoConvertFormat.WEBP,
-      resizeTo: OPTIMIZATION_PROFILES.AVATAR_MINI
+      profile: PHOTO_PROFILES.AVATAR_MINI
     }
     this.queueService.sendToPhotoEditor(data)
   } catch (error) {

@@ -20,8 +20,7 @@ export class PhotoQueueService {
       fileId: data.fileId,
       userId: data.userId,
       access: data.access,
-      convertTo: data.convertTo,
-      resizeTo: data.resizeTo,
+      profile: data.profile
     });
 
   }
