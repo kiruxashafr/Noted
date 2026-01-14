@@ -3,18 +3,34 @@ import { Job } from "bullmq";
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { FilesService } from "../files/files.service";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { PhotoConversionFailedEvent, PhotoEvent } from "../shared/events/types";
-import { FilesExtension } from "@noted/types";
 import { PhotoJobData } from "./interface/photo-job-data.interface";
+import { PhotoEvent } from "../shared/events/photo-event.types";
+
 
 @Processor("photo-editor")
 @Injectable()
 export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
     private readonly logger = new Logger(PhotoEditorProcessor.name);
-    private readonly TARGET_SIZE = 180;
-    private readonly MIMETYPE = "image/jpeg";
-    private readonly QUALITY = 80;
     private sharp
+    private readonly EXTENSION_MAP: Record<string, string> = {
+        'jpeg': 'jpg',
+        'png': 'png',
+        'webp': 'webp',
+        'heif': 'heif',
+        'gif': 'gif',
+        'tiff': 'tiff',
+        'avif': 'avif'
+    };
+
+    private readonly MIME_MAP: Record<string, string> = {
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'webp': 'image/webp',
+        'heif': 'image/heif',
+        'gif': 'image/gif',
+        'tiff': 'image/tiff',
+        'avif': 'image/avif'
+    };
 
     constructor(
         private eventEmitter: EventEmitter2,
@@ -27,7 +43,7 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
     }
 
     async process(job: Job<PhotoJobData>): Promise<void> {
-        const { fileId, userId, access, convertTo, resizeTo, compressTo } = job.data;
+        const { fileId, userId, access, convertTo, resizeTo } = job.data;
 
         const originalBuffer = await this.fileService.getFileBuffer(fileId, userId)
         const fileInfo = await this.fileService.findOne(fileId, userId)
@@ -36,25 +52,25 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
 
         if (convertTo) {
             processor = processor
-                .toFormat(convertTo)
+              .toFormat(convertTo)
+          this.logger.log(`photo ${fileId} convert to ${convertTo}`)
         }
         if (resizeTo) {
             processor = processor
                 .resize(resizeTo.width, resizeTo.height, {
                     fit: this.sharp.fit.inside,
                     withoutEnlargement: true
-            })
-        }
-        if (compressTo.quality) {
-
-            // processor = processor
+                })
+        this.logger.log(`photo ${fileId} resize to ${resizeTo}`)
         }
         const processedBuffer = await processor.toBuffer();
-
-              const uploadFile = {
+        const extension = this.EXTENSION_MAP[convertTo]
+        const mimeType = this.MIME_MAP[convertTo]
+              
+        const uploadFile = {
         buffer: processedBuffer,
-        originalname: fileInfo.originalName.replace(/\.[^.]+$/, '.jpg'),
-        mimetype: this.MIMETYPE,
+        originalname: fileInfo.originalName.replace(/\.[^.]+$/, `.${extension}`),
+        mimetype: mimeType,
         size: processedBuffer.length
       }
       
@@ -69,9 +85,6 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
       await this.eventEmitter.emitAsync(PhotoEvent.PHOTO_CONVERTED, resultData);
     
     }
-
-
-
 
   private async initializeSharp(): Promise<void> {
     try {

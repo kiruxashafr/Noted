@@ -1,21 +1,24 @@
-import { FilesExtension } from "@noted/types";
 import { FileAccess } from "generated/prisma/enums";
 
 interface ResizeOptions {
   width: number,
   height: number
 }
-
-interface CompressOptions {
-  quality?: number;
-  maxSizeKB?: number; 
+export enum PhotoConvertFormat {
+    JPEG = 'jpeg',
+    PNG = 'png',
+    WEBP = 'webp',
+    HEIF = 'heif',
+    GIF = 'gif',
+    TIFF = 'tiff',
+    AVIF = 'avif'
 }
+
 
 export interface PhotoJobData {
   fileId: string;
   userId: string;
   access: FileAccess;
-  convertTo?: FilesExtension;
+  convertTo?: PhotoConvertFormat;
   resizeTo?: ResizeOptions;
-  compressTo?: CompressOptions;
 }

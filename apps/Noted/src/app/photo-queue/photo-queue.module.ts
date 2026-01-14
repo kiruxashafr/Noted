@@ -1,11 +1,9 @@
 import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { PhotoConvertProcessor } from "./convert-photo.processor";
 import { PrismaModule } from "../prisma/prisma.module";
 import { FilesModule } from "../files/files.module";
 import { PhotoQueueService } from "./photo-queue.service";
-import { PhotoResizeProcessor } from "./resize-photo.processor";
 import { PhotoEditorProcessor } from "./photo-editor.processor";
 
 @Module({
@@ -14,30 +12,14 @@ import { PhotoEditorProcessor } from "./photo-editor.processor";
     PrismaModule,
     FilesModule,
     BullModule.registerQueueAsync({
-      name: "photo-conversion",
-      useFactory: (config: ConfigService) => ({
-        name: config.getOrThrow("CONVERSION_QUEUE_NAME")
-      }),
-      inject: [ConfigService],
-    }),
-    BullModule.registerQueueAsync({
-      name: "photo-resize",
-      useFactory: (config: ConfigService) => ({
-        name: config.getOrThrow("RESIZE_QUEUE_NAME")
-      }),
-      inject: [ConfigService],
-    }),
-    BullModule.registerQueueAsync({
       name: "photo-editor",
       useFactory: (config: ConfigService) => ({
-        name: config.getOrThrow("EDITOR_QUEUE_NAME")
+        name: config.getOrThrow("PHOTO_EDITOR_QUEUE_NAME")
       }),
       inject: [ConfigService],
     }),
   ],
   providers: [
-    PhotoResizeProcessor,
-    PhotoConvertProcessor,
     PhotoEditorProcessor,
     PhotoQueueService
   ],

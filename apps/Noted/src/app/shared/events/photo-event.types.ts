@@ -1,4 +1,3 @@
-// events/avatar.events.ts
 export enum PhotoEvent {
   PHOTO_CONVERTED = 'avatar.converted',
   PHOTO_CONVERSION_FAILED = 'avatar.conversion.failed',
