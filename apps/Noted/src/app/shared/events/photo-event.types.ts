@@ -1,18 +1,16 @@
 export enum PhotoEvent {
-  PHOTO_CONVERTED = 'avatar.converted',
-  PHOTO_CONVERSION_FAILED = 'avatar.conversion.failed',
+  PHOTO_CONVERTED = "avatar.converted",
+  PHOTO_CONVERSION_FAILED = "avatar.conversion.failed",
 }
 
 export interface PhotoConvertedEvent {
   userId: string;
-  jobId: string;
   originalFileId: string;
   newFileId: string;
 }
 
 export interface PhotoConversionFailedEvent {
   userId: string;
-  jobId: string;
   fileId: string;
   error: string;
 }

@@ -6,7 +6,7 @@ import { AuthModule } from "./auth/auth.module";
 import { FilesModule } from "./files/files.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { PhotoQueueModule } from "./photo-queue/photo-queue.module";
-import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EventEmitterModule } from "@nestjs/event-emitter";
 import { BullModule } from "@nestjs/bullmq";
 
 @Module({
@@ -24,13 +24,13 @@ import { BullModule } from "@nestjs/bullmq";
         connection: {
           host: conf.getOrThrow("REDIS_HOST"),
           port: conf.getOrThrow("REDIS_PORT"),
-          password: conf.getOrThrow("REDIS_PASSWORD")
+          password: conf.getOrThrow("REDIS_PASSWORD"),
         },
       }),
       inject: [ConfigService],
-    })
+    }),
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule  {}
+export class AppModule {}

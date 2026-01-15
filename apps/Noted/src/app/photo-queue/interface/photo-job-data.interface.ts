@@ -1,11 +1,10 @@
 import { FileAccess } from "generated/prisma/enums";
 
 export interface PhotoProfile {
-  format?: string,
-  width?: number,
-  height?: number
+  format?: string;
+  width?: number;
+  height?: number;
 }
-
 
 export interface PhotoJobData {
   fileId: string;

@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Logger} from "@nestjs/common";
+import { HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { ApiException } from "@noted/common/errors/api-exception";
@@ -10,15 +10,14 @@ import { UpdateUserDto } from "./dto/user-update.dto";
 import { FileAccess } from "generated/prisma/enums";
 import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
-import { UploadAvatarDto } from "./dto/upload-avatar.dto";
-import { PhotoEditResult } from "../photo-queue/interface/photo-editor-result.interface";
 import { OnEvent } from "@nestjs/event-emitter";
-import { PhotoConversionFailedEvent, PhotoEvent } from "../shared/events/photo-event.types";
+import { PhotoConversionFailedEvent, PhotoConvertedEvent, PhotoEvent } from "../shared/events/photo-event.types";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 
 import { error } from "console";
 import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
 import { PHOTO_PROFILES } from "../shared/photo-profiles";
+import { UserAvatarKeys } from "@noted/types";
 
 @Injectable()
 export class UsersService {
@@ -27,38 +26,54 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly filesService: FilesService,
-    private readonly queueService: PhotoQueueService
+    private readonly queueService: PhotoQueueService,
   ) {}
 
-async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
-  try {
-    const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file);
-    this.logger.log(`updateAvatar() | Original file uploaded: ${savedFile.id}, mimetype: ${file.mimetype}, size: ${file.size}`);
+  async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
+    try {
+      const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file);
+      this.logger.log(
+        `updateAvatar() | Original file uploaded: ${savedFile.id}, mimetype: ${file.mimetype}, size: ${file.size}`,
+      );
 
-    const data: PhotoJobData = {
-      fileId: savedFile.id,
-      userId: userId,
-      access: FileAccess.PUBLIC,
-      profile: PHOTO_PROFILES.AVATAR_MINI
+      const data: PhotoJobData = {
+        fileId: savedFile.id,
+        userId: userId,
+        access: FileAccess.PUBLIC,
+        profile: PHOTO_PROFILES.AVATAR_MINI,
+      };
+      this.queueService.sendToPhotoEditor(data);
+    } catch (error) {
+      this.logger.error(`updateAvatar() | Failed to update avatar: ${error.message}`, error.stack);
+      throw error;
     }
-    this.queueService.sendToPhotoEditor(data)
-  } catch (error) {
-    this.logger.error(`updateAvatar() | Failed to update avatar: ${error.message}`, error.stack);
-    throw error;
   }
-}
-
 
   @OnEvent(PhotoEvent.PHOTO_CONVERTED)
-  async handleAvatarConverted(event: PhotoEditResult) {
+  async handleAvatarConverted(event: PhotoConvertedEvent) {
     try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: event.userId },
+        select: { avatars: true },
+      });
+
+      const currentAvatars = (user?.avatars as object) || {};
+      const updatedAvatar = {
+        ...currentAvatars,
+        [UserAvatarKeys.ORIGINAL]: event.originalFileId,
+        [UserAvatarKeys.MINI_AVATAR]: event.newFileId,
+      };
       await this.prisma.user.update({
         where: { id: event.userId },
-        data: { avatarFileId: event.newFileId }
-      })
-      this.logger.log(`handleAvatarConverted() | Avatar updated for user ${event.userId} with new file ${event.newFileId}`);
-    }
-    catch (error) {
+        data: {
+          avatars: updatedAvatar,
+        },
+      });
+
+      this.logger.log(
+        `handleAvatarConverted() | Avatar updated for user ${event.userId} with new file ${event.newFileId}`,
+      );
+    } catch (error) {
       this.logger.error(`Avatar processing error for user ${event.userId}:`, error);
     }
   }
@@ -66,46 +81,7 @@ async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: strin
   @OnEvent(PhotoEvent.PHOTO_CONVERSION_FAILED)
   async handleAvatarConversionFail(event: PhotoConversionFailedEvent) {
     this.logger.error(`handleAvatarConversionFail() | heic convert fail for user ${event.userId}`);
-    throw new error;
-    }
-
-  private async uploadAvatar(dto: UploadAvatarDto) {
-    const { userId, buffer, newName, mimeType } = dto;
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
-      }
-
-      const fileData = {
-        buffer: buffer,
-        originalname: newName,
-        mimetype: mimeType,
-        size: buffer.length,
-      };
-
-      const uploadResult = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, fileData);
-
-      try {
-        await this.filesService.deleteFile(user.avatarFileId, userId);
-      } catch (error) {
-        this.logger.warn(`user ${userId}avatar delete failed ${error}`);
-      }
-
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          avatarFileId: uploadResult.id,
-        },
-      });
-
-      this.logger.log(`✅ Avatar updated for user ${userId}`);
-    } catch (error) {
-      this.logger.error(`Failed to update avatar for user ${userId}:`, error.message);
-    }
+    throw new error();
   }
 
   async updateUser(userId: string, dto: UpdateUserDto) {

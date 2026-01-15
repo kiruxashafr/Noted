@@ -14,15 +14,12 @@ import { PhotoEditorProcessor } from "./photo-editor.processor";
     BullModule.registerQueueAsync({
       name: "photo-editor",
       useFactory: (config: ConfigService) => ({
-        name: config.getOrThrow("PHOTO_EDITOR_QUEUE_NAME")
+        name: config.getOrThrow("PHOTO_EDITOR_QUEUE_NAME"),
       }),
       inject: [ConfigService],
     }),
   ],
-  providers: [
-    PhotoEditorProcessor,
-    PhotoQueueService
-  ],
+  providers: [PhotoEditorProcessor, PhotoQueueService],
   exports: [BullModule, PhotoQueueService],
 })
 export class PhotoQueueModule {}

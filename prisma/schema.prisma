@@ -20,11 +20,12 @@ enum FileAccess {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  avatars   Json?    @map("avatars")
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+  name     String
+  avatars  Json?  @map("avatars") /// @type {UserAvatar}
+
   createdAt DateTime @default(now()) @map("created_at")
 
   plan  UserPlan    @default(FREE)

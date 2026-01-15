@@ -3,3 +3,8 @@ export interface UpdateUserRequest {
   email?: string;
   password?: string;
 }
+
+export enum UserAvatarKeys {
+  ORIGINAL = "original",
+  MINI_AVATAR = "mini_avatar",
+}

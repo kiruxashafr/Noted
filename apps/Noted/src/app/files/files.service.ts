@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Logger, OnModuleInit} from "@nestjs/common";
+import { HttpStatus, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { v4 as uuid } from "uuid";
 import { Upload } from "@aws-sdk/lib-storage";
 import { ApiException } from "@noted/common/errors/api-exception";
@@ -97,14 +97,14 @@ export class FilesService implements OnModuleInit {
       return dto;
     } catch (error: unknown) {
       this.logger.error(`upload() | DB Save Failed. Cleaning up S3... | key=${fileKey}`, (error as Error).stack);
-        try {
-      await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: fileKey }));
-      this.logger.log(`upload() | Cleanup successful | key=${fileKey}`);
-    } catch (cleanupError) {
-      this.logger.error(`upload() | CRITICAL: Failed to cleanup S3 after DB error | key=${fileKey}`, cleanupError);
-        }
+      try {
+        await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: fileKey }));
+        this.logger.log(`upload() | Cleanup successful | key=${fileKey}`);
+      } catch (cleanupError) {
+        this.logger.error(`upload() | CRITICAL: Failed to cleanup S3 after DB error | key=${fileKey}`, cleanupError);
+      }
       if (error instanceof ApiException) throw error;
-      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST)
+      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -146,12 +146,9 @@ export class FilesService implements OnModuleInit {
     if (!file) {
       throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
-    if (file.size > 20 * 1024 * 1024) { 
-  throw new ApiException(
-    ErrorCodes.FILE_TOO_LARGE, 
-    HttpStatus.PAYLOAD_TOO_LARGE,
-  );
-}
+    if (file.size > 20 * 1024 * 1024) {
+      throw new ApiException(ErrorCodes.FILE_TOO_LARGE, HttpStatus.PAYLOAD_TOO_LARGE);
+    }
     this.checkAccess(file, userId);
     try {
       const command = new GetObjectCommand({
@@ -166,14 +163,12 @@ export class FilesService implements OnModuleInit {
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
-      return  Buffer.concat(chunks)
-      ;
+      return Buffer.concat(chunks);
     } catch (error) {
       this.logger.error(`getFileBuffer() | S3 Error for id=${fileId}`, error);
       throw new ApiException(ErrorCodes.FILE_RETRIEVAL_FAILED, HttpStatus.BAD_REQUEST);
     }
   }
-
 
   async deleteFile(fileId: string, userId: string) {
     const file = await this.prisma.mediaFile.findUnique({
@@ -256,8 +251,9 @@ export class FilesService implements OnModuleInit {
     if (newFileSize > available) {
       const limitMb = Math.round(limitBytes / 1024 / 1024);
       const usedMb = Math.round(usedBytes / 1024 / 1024);
-      throw new ApiException(ErrorCodes.PAILOAD_TOO_LARGE, HttpStatus.PAYLOAD_TOO_LARGE,
-        [`Storage quota exceeded. Limit: ${limitMb}MB, Used: ${usedMb}MB`])
+      throw new ApiException(ErrorCodes.PAILOAD_TOO_LARGE, HttpStatus.PAYLOAD_TOO_LARGE, [
+        `Storage quota exceeded. Limit: ${limitMb}MB, Used: ${usedMb}MB`,
+      ]);
     }
   }
 
