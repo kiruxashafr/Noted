@@ -33,7 +33,7 @@ export class UsersService {
 async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
   try {
     const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file);
-    this.logger.log(`updateAvatar() | File uploaded: ${savedFile.id}, mimetype: ${file.mimetype}, size: ${file.size}`);
+    this.logger.log(`updateAvatar() | Original file uploaded: ${savedFile.id}, mimetype: ${file.mimetype}, size: ${file.size}`);
 
     const data: PhotoJobData = {
       fileId: savedFile.id,

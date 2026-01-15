@@ -20,13 +20,12 @@ enum FileAccess {
 }
 
 model User {
-  id           String     @id @default(uuid())
-  email        String     @unique
-  password     String
-  name         String
-  avatarFileId String?    @unique @map("avatar_file_id")
-  avatarFile   MediaFile? @relation("UserAvatar", fields: [avatarFileId], references: [id])
-  createdAt    DateTime   @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatars   Json?    @map("avatars")
+  createdAt DateTime @default(now()) @map("created_at")
 
   plan  UserPlan    @default(FREE)
   files MediaFile[] @relation("UserFiles")
@@ -43,7 +42,6 @@ model MediaFile {
   size         Int
   ownerId      String
   owner        User       @relation("UserFiles", fields: [ownerId], references: [id])
-  userAvatar   User?      @relation("UserAvatar")
   access       FileAccess @default(PRIVATE)
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")

@@ -87,7 +87,6 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
         
       
       const convertedFile = await this.fileService.uploadFile(userId, access, uploadFile)
-      this.fileService.deleteFile(fileId, userId)
 
       const resultData = {
         userId,
