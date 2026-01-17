@@ -1,4 +1,4 @@
-import { HttpStatus } from "@nestjs/common";
+import { HttpStatus, Logger } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { AuthService } from "./auth.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -53,6 +53,15 @@ const mockConfigService = {
   }),
 };
 
+
+const mockLogger = {
+  log: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn(),
+  verbose: jest.fn(),
+};
+
 jest.mock("argon2", () => ({
   hash: jest.fn().mockResolvedValue("hashed-password-123"),
   verify: jest.fn(),
@@ -73,12 +82,18 @@ describe("AuthService", () => {
   let authService: AuthService;
 
   beforeEach(async () => {
+      jest.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
+  jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+  jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
+  jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => {});
+  jest.spyOn(Logger.prototype, 'verbose').mockImplementation(() => {});
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+  { provide: Logger.name, useValue: mockLogger },
       ],
     }).compile();
 

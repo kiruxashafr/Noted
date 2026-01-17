@@ -24,12 +24,12 @@ export class AuthService {
   private readonly jwtAccessTokenTTL: number;
   private readonly jwtRefreshTokenTTL: number;
   private readonly cookieDomain: string;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly logger = new Logger(AuthService.name),
   ) {
     this.accessSecret = this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
     this.refreshSecret = this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
