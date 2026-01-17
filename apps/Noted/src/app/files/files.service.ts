@@ -68,10 +68,7 @@ export class FilesService implements OnModuleInit {
           Bucket: this.bucket,
           Key: fileKey,
           Body: file.buffer,
-          ContentType: file.mimetype,
-          Metadata: {
-            "Original-Filename": file.originalname,
-          },
+          ContentType: file.mimetype
         },
       });
       await upload.done();
