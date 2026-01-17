@@ -68,7 +68,7 @@ export class FilesService implements OnModuleInit {
           Bucket: this.bucket,
           Key: fileKey,
           Body: file.buffer,
-          ContentType: file.mimetype
+          ContentType: file.mimetype,
         },
       });
       await upload.done();
@@ -185,7 +185,7 @@ export class FilesService implements OnModuleInit {
         }),
       );
     } catch {
-      this.logger.warn(`Failed to delete from S3 | key=${file.key}`);
+      this.logger.warn(`deleteFile() | Failed to delete from S3 | key=${file.key}`);
     }
   }
 
@@ -198,7 +198,7 @@ export class FilesService implements OnModuleInit {
     });
 
     if (userFiles.length === 0) {
-      this.logger.log(`User ${userId} has no files to delete`);
+      this.logger.log(`deleteAllUserFiles() | User ${userId} has no files to delete`);
       return { deletedCount: 0 };
     }
 
@@ -222,7 +222,7 @@ export class FilesService implements OnModuleInit {
         );
         if (deleteResult.Errors && deleteResult.Errors.length > 0) {
           deleteResult.Errors.forEach(error => {
-            this.logger.error(`Failed to delete ${error.Key}: ${error.Code} - ${error.Message}`);
+            this.logger.error(`deleteAllUserFiles() | Failed to delete ${error.Key}: ${error.Code} - ${error.Message}`);
           });
         }
 
@@ -234,10 +234,10 @@ export class FilesService implements OnModuleInit {
         where: { ownerId: userId },
       });
 
-      this.logger.log(`Deleted ${totalDeleted} files for user ${userId} from bucket ${bucket}`);
+      this.logger.log(`deleteAllUserFiles() |  Deleted ${totalDeleted} files for user ${userId} from bucket ${bucket}`);
       return { deletedCount: totalDeleted };
     } catch (error) {
-      this.logger.error(`Failed to delete files from S3 for user ${userId}`, error);
+      this.logger.error(`deleteAllUserFiles() | Failed to delete files from S3 for user ${userId}`, error);
       throw error;
     }
   }
@@ -300,7 +300,7 @@ export class FilesService implements OnModuleInit {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.$metadata?.httpStatusCode === 404) {
-        this.logger.log(`Bucket "${this.bucket}" not found. Creating...`);
+        this.logger.log(`ensureBucketExists() | Bucket "${this.bucket}" not found. Creating...`);
         await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }));
 
         const policy = {

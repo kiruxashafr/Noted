@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../prisma/prisma.service";
@@ -29,6 +29,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly logger = new Logger(AuthService.name),
   ) {
     this.accessSecret = this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
     this.refreshSecret = this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
@@ -61,9 +62,10 @@ export class AuthService {
         refreshToken: tokens.refreshToken,
         userId: user.id,
       };
-
+      this.logger.log(`register() | User ${user.id} registered`);
       return toDto(registerData, ReadAuthDto);
     } catch (error) {
+      this.logger.error(`register() | User ${email} register failed with error ${error.message}}`);
       this.handleAccountConstraintError(error);
     }
   }

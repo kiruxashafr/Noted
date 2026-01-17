@@ -33,7 +33,7 @@ export class UsersService {
     try {
       const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file);
       this.logger.log(
-        `updateAvatar() | Original file uploaded: ${savedFile.id}, mimetype: ${file.mimetype}, size: ${file.size}`,
+        `updateAvatar() | Original avatar uploaded for user ${userId} with the new file ${savedFile.id}, mimetype: ${file.mimetype}, size: ${file.size}`,
       );
 
       const data: PhotoJobData = {
@@ -71,10 +71,10 @@ export class UsersService {
       });
 
       this.logger.log(
-        `handleAvatarConverted() | Avatar updated for user ${event.userId} with new file ${event.newFileId}`,
+        `handleAvatarConverted() | Edited avatar updated for user ${event.userId} with new file ${event.newFileId}`,
       );
     } catch (error) {
-      this.logger.error(`Avatar processing error for user ${event.userId}:`, error);
+      this.logger.error(`handleAvatarConverted() | Avatar processing error for user ${event.userId}:`, error);
     }
   }
 
@@ -102,7 +102,7 @@ export class UsersService {
         where: { id: userId },
         data: updateData,
       });
-
+      this.logger.log(`updateUser | User ${userId} update profile`);
       return toDto(updatedUser, ReadUserDto);
     } catch (error) {
       this.handleAccountConstraintError(error);
@@ -120,7 +120,7 @@ export class UsersService {
 
     const result = await this.filesService.deleteAllUserFiles(userId);
     if (result.deletedCount === 0) {
-      this.logger.log("User had no files to delete");
+      this.logger.log("deleteUser() | User had no files to delete");
     }
     await this.prisma.user.delete({
       where: {

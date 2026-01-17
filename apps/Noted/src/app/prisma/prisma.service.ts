@@ -22,7 +22,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
       await this.$queryRaw`SELECT 1`;
     } catch (error) {
-      this.logger.error("Failed to connect to the database", error.message);
+      this.logger.error("Prisma connect | Failed to connect to the database", error.message);
     }
   }
 

@@ -51,7 +51,7 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
 
       if (profile.format) {
         processor = processor.toFormat(profile.format);
-        this.logger.log(`photo ${fileId} convert to ${profile.format}`);
+        this.logger.log(`photoWorker | Photo ${fileId} convert to ${profile.format}`);
       }
 
       if (profile.width || profile.height) {
@@ -59,7 +59,7 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
           fit: this.sharp.fit.inside,
           withoutEnlargement: true,
         });
-        this.logger.log(`photo ${fileId} resize to ...`);
+        this.logger.log(`photoWorker | Photo ${fileId} resize to ...`);
       }
 
       const processedBuffer = await processor.toBuffer();
@@ -89,7 +89,7 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
 
       await this.eventEmitter.emitAsync(PhotoEvent.PHOTO_CONVERTED, resultData);
     } catch (editError) {
-      this.logger.error(`edit is failed ${editError}`);
+      this.logger.error(`photoWorker | Edit is failed ${editError}`);
     }
   }
 
@@ -97,7 +97,7 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
     try {
       this.sharp = require("sharp");
     } catch (error) {
-      this.logger.error(`Failed to initialize sharp: ${error.message}`);
+      this.logger.error(`initializeSharp() | Failed to initialize sharp: ${error.message}`);
     }
   }
 }
