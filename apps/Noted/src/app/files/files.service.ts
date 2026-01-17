@@ -178,7 +178,7 @@ export class FilesService implements OnModuleInit {
       throw new ApiException(ErrorCodes.FILE_ACCESS_DENIED, HttpStatus.FORBIDDEN);
     }
     try {
-      this.s3.send(
+      await this.s3.send(
         new DeleteObjectCommand({
           Bucket: file.bucket,
           Key: file.key,
@@ -186,7 +186,12 @@ export class FilesService implements OnModuleInit {
       );
     } catch {
       this.logger.warn(`deleteFile() | Failed to delete from S3 | key=${file.key}`);
+      throw new ApiException(ErrorCodes.FILE_DELETE_FAILED, HttpStatus.BAD_REQUEST);
     }
+
+    await this.prisma.mediaFile.delete({ where: { id: fileId } });
+
+    this.logger.log(`deleteFile() | Delete file ${fileId} for user ${userId}`);
   }
 
   async deleteAllUserFiles(userId: string) {
