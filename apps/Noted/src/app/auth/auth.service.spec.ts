@@ -53,7 +53,6 @@ const mockConfigService = {
   }),
 };
 
-
 const mockLogger = {
   log: jest.fn(),
   error: jest.fn(),
@@ -82,18 +81,18 @@ describe("AuthService", () => {
   let authService: AuthService;
 
   beforeEach(async () => {
-      jest.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
-  jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-  jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
-  jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => {});
-  jest.spyOn(Logger.prototype, 'verbose').mockImplementation(() => {});
+    jest.spyOn(Logger.prototype, "log").mockImplementation(() => {});
+    jest.spyOn(Logger.prototype, "error").mockImplementation(() => {});
+    jest.spyOn(Logger.prototype, "warn").mockImplementation(() => {});
+    jest.spyOn(Logger.prototype, "debug").mockImplementation(() => {});
+    jest.spyOn(Logger.prototype, "verbose").mockImplementation(() => {});
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
-  { provide: Logger.name, useValue: mockLogger },
+        { provide: Logger.name, useValue: mockLogger },
       ],
     }).compile();
 
