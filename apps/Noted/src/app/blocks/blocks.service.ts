@@ -13,6 +13,8 @@ import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { TextBlockMetaDto } from "./dto/content-payload.dto";
 import { CreatePageDto } from "./dto/create-page.dto";
+import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
+import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 
 @Injectable()
 export class BlocksService {
@@ -22,7 +24,7 @@ export class BlocksService {
     private readonly prisma: PrismaService,
     private readonly filesService: FilesService,
     private readonly queueService: PhotoQueueService,
-  ) {}
+  ) { }
   async createBlock(userId: string, dto: CreateBlockDto) {
     const blockNesting = await this.validateReqBlockNesting(dto);
     await this.validateBlockMeta(dto.blockType, dto.meta);
@@ -72,6 +74,7 @@ export class BlocksService {
           title: true,
         },
       });
+      if(!pages){throw new ApiException(ErrorCodes.FAILED_TO_FIND_PAGE, HttpStatus.BAD_REQUEST)}
 
       const pageTitles = pages.map(page => {
         return {
@@ -82,7 +85,9 @@ export class BlocksService {
 
       return { pageTitles };
     } catch (error) {
-      this.logger.error(`findPageTitle() | ${error}`);
+      if (error instanceof ApiException) throw error
+      this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
+      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST)
     }
   }
 
@@ -103,6 +108,7 @@ export class BlocksService {
               order: dto.order,
             },
           });
+          this.logger.log(`saveBlockByNesting() | user: ${userId} create block: ${block.id}`)
           return block;
         }
         case BlockNesting.TOP: {
@@ -113,11 +119,14 @@ export class BlocksService {
               pageId: dto.pageId,
             },
           });
+          this.logger.log(`saveBlockByNesting() | user: ${userId} create ${blockNesting} block: ${block.id}`)
           return block;
         }
       }
     } catch (error) {
-      this.logger.error(`saveBlockByNesting() | ${error}`);
+      if (error instanceof ApiException) throw error
+      this.logger.error(`saveBlockByNesting() | ${(error as Error).message}`, (error as Error).stack);
+      throw new ApiException(ErrorCodes.FAILED_TO_CREATE_BLOCK, HttpStatus.BAD_REQUEST)
     }
   }
 
@@ -128,14 +137,13 @@ export class BlocksService {
     blockId?: string,
     pageId?: string,
   ) {
-    this.logger.debug(`check access ${userId}`);
     switch (blockNesting) {
       case BlockNesting.CHILD: {
         await this.applyChildAccessCheck(userId, permission, blockId);
         break;
       }
       case BlockNesting.TOP: {
-        await this.applyTopAccessCheck(userId, permission, blockId, pageId);
+        await this.applyTopAccessCheck(userId, permission, pageId);
         break;
       }
       default:
@@ -171,13 +179,14 @@ export class BlocksService {
       }
       return;
     } catch (error) {
-      this.logger.error(`applyChildAccessCheck() | check access child block error ${error.message}`);
-      throw error;
+      if (error instanceof ApiException) throw error;
+      this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
+      throw new ApiException(ErrorCodes.FAILED_TO_CREATE_BLOCK, HttpStatus.BAD_REQUEST);
     }
   }
-  private async applyTopAccessCheck(userId: string, permission: BlockPermission, blockId?: string, pageId?: string) {
-    try {
-      const parentPageForTop = await this.prisma.page.findUnique({
+  private async applyTopAccessCheck(userId: string, permission: BlockPermission, pageId: string) {
+      try{
+    const parentPageForTop = await this.prisma.page.findUnique({
         where: { id: pageId },
       });
       if (parentPageForTop.ownerId == userId) {
@@ -200,10 +209,11 @@ export class BlocksService {
         this.logger.log(`checkAccess() | access denied: user ${userId} to page ${pageId} `);
         throw new ApiException(ErrorCodes.BLOCK_ACCESS_DENIED, HttpStatus.FORBIDDEN);
       }
-      return;
-    } catch (error) {
-      this.logger.error(`applyTopAccessCheck() | check access top block error ${error.message}`);
-      throw error;
+    return;
+        } catch (error) {
+      if (error instanceof ApiException) throw error;
+      this.logger.error(`applyTopAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
+      throw new ApiException(ErrorCodes.FAILED_TO_CREATE_BLOCK, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -217,7 +227,7 @@ export class BlocksService {
 
       return parentPage;
     } catch (error) {
-      this.logger.error(`findParentPage() | ${error}`);
+      this.logger.error(`findParentPage() | find parent page error ${error}`);
     }
   }
 
@@ -275,7 +285,9 @@ export class BlocksService {
         where: { id: result[0].id },
       });
     } catch (error) {
-      this.logger.error(`findTopBlock() | ${error}`);
+      if (error instanceof ApiException) throw error;
+      this.logger.error(`findTopBlock() | ${(error as Error).message}`, (error as Error).stack);
+      throw new ApiException(ErrorCodes.FAILED_TO_FIND_BLOCK, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -323,4 +335,17 @@ export class BlocksService {
     }
     throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
   }
+
+    private handleBlockConstraintError(error: unknown): never {
+      if (!isPrismaConstraintError(error)) {
+        throw new ApiException(ErrorCodes.REGISTRATION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+  
+      if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "Block") {
+        throw new ApiException(ErrorCodes.EMAIL_ALREADY_EXISTS, HttpStatus.CONFLICT);
+      }
+
+  
+      throw new ApiException(ErrorCodes.DUPLICATE_VALUE, HttpStatus.CONFLICT);
+    }
 }
