@@ -2,7 +2,7 @@ import { BlockType } from "generated/prisma/enums";
 
 export interface CreateBlockRequest {
   blockType: BlockType;
-  meta?: unknown;
+  meta: unknown;
   parentId?: string;
   pageId?: string;
   order?: number;
@@ -19,7 +19,7 @@ export interface TextMetaContent {
 }
 
 export enum TextPageKeys {
-  JSON = "json",
+  Json = "json",
 }
 
 export enum BlockNesting {
@@ -27,4 +27,4 @@ export enum BlockNesting {
   CHILD,
 }
 
-export type BlockMeta =  TextMetaContent;
+export type BlockMeta = TextMetaContent;

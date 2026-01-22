@@ -2,7 +2,7 @@ import { BadRequestException, HttpStatus, Injectable, Logger } from "@nestjs/com
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
-import { CreateBlockDto} from "./dto/create-block.dto";
+import { CreateBlockDto } from "./dto/create-block.dto";
 import { BlockMeta, BlockNesting, TextMetaContent, TextPageKeys } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Prisma } from "generated/prisma/client";
@@ -11,7 +11,7 @@ import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
-import {  TextBlockMetaDto } from "./dto/content-payload.dto";
+import { TextBlockMetaDto } from "./dto/content-payload.dto";
 import { CreatePageDto } from "./dto/create-page.dto";
 
 @Injectable()
@@ -24,11 +24,8 @@ export class BlocksService {
     private readonly queueService: PhotoQueueService,
   ) {}
   async createBlock(userId: string, dto: CreateBlockDto) {
-    this.logger.debug(`pageId ${dto.pageId} parentId ${dto.parentId} meta ${dto.meta}, type ${dto.blockType} order ${dto.order}`)
     const blockNesting = await this.validateReqBlockNesting(dto);
-    if (dto.meta) {
-      await this.validateBlockMeta(dto.blockType, dto.meta);
-    }
+    await this.validateBlockMeta(dto.blockType, dto.meta);
     await this.checkAccess(userId, blockNesting, BlockPermission.EDIT, dto.parentId, dto.pageId);
     switch (dto.blockType) {
       case BlockType.TEXT:
@@ -38,21 +35,21 @@ export class BlocksService {
     }
   }
   async createPage(userId: string, dto: CreatePageDto) {
-
     const page = await this.prisma.page.create({
       data: {
         ownerId: userId,
-        title: dto.title
+        title: dto.title,
       },
     });
     this.logger.log(`createPageBlock() | user ${userId} create page ${page.id}`);
+    return page;
   }
 
   async createTextBlock(userId: string, dto: CreateBlockDto, blockNesting: BlockNesting) {
     const textBlockMeta = dto.meta as TextMetaContent;
 
     const meta: TextMetaContent = {
-      [TextPageKeys.JSON]: textBlockMeta.json,
+      [TextPageKeys.Json]: textBlockMeta.json,
     };
     const createBlock: CreateBlockDto = {
       blockType: dto.blockType,
@@ -65,54 +62,62 @@ export class BlocksService {
   }
 
   async findPageTitle(userId: string) {
-    const pages = await this.prisma.page.findMany({
-      where: {
-        ownerId: userId,
-      },
-      select: {
-        id: true,
-        title: true,
-      },
-    });
+    try {
+      const pages = await this.prisma.page.findMany({
+        where: {
+          ownerId: userId,
+        },
+        select: {
+          id: true,
+          title: true,
+        },
+      });
 
-    const pageTitles = pages.map(page => {
-      return {
-        id: page.id,
-        title: page.title,
-      };
-    });
+      const pageTitles = pages.map(page => {
+        return {
+          id: page.id,
+          title: page.title,
+        };
+      });
 
-    return { pageTitles };
+      return { pageTitles };
+    } catch (error) {
+      this.logger.error(`findPageTitle() | ${error}`);
+    }
   }
 
   private async saveBlockByNesting(userId: string, blockNesting: BlockNesting, dto: CreateBlockDto) {
-    switch (blockNesting) {
-      case BlockNesting.CHILD: {
-        const block = await this.prisma.block.create({
-          data: {
-            type: dto.blockType,
-            meta: dto.meta as unknown as Prisma.InputJsonValue,
-          },
-        });
-        await this.prisma.blockRelation.create({
-          data: {
-            fromId: dto.parentId,
-            toId: block.id,
-            order: dto.order,
-          },
-        });
-        return block;
+    try {
+      switch (blockNesting) {
+        case BlockNesting.CHILD: {
+          const block = await this.prisma.block.create({
+            data: {
+              type: dto.blockType,
+              meta: dto.meta as unknown as Prisma.InputJsonValue,
+            },
+          });
+          await this.prisma.blockRelation.create({
+            data: {
+              fromId: dto.parentId,
+              toId: block.id,
+              order: dto.order,
+            },
+          });
+          return block;
+        }
+        case BlockNesting.TOP: {
+          const block = await this.prisma.block.create({
+            data: {
+              type: dto.blockType,
+              meta: dto.meta as unknown as Prisma.InputJsonValue,
+              pageId: dto.pageId,
+            },
+          });
+          return block;
+        }
       }
-      case BlockNesting.TOP: {
-        const block = await this.prisma.block.create({
-          data: {
-            type: dto.blockType,
-            meta: dto.meta as unknown as Prisma.InputJsonValue,
-            pageId: dto.pageId,
-          },
-        });
-        return block;
-      }
+    } catch (error) {
+      this.logger.error(`saveBlockByNesting() | ${error}`);
     }
   }
 
@@ -123,6 +128,7 @@ export class BlocksService {
     blockId?: string,
     pageId?: string,
   ) {
+    this.logger.debug(`check access ${userId}`);
     switch (blockNesting) {
       case BlockNesting.CHILD: {
         await this.applyChildAccessCheck(userId, permission, blockId);
@@ -130,101 +136,106 @@ export class BlocksService {
       }
       case BlockNesting.TOP: {
         await this.applyTopAccessCheck(userId, permission, blockId, pageId);
-        break; 
+        break;
       }
       default:
         return;
     }
-}
-
-  private async applyChildAccessCheck(
-    userId: string,
-    permission: BlockPermission,
-    blockId?: string,) {
-    const parentPage = await this.findParentPage(blockId);
-
-        if (parentPage.ownerId == userId) {
-          return;
-        }
-
-        const accessBlock = await this.prisma.pageAccess.findUnique({
-          where: {
-            pageId_userId: {
-              pageId: parentPage.id,
-              userId: userId,
-            },
-          },
-        });
-
-        if (
-          !accessBlock ||
-          !accessBlock.isActive ||
-          permission !== accessBlock.permission ||
-          (accessBlock.expiresAt && accessBlock.expiresAt < new Date())
-        ) {
-          this.logger.log(`checkAccess() | access denied: user ${userId} to block ${blockId} `);
-          throw new ApiException(ErrorCodes.BLOCK_ACCESS_DENIED, HttpStatus.FORBIDDEN);
-        }
-    return
   }
-  private async applyTopAccessCheck(
-    userId: string,
-    permission: BlockPermission,
-    blockId?: string,
-    pageId?: string,
-  ) {
-     const parentPageForTop = await this.prisma.page.findUnique({
-          where: { id: pageId },
-        });
-        if (parentPageForTop.ownerId == userId) {
-          return;
-        }
-        const accessBlockForTop = await this.prisma.pageAccess.findUnique({
-          where: {
-            pageId_userId: {
-              pageId: pageId,
-              userId: userId,
-            },
-          },
-        });
-        if (
-          !accessBlockForTop ||
-          !accessBlockForTop.isActive ||
-          permission !== accessBlockForTop.permission ||
-          (accessBlockForTop.expiresAt && accessBlockForTop.expiresAt < new Date())
-        ) {
-          this.logger.log(`checkAccess() | access denied: user ${userId} to page ${pageId} `);
-          throw new ApiException(ErrorCodes.BLOCK_ACCESS_DENIED, HttpStatus.FORBIDDEN);
-        }
+
+  private async applyChildAccessCheck(userId: string, permission: BlockPermission, blockId?: string) {
+    try {
+      const parentPage = await this.findParentPage(blockId);
+
+      if (parentPage.ownerId == userId) {
         return;
+      }
+
+      const accessBlock = await this.prisma.pageAccess.findUnique({
+        where: {
+          pageId_userId: {
+            pageId: parentPage.id,
+            userId: userId,
+          },
+        },
+      });
+
+      if (
+        !accessBlock ||
+        !accessBlock.isActive ||
+        permission !== accessBlock.permission ||
+        (accessBlock.expiresAt && accessBlock.expiresAt < new Date())
+      ) {
+        this.logger.log(`checkAccess() | access denied: user ${userId} to block ${blockId} `);
+        throw new ApiException(ErrorCodes.BLOCK_ACCESS_DENIED, HttpStatus.FORBIDDEN);
+      }
+      return;
+    } catch (error) {
+      this.logger.error(`applyChildAccessCheck() | check access child block error ${error.message}`);
+      throw error;
+    }
+  }
+  private async applyTopAccessCheck(userId: string, permission: BlockPermission, blockId?: string, pageId?: string) {
+    try {
+      const parentPageForTop = await this.prisma.page.findUnique({
+        where: { id: pageId },
+      });
+      if (parentPageForTop.ownerId == userId) {
+        return;
+      }
+      const accessBlockForTop = await this.prisma.pageAccess.findUnique({
+        where: {
+          pageId_userId: {
+            pageId: pageId,
+            userId: userId,
+          },
+        },
+      });
+      if (
+        !accessBlockForTop ||
+        !accessBlockForTop.isActive ||
+        permission !== accessBlockForTop.permission ||
+        (accessBlockForTop.expiresAt && accessBlockForTop.expiresAt < new Date())
+      ) {
+        this.logger.log(`checkAccess() | access denied: user ${userId} to page ${pageId} `);
+        throw new ApiException(ErrorCodes.BLOCK_ACCESS_DENIED, HttpStatus.FORBIDDEN);
+      }
+      return;
+    } catch (error) {
+      this.logger.error(`applyTopAccessCheck() | check access top block error ${error.message}`);
+      throw error;
+    }
   }
 
   private async findParentPage(blockId: string) {
-    const topBlock = await this.findTopBlock(blockId);
+    try {
+      const topBlock = await this.findTopBlock(blockId);
 
-    const parentPage = await this.prisma.page.findUnique({
-      where: { id: topBlock.pageId },
-    });
+      const parentPage = await this.prisma.page.findUnique({
+        where: { id: topBlock.pageId },
+      });
 
-    return parentPage;
+      return parentPage;
+    } catch (error) {
+      this.logger.error(`findParentPage() | ${error}`);
+    }
   }
 
+  private async findTopBlock(blockId: string) {
+    try {
+      const block = await this.prisma.block.findUnique({
+        where: { id: blockId },
+      });
 
+      if (!block) {
+        throw new ApiException(ErrorCodes.BLOCK_NOT_FOUND, HttpStatus.NOT_FOUND);
+      }
 
-private async findTopBlock(blockId: string) {
-  const block = await this.prisma.block.findUnique({
-    where: { id: blockId }
-  });
+      if (block.pageId) {
+        return block;
+      }
 
-  if (!block) {
-    throw new ApiException(ErrorCodes.BLOCK_NOT_FOUND, HttpStatus.NOT_FOUND);
-  }
-
-  if (block.pageId) {
-    return block;
-  }
-
-  const result = await this.prisma.$queryRaw<Array<{id: string}>>`
+      const result = await this.prisma.$queryRaw<Array<{ id: string }>>`
     WITH RECURSIVE block_hierarchy AS (
       SELECT 
         b.id,
@@ -255,19 +266,25 @@ private async findTopBlock(blockId: string) {
     LIMIT 1;
   `;
 
-  if (!result || result.length === 0) {
-    this.logger.error(`findTopBlock: No parent block with page found for block ${blockId}`);
-    throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+      if (!result || result.length === 0) {
+        this.logger.error(`findTopBlock: No parent block with page found for block ${blockId}`);
+        throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+      }
+
+      return this.prisma.block.findUnique({
+        where: { id: result[0].id },
+      });
+    } catch (error) {
+      this.logger.error(`findTopBlock() | ${error}`);
+    }
   }
 
-  return this.prisma.block.findUnique({
-    where: { id: result[0].id }
-  });
-}
-  
   private async validateBlockMeta(type: BlockType, content: BlockMeta): Promise<void> {
     let dtoInstance: object;
-
+    if (!content) {
+      this.logger.debug("Empty meta, skipping validation");
+      return;
+    }
     switch (type) {
       case BlockType.TEXT:
         dtoInstance = plainToInstance(TextBlockMetaDto, content);
@@ -284,16 +301,18 @@ private async findTopBlock(blockId: string) {
       this.logger.warn(`Validation failed for block type ${type}: ${messages}`);
       throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
     }
-    return
+    return;
   }
 
-  private async validateReqBlockNesting(dto: CreateBlockDto) {
+  private async validateReqBlockNesting(dto: CreateBlockDto): Promise<BlockNesting> {
     if (!dto.parentId && !dto.pageId) {
-      this.logger.error(`create block error | request hasnt parentId or pageId`);
+      this.logger.error(`validateReqBlockNesting() | create block error request hasnt parentId or pageId`);
       throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
     }
     if (dto.parentId && dto.pageId) {
-      this.logger.error(`create block error | request should has parentId or pageId not together`);
+      this.logger.error(
+        `validateReqBlockNesting() | create block error request should has parentId or pageId not together`,
+      );
       throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
     }
     if (dto.pageId) {
@@ -302,5 +321,6 @@ private async findTopBlock(blockId: string) {
     if (dto.parentId) {
       return BlockNesting.CHILD;
     }
+    throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
   }
 }
