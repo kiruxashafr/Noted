@@ -6,7 +6,7 @@ jest.mock("argon2", () => ({
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
-import { UserPlan } from "generated/prisma/enums";
+import { FileAccess, UserPlan } from "generated/prisma/enums";
 import { UsersService } from "../users/users.service";
 import { Test, TestingModule } from "@nestjs/testing";
 import { UpdateUserDto } from "./dto/user-update.dto";
@@ -16,6 +16,7 @@ import * as argon2 from "argon2";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import { HttpStatus } from "@nestjs/common";
+import { ReadFileDto } from "../files/dto/read-file.dto";
 describe("UserService", () => {
   let userService: UsersService;
   let mockPrisma: {
@@ -194,4 +195,27 @@ describe("UserService", () => {
       });
     });
   });
+  describe("updateAvatar", () => {
+    it("should call uploadFile", async () => {
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalName: "avatar.heif",
+        mimetype: "image/heif",
+        size: 10000
+      }
+      const mockUserId = "user-123"
+
+    const mockSavedFile: ReadFileDto = {
+      id: 'file-456',
+      url: 'https://storage.example.com/file.jpg',
+      originalName: 'avatar_uploaded.jpg',
+      mimeType: 'image/jpeg',
+      access: FileAccess.PUBLIC,
+      size: 1024,
+      key: 'users/user-123/avatar.jpg',
+      ownerId: mockUserId,
+      createdAt: new Date(),
+    };
+    })
+  })
 });
