@@ -17,6 +17,10 @@ import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import { HttpStatus } from "@nestjs/common";
 import { ReadFileDto } from "../files/dto/read-file.dto";
+import { PHOTO_PROFILES } from "../shared/photo-profiles";
+import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
+import { PhotoConvertedEvent } from "../shared/events/photo-event.types";
+import { UserAvatarKeys } from "@noted/types";
 describe("UserService", () => {
   let userService: UsersService;
   let mockPrisma: {
@@ -196,26 +200,70 @@ describe("UserService", () => {
     });
   });
   describe("updateAvatar", () => {
-    it("should call uploadFile", async () => {
+    it("should call uploadFile and sendToPhotoEditor", async () => {
       const mockFile = {
-        buffer: Buffer.from('test'),
+        buffer: Buffer.from("test"),
         originalName: "avatar.heif",
-        mimetype: "image/heif",
-        size: 10000
-      }
-      const mockUserId = "user-123"
+        mimeType: "image/heif",
+        size: 10000,
+      };
+      const mockUserId = "user-123";
 
-    const mockSavedFile: ReadFileDto = {
-      id: 'file-456',
-      url: 'https://storage.example.com/file.jpg',
-      originalName: 'avatar_uploaded.jpg',
-      mimeType: 'image/jpeg',
-      access: FileAccess.PUBLIC,
-      size: 1024,
-      key: 'users/user-123/avatar.jpg',
-      ownerId: mockUserId,
-      createdAt: new Date(),
-    };
-    })
-  })
+      const mockSavedFile: ReadFileDto = {
+        id: "file-456",
+        url: "https://storage.example.com/file.jpg",
+        originalName: "avatar_uploaded.jpg",
+        mimeType: "image/jpeg",
+        access: FileAccess.PUBLIC,
+        size: 1024,
+        key: "users/user-123/avatar.jpg",
+        ownerId: mockUserId,
+        createdAt: new Date(),
+      };
+
+      const mockJobData: PhotoJobData = {
+        fileId: mockSavedFile.id,
+        userId: mockUserId,
+        access: FileAccess.PUBLIC,
+        profile: PHOTO_PROFILES.AVATAR_MINI,
+      };
+
+      mockFilesService.uploadFile.mockResolvedValue(mockSavedFile);
+      await userService.updateAvatar(mockFile, mockUserId);
+
+      expect(mockFilesService.uploadFile).toHaveBeenCalledWith(mockUserId, FileAccess.PUBLIC, mockFile);
+      expect(mockFilesService.uploadFile).toHaveBeenCalledTimes(1);
+      expect(mockQueueService.sendToPhotoEditor).toHaveBeenCalledWith(mockJobData);
+    });
+  });
+  describe("handleAvatarConverted", () => {
+    it("should call find user and update user", async () => {
+      const mockEvent: PhotoConvertedEvent = {
+        userId: mockUser.id,
+        originalFileId: "original_avatar_file_id",
+        newFileId: "new_avatar_file_id",
+      };
+
+      mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+
+      await userService.handleAvatarConverted(mockEvent);
+      const currentAvatars = (mockUser?.avatars as object) || {};
+
+      const updatedAvatar = {
+        ...currentAvatars,
+        [UserAvatarKeys.ORIGINAL]: mockEvent.originalFileId,
+        [UserAvatarKeys.MINI_AVATAR]: mockEvent.newFileId,
+      };
+      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockEvent.userId },
+        select: { avatars: true },
+      });
+      expect(mockPrisma.user.findUnique).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: mockEvent.userId },
+        data: { avatars: updatedAvatar },
+      });
+      expect(mockPrisma.user.update).toHaveBeenCalledTimes(1);
+    });
+  });
 });

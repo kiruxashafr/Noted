@@ -29,11 +29,11 @@ export class UsersService {
     private readonly queueService: PhotoQueueService,
   ) {}
 
-  async updateAvatar(file: { buffer: Buffer; originalname: string; mimetype: string; size: number }, userId: string) {
+  async updateAvatar(file: { buffer: Buffer; originalName: string; mimeType: string; size: number }, userId: string) {
     try {
       const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file);
       this.logger.log(
-        `updateAvatar() | Original avatar uploaded for user ${userId} with the new file ${savedFile.id}, mimetype: ${file.mimetype}, size: ${file.size}`,
+        `updateAvatar() | Original avatar uploaded for user ${userId} with the new file ${savedFile.id}, mimetype: ${file.mimeType}, size: ${file.size}`,
       );
 
       const data: PhotoJobData = {

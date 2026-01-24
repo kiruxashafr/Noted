@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Expose } from "class-transformer";
+import { UserAvatarsDto } from "./user-avatar.dto";
 
 export class ReadUserDto {
   @ApiProperty({
@@ -22,6 +23,9 @@ export class ReadUserDto {
   })
   @Expose()
   name: string;
+
+  @Expose()
+  avatars: UserAvatarsDto;
 
   @ApiProperty({
     description: "Account creation date",

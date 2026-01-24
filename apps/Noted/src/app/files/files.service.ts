@@ -56,7 +56,7 @@ export class FilesService implements OnModuleInit {
   async uploadFile(
     userId: string,
     access: FileAccess = FileAccess.PRIVATE,
-    file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
+    file: { buffer: Buffer; originalName: string; mimeType: string; size: number },
   ): Promise<ReadFileDto> {
     await this.checkQuota(userId, file.size);
     const fileKey = `${userId}/${uuid()}`;
@@ -68,7 +68,7 @@ export class FilesService implements OnModuleInit {
           Bucket: this.bucket,
           Key: fileKey,
           Body: file.buffer,
-          ContentType: file.mimetype,
+          ContentType: file.mimeType,
         },
       });
       await upload.done();
@@ -81,8 +81,8 @@ export class FilesService implements OnModuleInit {
         data: {
           bucket: this.bucket,
           key: fileKey,
-          mimeType: file.mimetype,
-          originalName: file.originalname,
+          mimeType: file.mimeType,
+          originalName: file.originalName,
           size: file.size,
           ownerId: userId,
           access,
