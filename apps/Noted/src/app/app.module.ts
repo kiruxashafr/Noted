@@ -8,6 +8,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 import { PhotoQueueModule } from "./photo-queue/photo-queue.module";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { BullModule } from "@nestjs/bullmq";
+import { NotificationModule } from "./notification/notification.module";
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BullModule } from "@nestjs/bullmq";
     FilesModule,
     PrismaModule,
     PhotoQueueModule,
+    NotificationModule,
     EventEmitterModule.forRoot(),
     BullModule.forRootAsync({
       imports: [ConfigModule],

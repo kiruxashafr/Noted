@@ -42,7 +42,7 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
   }
 
   async process(job: Job<PhotoJobData>): Promise<void> {
-    const { fileId, userId, access, profile } = job.data;
+    const { fileId, userId, access, profile, socketId } = job.data;
     try {
       const originalBuffer = await this.fileService.getFileBuffer(fileId, userId);
       const fileInfo = await this.fileService.findOne(fileId, userId);
@@ -74,8 +74,8 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
       }
       const uploadFile = {
         buffer: processedBuffer,
-        originalname: newOriginalName,
-        mimetype: mimeType,
+        originalName: newOriginalName,
+        mimeType: mimeType,
         size: processedBuffer.length,
       };
 
@@ -85,6 +85,7 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
         userId,
         originalFileId: fileId,
         newFileId: convertedFile.id,
+        socketId: socketId
       };
 
       await this.eventEmitter.emitAsync(PhotoEvent.PHOTO_CONVERTED, resultData);

@@ -29,7 +29,7 @@ export class UsersService {
     private readonly queueService: PhotoQueueService,
   ) {}
 
-  async updateAvatar(file: { buffer: Buffer; originalName: string; mimeType: string; size: number }, userId: string) {
+  async updateAvatar(file: { buffer: Buffer; originalName: string; mimeType: string; size: number }, userId: string, socketId) {
     try {
       const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file);
       this.logger.log(
@@ -41,6 +41,7 @@ export class UsersService {
         userId: userId,
         access: FileAccess.PUBLIC,
         profile: PHOTO_PROFILES.AVATAR_MINI,
+        socketId: socketId
       };
       this.queueService.sendToPhotoEditor(data);
     } catch (error) {

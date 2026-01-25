@@ -11,4 +11,5 @@ export interface PhotoJobData {
   userId: string;
   access: FileAccess;
   profile: PhotoProfile;
+  socketId: string;
 }

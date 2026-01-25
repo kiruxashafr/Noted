@@ -19,6 +19,7 @@ import { ImageValidationPipe } from "../pipes/image-validation.pipe";
 import { UpdateUserDto } from "./dto/user-update.dto";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Multer } from "multer";
+import { UploadAvatarPhotoDto } from "./dto/upload-avatar.dto";
 
 @Controller("users")
 export class UsersController {
@@ -32,14 +33,15 @@ export class UsersController {
     @Req() req: Request,
     @UploadedFile(ImageValidationPipe)
     file: Express.Multer.File,
+    @Body() dto: UploadAvatarPhotoDto
   ) {
-    const uploadData = {
+    const uploadData= {
       buffer: file.buffer,
-      originalname: file.originalname,
-      mimetype: file.mimetype,
+      originalName: file.originalname,
+      mimeType: file.mimetype,
       size: file.size,
     };
-    return this.usersService.updateAvatar(uploadData, req.user.sub);
+    return this.usersService.updateAvatar(uploadData, req.user.sub, dto.socketId);
   }
 
   @Delete("me/delete")
