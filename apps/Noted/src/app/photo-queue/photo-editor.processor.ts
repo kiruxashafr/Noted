@@ -59,7 +59,7 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
           fit: this.sharp.fit.inside,
           withoutEnlargement: true,
         });
-        this.logger.log(`photoWorker | Photo ${fileId} resize to ...`);
+        this.logger.log(`photoWorker | Photo ${fileId} resize to width:${profile.width}, height:${profile.height}`);
       }
 
       const processedBuffer = await processor.toBuffer();
@@ -85,7 +85,7 @@ export class PhotoEditorProcessor extends WorkerHost implements OnModuleInit {
         userId,
         originalFileId: fileId,
         newFileId: convertedFile.id,
-        socketId: socketId
+        socketId: socketId,
       };
 
       await this.eventEmitter.emitAsync(PhotoEvent.PHOTO_CONVERTED, resultData);

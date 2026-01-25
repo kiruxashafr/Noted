@@ -1,3 +1,3 @@
 export enum NotificationEvent {
-    PHOTO_EDIT = "photo_edit_result"
+  PHOTO_EDIT = "photo_edit_result",
 }

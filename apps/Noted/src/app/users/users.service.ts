@@ -17,7 +17,7 @@ import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { error } from "console";
 import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
 import { PHOTO_PROFILES } from "../shared/photo-profiles";
-import { UserAvatarKeys } from "@noted/types";
+import { UserAvatar, UserAvatarKeys } from "@noted/types";
 
 @Injectable()
 export class UsersService {
@@ -29,7 +29,11 @@ export class UsersService {
     private readonly queueService: PhotoQueueService,
   ) {}
 
-  async updateAvatar(file: { buffer: Buffer; originalName: string; mimeType: string; size: number }, userId: string, socketId) {
+  async updateAvatar(
+    file: { buffer: Buffer; originalName: string; mimeType: string; size: number },
+    userId: string,
+    socketId,
+  ) {
     try {
       const savedFile = await this.filesService.uploadFile(userId, FileAccess.PUBLIC, file);
       this.logger.log(
@@ -41,7 +45,7 @@ export class UsersService {
         userId: userId,
         access: FileAccess.PUBLIC,
         profile: PHOTO_PROFILES.AVATAR_MINI,
-        socketId: socketId
+        socketId: socketId,
       };
       this.queueService.sendToPhotoEditor(data);
     } catch (error) {
@@ -58,7 +62,11 @@ export class UsersService {
         select: { avatars: true },
       });
 
-      const currentAvatars = (user?.avatars as object) || {};
+      const currentAvatars: UserAvatar = (user?.avatars as object) || {};
+
+      await this.filesService.deleteFile(currentAvatars.mini_avatar, event.userId);
+      await this.filesService.deleteFile(currentAvatars.original, event.userId);
+      
       const updatedAvatar = {
         ...currentAvatars,
         [UserAvatarKeys.ORIGINAL]: event.originalFileId,

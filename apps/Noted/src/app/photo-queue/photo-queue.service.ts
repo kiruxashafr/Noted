@@ -20,7 +20,7 @@ export class PhotoQueueService {
       userId: data.userId,
       access: data.access,
       profile: data.profile,
-      socketId: data.socketId
+      socketId: data.socketId,
     });
   }
 }

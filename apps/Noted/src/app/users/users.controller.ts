@@ -33,9 +33,9 @@ export class UsersController {
     @Req() req: Request,
     @UploadedFile(ImageValidationPipe)
     file: Express.Multer.File,
-    @Body() dto: UploadAvatarPhotoDto
+    @Body() dto: UploadAvatarPhotoDto,
   ) {
-    const uploadData= {
+    const uploadData = {
       buffer: file.buffer,
       originalName: file.originalname,
       mimeType: file.mimetype,
