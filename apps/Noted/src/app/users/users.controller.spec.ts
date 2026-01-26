@@ -58,7 +58,6 @@ describe("UsersController", () => {
         },
         { provide: JwtService, useValue: { signAsync: jest.fn() } },
         { provide: ConfigService, useValue: { get: jest.fn() } },
-
       ],
     }).compile();
 
@@ -76,29 +75,26 @@ describe("UsersController", () => {
       };
       service.updateAvatar.mockResolvedValue();
       await controller.uploadAvatar(mockReq, mockFile, mockDto);
-        expect(service.updateAvatar).toHaveBeenCalledWith(uploadData, mockReq.user.sub, mockDto.socketId);
-        expect(service.updateAvatar).toHaveBeenCalledTimes(1);
-
+      expect(service.updateAvatar).toHaveBeenCalledWith(uploadData, mockReq.user.sub, mockDto.socketId);
+      expect(service.updateAvatar).toHaveBeenCalledTimes(1);
     });
   });
-    describe("deleteUser", () => {
-        it("should call deleteUser service", async () => {
-        service.deleteUser.mockResolvedValue()
-        await controller.deleteUser(mockReq)
-        expect(service.deleteUser).toHaveBeenCalledWith(mockReq.user.sub)
-        })
+  describe("deleteUser", () => {
+    it("should call deleteUser service", async () => {
+      service.deleteUser.mockResolvedValue();
+      await controller.deleteUser(mockReq);
+      expect(service.deleteUser).toHaveBeenCalledWith(mockReq.user.sub);
+    });
+  });
 
-    })
-
-    describe("updateUser", () => {
-        it("should call updateUser ", async () => {
-            const mockUserUpdateDto: UpdateUserDto = {
-                name: "tst",
-                email:"test@mail.com"
-            }
-            await controller.updateMe(mockReq, mockUserUpdateDto)
-            expect(service.updateUser).toHaveBeenCalledWith(mockReq.user.sub, mockUserUpdateDto)
-        }
-        )
-    })
+  describe("updateUser", () => {
+    it("should call updateUser ", async () => {
+      const mockUserUpdateDto: UpdateUserDto = {
+        name: "tst",
+        email: "test@mail.com",
+      };
+      await controller.updateMe(mockReq, mockUserUpdateDto);
+      expect(service.updateUser).toHaveBeenCalledWith(mockReq.user.sub, mockUserUpdateDto);
+    });
+  });
 });
