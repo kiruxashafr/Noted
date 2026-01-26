@@ -46,15 +46,15 @@ describe("UsersController", () => {
         },
         {
           provide: PrismaService,
-          useValue: { canActivate: jest.fn(() => true) },
+          useValue: jest.fn(),
         },
         {
           provide: PhotoQueueService,
-          useValue: { canActivate: jest.fn(() => true) },
+          useValue: jest.fn(),
         },
         {
           provide: FilesService,
-          useValue: { signAsync: jest.fn() },
+          useValue: jest.fn(),
         },
         { provide: JwtService, useValue: { signAsync: jest.fn() } },
         { provide: ConfigService, useValue: { get: jest.fn() } },
