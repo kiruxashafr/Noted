@@ -14,7 +14,6 @@ import { OnEvent } from "@nestjs/event-emitter";
 import { PhotoConversionFailedEvent, PhotoConvertedEvent, PhotoEvent } from "../shared/events/photo-event.types";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 
-import { error } from "console";
 import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
 import { PHOTO_PROFILES } from "../shared/photo-profiles";
 import { UserAvatar, UserAvatarKeys } from "@noted/types";
@@ -90,7 +89,6 @@ export class UsersService {
   @OnEvent(PhotoEvent.PHOTO_CONVERSION_FAILED)
   async handleAvatarConversionFail(event: PhotoConversionFailedEvent) {
     this.logger.error(`handleAvatarConversionFail() | heic convert fail for user ${event.userId}`);
-    throw new error();
   }
 
   async updateUser(userId: string, dto: UpdateUserDto) {

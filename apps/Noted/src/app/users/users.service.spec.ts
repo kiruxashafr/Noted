@@ -15,7 +15,7 @@ import { ReadUserDto } from "./dto/read-user.dto";
 import * as argon2 from "argon2";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
-import { HttpStatus } from "@nestjs/common";
+import { HttpStatus, Logger } from "@nestjs/common";
 import { ReadFileDto } from "../files/dto/read-file.dto";
 import { PHOTO_PROFILES } from "../shared/photo-profiles";
 import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
@@ -61,6 +61,7 @@ describe("UserService", () => {
     const filesServiceMock = {
       uploadFile: jest.fn(),
       deleteAllUserFiles: jest.fn(),
+      deleteFile: jest.fn()
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -226,10 +227,11 @@ describe("UserService", () => {
         userId: mockUserId,
         access: FileAccess.PUBLIC,
         profile: PHOTO_PROFILES.AVATAR_MINI,
+        socketId: "user-socket-123"
       };
 
       mockFilesService.uploadFile.mockResolvedValue(mockSavedFile);
-      await userService.updateAvatar(mockFile, mockUserId);
+      await userService.updateAvatar(mockFile, mockUserId, mockJobData.socketId);
 
       expect(mockFilesService.uploadFile).toHaveBeenCalledWith(mockUserId, FileAccess.PUBLIC, mockFile);
       expect(mockFilesService.uploadFile).toHaveBeenCalledTimes(1);
@@ -237,15 +239,18 @@ describe("UserService", () => {
     });
   });
   describe("handleAvatarConverted", () => {
-    it("should call find user and update user", async () => {
+    it("should call find user, delete old photo and update user for user without photo", async () => {
       const mockEvent: PhotoConvertedEvent = {
         userId: mockUser.id,
         originalFileId: "original_avatar_file_id",
         newFileId: "new_avatar_file_id",
+        socketId: "user-socket-123"
       };
 
-      mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+      const userWithoutPhoto = { ...mockUser, avatar: {} }
 
+      mockPrisma.user.findUnique.mockResolvedValue(userWithoutPhoto);
+      mockFilesService.deleteFile.mockResolvedValue()
       await userService.handleAvatarConverted(mockEvent);
       const currentAvatars = (mockUser?.avatars as object) || {};
 
@@ -264,6 +269,37 @@ describe("UserService", () => {
         data: { avatars: updatedAvatar },
       });
       expect(mockPrisma.user.update).toHaveBeenCalledTimes(1);
+      expect(mockFilesService.deleteFile).toHaveBeenCalledTimes(2)
+    });
+    it("should call find user, delete old photo and update user for user with photo", async () => {
+      const mockEvent: PhotoConvertedEvent = {
+        userId: mockUser.id,
+        originalFileId: "original_avatar_file_id",
+        newFileId: "new_avatar_file_id",
+        socketId: "user-socket-123"
+      };
+
+      mockPrisma.user.findUnique.mockResolvedValue(mockUser);
+      mockFilesService.deleteFile.mockResolvedValue()
+      await userService.handleAvatarConverted(mockEvent);
+      const currentAvatars = (mockUser?.avatars as object) || {};
+
+      const updatedAvatar = {
+        ...currentAvatars,
+        [UserAvatarKeys.ORIGINAL]: mockEvent.originalFileId,
+        [UserAvatarKeys.MINI_AVATAR]: mockEvent.newFileId,
+      };
+      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: mockEvent.userId },
+        select: { avatars: true },
+      });
+      expect(mockPrisma.user.findUnique).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: mockEvent.userId },
+        data: { avatars: updatedAvatar },
+      });
+      expect(mockPrisma.user.update).toHaveBeenCalledTimes(1);
+      expect(mockFilesService.deleteFile).toHaveBeenCalledTimes(2)
     });
   });
 });
