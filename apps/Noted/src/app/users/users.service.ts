@@ -65,7 +65,7 @@ export class UsersService {
 
       await this.filesService.deleteFile(currentAvatars.mini_avatar, event.userId);
       await this.filesService.deleteFile(currentAvatars.original, event.userId);
-      
+
       const updatedAvatar = {
         ...currentAvatars,
         [UserAvatarKeys.ORIGINAL]: event.originalFileId,
