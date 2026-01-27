@@ -5,7 +5,6 @@ import { ApiException, ApiErrorResponse } from "./api-exception";
 
 type ValidationErrorResponse = {
   message: string | string[];
-  // другие поля могут быть, но нам важно только message
 };
 
 @Catch()
@@ -33,23 +32,20 @@ export class ApiExceptionFilter implements ExceptionFilter {
           const validationRes = res as ValidationErrorResponse;
           errorCode = "VALIDATION_ERROR";
 
-          // class-validator возвращает либо строку, либо массив строк
           if (Array.isArray(validationRes.message)) {
             details = validationRes.message;
           } else if (typeof validationRes.message === "string") {
             details = [validationRes.message];
           }
-          // если вдруг что-то другое — оставляем null
         }
       } else {
         errorCode = "HTTP_ERROR";
       }
     }
-    // else — неожиданная ошибка (не HttpException) → используем defaults
 
     response.status(status).json({
       errorCode,
-      details, // теперь типизированы: null | string[] | object
+      details,
     });
   }
 }

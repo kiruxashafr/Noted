@@ -28,10 +28,8 @@ describe("ImageValidationPipe", () => {
       size: 1024,
     } as Express.Multer.File;
 
-    // Проверяем синхронно
     expect(() => pipe.transform(mockFile)).toThrow(ApiException);
 
-    // Более точная проверка
     try {
       pipe.transform(mockFile);
       fail("Expected to throw ApiException");

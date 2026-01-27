@@ -3,52 +3,33 @@ import { FilesService } from "./files.service";
 import { Test, TestingModule } from "@nestjs/testing";
 import { PrismaService } from "../prisma/prisma.service";
 import { ConfigService } from "@nestjs/config";
+import { ApiException } from "@noted/common/errors/api-exception";
+import { HttpStatus } from "@nestjs/common";
+import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 
 const mockS3Send = jest.fn();
 const mockUploadDone = jest.fn();
 
-
-function MockDeleteObjectCommand(params: any) {
-  return { input: params };
-}
-
-function MockGetObjectCommand(params: any) {
-  return { input: params };
-}
-
-function MockCreateBucketCommand(params: any) {
-  return { input: params };
-}
-
-function MockHeadBucketCommand(params: any) {
-  return { input: params };
-}
-
-function MockPutBucketPolicyCommand(params: any) {
-  return { input: params };
-}
-
 jest.mock("@aws-sdk/client-s3", () => {
   return {
-    S3Client: jest.fn(() => ({
+    S3Client: jest.fn().mockImplementation(() => ({
       send: mockS3Send,
     })),
-    CreateBucketCommand: MockCreateBucketCommand,
-    HeadBucketCommand: MockHeadBucketCommand,
-    PutBucketPolicyCommand: MockPutBucketPolicyCommand,
-    GetObjectCommand: MockGetObjectCommand,
-    DeleteObjectCommand: MockDeleteObjectCommand,
+    CreateBucketCommand: jest.fn(),
+    HeadBucketCommand: jest.fn(),
+    PutBucketPolicyCommand: jest.fn(),
+    GetObjectCommand: jest.fn(),
+    DeleteObjectCommand: jest.fn(),
   };
 });
 
 jest.mock("@aws-sdk/lib-storage", () => {
   return {
-    Upload: jest.fn(() => ({
+    Upload: jest.fn().mockImplementation(() => ({
       done: mockUploadDone,
     })),
   };
 });
-
 describe("FilesService", () => {
   let fileService: FilesService;
 
@@ -135,5 +116,42 @@ describe("FilesService", () => {
         where: { id: mockFileId }
       });
     });
+
+    it("should throw error if file not found", async () => {
+      mockPrismaService.mediaFile.findUnique.mockResolvedValue(null)
+      mockS3Send.mockResolvedValue({});
+      mockPrismaService.mediaFile.delete.mockResolvedValue(mockDbFile);
+
+    await expect(fileService.deleteFile(mockFileId, mockUserId))
+      .rejects
+      .toThrow(ApiException);
+    
+
+    await expect(fileService.deleteFile(mockFileId, mockUserId))
+      .rejects
+      .toMatchObject({
+        errorCode: ErrorCodes.FILE_NOT_FOUND, 
+        status: HttpStatus.NOT_FOUND
+      });
+    })
+
+    it("should throw error if user is not correct", async () => {
+      const notCorrectUserId = "notCorrect"
+      mockPrismaService.mediaFile.findUnique.mockResolvedValue(mockDbFile)
+      mockS3Send.mockResolvedValue({});
+      mockPrismaService.mediaFile.delete.mockResolvedValue(mockDbFile);
+    
+    await expect(fileService.deleteFile(mockFileId, notCorrectUserId))
+      .rejects
+      .toThrow(ApiException);
+    
+
+    await expect(fileService.deleteFile(mockFileId, notCorrectUserId))
+      .rejects
+      .toMatchObject({
+        errorCode: ErrorCodes.FILE_ACCESS_DENIED, 
+        status: HttpStatus.FORBIDDEN
+      });
+    })
   });
 });
