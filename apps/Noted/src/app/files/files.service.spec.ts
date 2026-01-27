@@ -37,7 +37,7 @@ describe("FilesService", () => {
   const mockAccess = FileAccess.PRIVATE;
   const mockFileId = "file-123";
   const mockFileKey = "user-123/uuid-123";
-  
+
   const mockDbFile = {
     id: mockFileId,
     bucket: "test-bucket",
@@ -48,7 +48,7 @@ describe("FilesService", () => {
     ownerId: mockUserId,
     access: mockAccess,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   };
 
   const mockPrismaService = {
@@ -61,17 +61,17 @@ describe("FilesService", () => {
       findMany: jest.fn(),
       delete: jest.fn(),
       deleteMany: jest.fn(),
-      aggregate: jest.fn()
-    }
+      aggregate: jest.fn(),
+    },
   };
 
   const mockConfigService = {
-    getOrThrow: jest.fn()
+    getOrThrow: jest.fn(),
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     mockConfigService.getOrThrow
       .mockReturnValueOnce("test-bucket")
       .mockReturnValueOnce("http://localhost")
@@ -86,18 +86,18 @@ describe("FilesService", () => {
         FilesService,
         {
           provide: PrismaService,
-          useValue: mockPrismaService
+          useValue: mockPrismaService,
         },
         {
           provide: ConfigService,
-          useValue: mockConfigService
-        }
-      ]
+          useValue: mockConfigService,
+        },
+      ],
     }).compile();
-    
+
     fileService = module.get<FilesService>(FilesService);
   });
-  
+
   describe("deleteFile", () => {
     it("should call prisma service, s3 command and delete file successfully", async () => {
       mockPrismaService.mediaFile.findUnique.mockResolvedValue(mockDbFile);
@@ -107,51 +107,66 @@ describe("FilesService", () => {
       await fileService.deleteFile(mockFileId, mockUserId);
 
       expect(mockPrismaService.mediaFile.findUnique).toHaveBeenCalledWith({
-        where: { id: mockFileId }
+        where: { id: mockFileId },
       });
-      
+
       expect(mockS3Send).toHaveBeenCalledTimes(1);
-      
+
       expect(mockPrismaService.mediaFile.delete).toHaveBeenCalledWith({
-        where: { id: mockFileId }
+        where: { id: mockFileId },
       });
     });
 
     it("should throw error if file not found", async () => {
-      mockPrismaService.mediaFile.findUnique.mockResolvedValue(null)
+      mockPrismaService.mediaFile.findUnique.mockResolvedValue(null);
       mockS3Send.mockResolvedValue({});
       mockPrismaService.mediaFile.delete.mockResolvedValue(mockDbFile);
 
-    await expect(fileService.deleteFile(mockFileId, mockUserId))
-      .rejects
-      .toThrow(ApiException);
-    
+      await expect(fileService.deleteFile(mockFileId, mockUserId)).rejects.toThrow(ApiException);
 
-    await expect(fileService.deleteFile(mockFileId, mockUserId))
-      .rejects
-      .toMatchObject({
-        errorCode: ErrorCodes.FILE_NOT_FOUND, 
-        status: HttpStatus.NOT_FOUND
+      await expect(fileService.deleteFile(mockFileId, mockUserId)).rejects.toMatchObject({
+        errorCode: ErrorCodes.FILE_NOT_FOUND,
+        status: HttpStatus.NOT_FOUND,
       });
-    })
+    });
 
     it("should throw error if user is not correct", async () => {
-      const notCorrectUserId = "notCorrect"
-      mockPrismaService.mediaFile.findUnique.mockResolvedValue(mockDbFile)
+      const notCorrectUserId = "notCorrect";
+      mockPrismaService.mediaFile.findUnique.mockResolvedValue(mockDbFile);
       mockS3Send.mockResolvedValue({});
       mockPrismaService.mediaFile.delete.mockResolvedValue(mockDbFile);
-    
-    await expect(fileService.deleteFile(mockFileId, notCorrectUserId))
-      .rejects
-      .toThrow(ApiException);
-    
 
-    await expect(fileService.deleteFile(mockFileId, notCorrectUserId))
-      .rejects
-      .toMatchObject({
-        errorCode: ErrorCodes.FILE_ACCESS_DENIED, 
-        status: HttpStatus.FORBIDDEN
+      await expect(fileService.deleteFile(mockFileId, notCorrectUserId)).rejects.toThrow(ApiException);
+
+      await expect(fileService.deleteFile(mockFileId, notCorrectUserId)).rejects.toMatchObject({
+        errorCode: ErrorCodes.FILE_ACCESS_DENIED,
+        status: HttpStatus.FORBIDDEN,
       });
-    })
+    });
+  });
+
+  describe("checkAccess", () => {
+    it("should return if access public", async () => {
+      const mockPublicFile = {
+        ...mockDbFile,
+        access: FileAccess.PUBLIC,
+      };
+      expect(() => {
+        (fileService as any).checkAccess(mockPublicFile, mockUserId);
+      }).not.toThrow();
+    });
+
+    it("should  return if access private and userId correct", async () => {
+      expect(() => {
+        (fileService as any).checkAccess(mockDbFile, mockUserId).not.toThrow();
+      });
+    });
+
+    it("should throw error if serId is not owner", async () => {
+      const mockNotCorrectUserId = "notCorrect";
+      expect(() => {
+        (fileService as any).checkAccess(mockDbFile, mockUserId).toThrow(ApiException);
+      });
+    });
   });
 });
