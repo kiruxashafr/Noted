@@ -19,6 +19,11 @@ enum FileAccess {
   PRIVATE
 }
 
+enum BlockPermission {
+  VIEW
+  EDIT
+}
+
 model User {
   id       String @id @default(uuid())
   email    String @unique
@@ -30,6 +35,9 @@ model User {
 
   plan  UserPlan    @default(FREE)
   files MediaFile[] @relation("UserFiles")
+
+  ownedBlocks   Block[]       @relation("OwnedBlocks")
+  blockAccesses BlockAccess[]
 
   @@map("users")
 }
@@ -50,4 +58,59 @@ model MediaFile {
   @@index([ownerId])
   @@index([mimeType])
   @@map("media_files")
+}
+
+model Block {
+  id              String          @id @default(uuid())
+  type            String
+  title           String
+  meta            Json?           @db.JsonB
+  ownerId         String          @map("owner_id")
+  owner           User            @relation("OwnedBlocks", fields: [ownerId], references: [id])
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  accesses        BlockAccess[]
+  parentRelations BlockRelation[] @relation("ChildBlocks")
+  childRelations  BlockRelation[] @relation("ParentBlocks")
+
+  @@index([ownerId])
+  @@map("blocks")
+}
+
+model BlockRelation {
+  id     String @id @default(uuid())
+  fromId String @map("from")
+  toId   String @map("to")
+  order  Int    @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  parent Block @relation("ParentBlocks", fields: [fromId], references: [id])
+  child  Block @relation("ChildBlocks", fields: [toId], references: [id])
+
+  @@unique([fromId, toId])
+  @@index([fromId])
+  @@index([toId])
+  @@map("block_relations")
+}
+
+model BlockAccess {
+  id         String          @id @default(uuid())
+  blockId    String          @map("block_id")
+  block      Block           @relation(fields: [blockId], references: [id])
+  userId     String          @map("user_id")
+  user       User            @relation(fields: [userId], references: [id])
+  permission BlockPermission @default(VIEW)
+  isActive   Boolean         @default(true)
+  expiresAt  DateTime?       @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([blockId, userId])
+  @@index([blockId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("block_accesses")
 }

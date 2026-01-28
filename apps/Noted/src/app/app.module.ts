@@ -9,6 +9,7 @@ import { PhotoQueueModule } from "./photo-queue/photo-queue.module";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { BullModule } from "@nestjs/bullmq";
 import { NotificationModule } from "./notification/notification.module";
+import { BlocksModule } from "./blocks/blocks.module";
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { NotificationModule } from "./notification/notification.module";
     UsersModule,
     AuthModule,
     FilesModule,
+    BlocksModule,
     PrismaModule,
     PhotoQueueModule,
     NotificationModule,
