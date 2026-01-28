@@ -24,6 +24,12 @@ enum BlockPermission {
   EDIT
 }
 
+enum BlockType {
+  PAGE
+  TEXT
+  PHOTO
+}
+
 model User {
   id       String @id @default(uuid())
   email    String @unique
@@ -62,7 +68,7 @@ model MediaFile {
 
 model Block {
   id              String          @id @default(uuid())
-  type            String
+  type            BlockType
   title           String
   meta            Json?           @db.JsonB
   ownerId         String          @map("owner_id")

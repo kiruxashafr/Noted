@@ -9,5 +9,6 @@ export class BlocksService {
         private readonly prisma: PrismaService,
         private readonly filesService: FilesService,
         private readonly queueService: PhotoQueueService,
-      ) {}
+    ) { } 
+
 }
