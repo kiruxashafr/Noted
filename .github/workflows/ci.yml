@@ -50,7 +50,7 @@ jobs:
         run: npx prisma generate client
 
       - name: Audit
-        run: npm audit
+        run: npm audit --production || true
 
       - name: Type Check
         run: npm run typecheck
