@@ -8,7 +8,7 @@
     "build": "npm install && docker-compose up -d && npx prisma db push && npx prisma generate client",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "sudo prettier --write \"**/*.{ts,js,json,md}\"",
+    "format": "sudo npx prettier --write .",
     "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
     "lint:nx": "nx run-many --target=lint --all",
     "lint:nx:fix": "nx run-many --target=lint --all --fix",

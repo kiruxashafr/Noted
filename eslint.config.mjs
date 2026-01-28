@@ -68,6 +68,6 @@ export default [
 
   // Игнорируемые файлы
   {
-    ignores: ["**/*.spec.ts", "**/*.test.ts", "dist/**", "node_modules/**", "coverage/**", ".nx/**", "jest.preset.js",],
+    ignores: ["**/*.spec.ts", "**/*.test.ts", "dist/**", "node_modules/**", "coverage/**", ".nx/**", "jest.preset.js"],
   },
 ];
