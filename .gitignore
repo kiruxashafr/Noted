@@ -46,3 +46,5 @@ Thumbs.db
 /generated/prisma
 
 .env
+.pnpm-lock.yaml
+.pnpm-workspace.yaml
