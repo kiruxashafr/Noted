@@ -17,7 +17,6 @@ import type { Response } from "express";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import { toDto } from "@noted/common/utils/to-dto";
 
-
 @Injectable()
 export class AuthService {
   private readonly accessSecret: string;

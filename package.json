@@ -16,7 +16,7 @@
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.base.json",
     "test": "npx nx run-many --target=test --all --passWithNoTests",
     "ci": "npm audit --production || true && npm run typecheck && npm run format:check && npm run lint:nx && npm run test"
-    },
+  },
   "private": true,
   "dependencies": {
     "@aws-sdk/client-s3": "^3.969.0",
