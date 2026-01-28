@@ -15,8 +15,8 @@
     "audit": "npm audit --audit-level=moderate",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.base.json",
     "test": "npx nx run-many --target=test --all --passWithNoTests",
-    "ci": "npm audit --production && npm run typecheck && npm run format:check && npm run lint:nx && npm run test"
-    },
+    "ci": "npm run audit && npm run typecheck && npm run format:check && npm run lint:nx && npm run test"
+  },
   "private": true,
   "dependencies": {
     "@aws-sdk/client-s3": "^3.969.0",
@@ -100,7 +100,6 @@
     "ts-node": "^10.9.2",
     "tslib": "^2.8.1",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.53.0",
     "webpack-cli": "^6.0.1"
   }
 }
