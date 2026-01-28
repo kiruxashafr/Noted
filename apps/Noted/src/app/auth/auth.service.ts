@@ -16,6 +16,7 @@ import { isDev } from "@noted/common/utils/is-dev";
 import { toDto } from "@noted/common/utils/to-dto";
 import type { Response } from "express";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
+import { toDto } from "../utils/to-dto";
 
 @Injectable()
 export class AuthService {
@@ -63,6 +64,7 @@ export class AuthService {
         userId: user.id,
       };
       this.logger.log(`register() | User ${user.id} registered`);
+
       return toDto(registerData, ReadAuthDto);
     } catch (error) {
       this.logger.error(`register() | User ${email} register failed with error ${error.message}}`);
