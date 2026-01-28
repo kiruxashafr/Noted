@@ -7,6 +7,8 @@ out-tsc
 
 # dependencies
 node_modules
+pnpm-lock.yaml
+pnpm-workspace.yaml
 
 # IDEs and editors
 /.idea
@@ -46,5 +48,3 @@ Thumbs.db
 /generated/prisma
 
 .env
-pnpm-lock.yaml
-pnpm-workspace.yaml
