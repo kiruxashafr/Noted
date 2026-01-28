@@ -4,6 +4,15 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Start app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Debug Noted with Nx",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["nx", "serve", "Noted"],
@@ -14,10 +23,7 @@
       "internalConsoleOptions": "neverOpen",
       "skipFiles": ["<node_internals>/**"],
       "sourceMaps": true,
-      "outFiles": [
-        "${workspaceFolder}/apps/Noted/dist/**/*.(m|c|)js",
-        "!**/node_modules/**"
-      ]
+      "outFiles": ["${workspaceFolder}/apps/Noted/dist/**/*.(m|c|)js", "!**/node_modules/**"]
     }
   ]
 }

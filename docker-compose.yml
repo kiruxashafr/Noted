@@ -1,0 +1,69 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: noted-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: noted
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - noted-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: noted-minio
+    command: server --console-address ":9001" /data/
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-storage:/data
+    networks:
+      - noted-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: noted-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning --requirepass redis_password
+    environment:
+      - REDIS_PASSWORD=redis_password
+    volumes:
+      - redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - noted-network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: noted-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:redis_password
+    depends_on:
+      - redis
+    networks:
+      - noted-network
+
+volumes:
+  postgres-data:
+  minio-storage:
+  redis-data:
+
+networks:
+  noted-network:
+    driver: bridge
