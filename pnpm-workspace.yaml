@@ -1,9 +1,9 @@
 ignoredBuiltDependencies:
-  - '@nestjs/core'
-  - '@parcel/watcher'
-  - '@prisma/engines'
-  - '@scarf/scarf'
-  - '@swc/core'
+  - "@nestjs/core"
+  - "@parcel/watcher"
+  - "@prisma/engines"
+  - "@scarf/scarf"
+  - "@swc/core"
   - argon2
   - bcrypt
   - less

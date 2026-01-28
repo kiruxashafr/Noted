@@ -7,9 +7,6 @@ module.exports = {
   },
   moduleFileExtensions: ["ts", "js", "html"],
   coverageDirectory: "../../coverage/apps/Noted",
-  
 
-  transformIgnorePatterns: [
-    "/node_modules/(?!(uuid|@?))"
-  ]
+  transformIgnorePatterns: ["/node_modules/(?!(uuid|@?))"],
 };
