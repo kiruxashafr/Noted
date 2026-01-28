@@ -69,10 +69,10 @@ model MediaFile {
 model Block {
   id              String          @id @default(uuid())
   type            BlockType
-  title           String
+  title           String?
   meta            Json?           @db.JsonB
-  ownerId         String          @map("owner_id")
-  owner           User            @relation("OwnedBlocks", fields: [ownerId], references: [id])
+  ownerId         String?         @map("owner_id")
+  owner           User?           @relation("OwnedBlocks", fields: [ownerId], references: [id])
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
   accesses        BlockAccess[]
@@ -87,7 +87,7 @@ model BlockRelation {
   id     String @id @default(uuid())
   fromId String @map("from")
   toId   String @map("to")
-  order  Int    @default(0)
+  order  Int    @default(1)
 
   createdAt DateTime @default(now()) @map("created_at")
 

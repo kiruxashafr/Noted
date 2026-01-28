@@ -3,5 +3,5 @@ import { BlocksService } from "./blocks.service";
 
 @Controller("blocks")
 export class BlocksController {
-    constructor(private readonly blocksServise: BlocksService) {}
+  constructor(private readonly blocksServise: BlocksService) {}
 }
