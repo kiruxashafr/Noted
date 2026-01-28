@@ -15,7 +15,7 @@ export class ApiException extends HttpException {
     super(
       {
         errorCode,
-        details: details ?? null, // теперь безопасно
+        details: details ?? null,
       } as ApiErrorResponse,
       status,
     );

@@ -1,8 +1,8 @@
 import { IsNotEmpty, MaxLength, IsString, IsEmail, MinLength } from "class-validator";
-import { LoginPayload } from "@noted/types/auth/login.types";
 import { ApiProperty } from "@nestjs/swagger";
+import { LoginRequest } from "@noted/types";
 
-export class LoginDto implements LoginPayload {
+export class LoginDto implements LoginRequest {
   @ApiProperty({
     description: "User email address",
     example: "user@example.com",

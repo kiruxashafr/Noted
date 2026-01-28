@@ -12,6 +12,7 @@ import { ReadAuthDto } from "./dto/read-auth.dto";
 import { ReadRefreshDto } from "./dto/read-refresh.dto";
 import { JwtAuthGuard } from "./guards/jwt.guards";
 import { ReadUserProfileDto } from "./dto/read-user-profile.dto";
+import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -96,7 +97,7 @@ export class AuthController {
     const refreshToken = req.cookies["refreshToken"];
 
     if (!refreshToken) {
-      throw new ApiException("REFRESH_TOKEN_MISSING", HttpStatus.UNAUTHORIZED);
+      throw new ApiException(ErrorCodes.REFRESH_TOKEN_MISSING, HttpStatus.UNAUTHORIZED);
     }
 
     return await this.authService.refresh(refreshToken);

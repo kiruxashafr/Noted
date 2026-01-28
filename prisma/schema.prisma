@@ -8,16 +8,46 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id String @id @default(uuid())
+enum UserPlan {
+  FREE
+  PRO
+  PREMIUM
+}
 
+enum FileAccess {
+  PUBLIC
+  PRIVATE
+}
+
+model User {
+  id       String @id @default(uuid())
   email    String @unique
   password String
-
-  name String
+  name     String
+  avatars  Json?  @map("avatars") /// @type {UserAvatar}
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("user")
+  plan  UserPlan    @default(FREE)
+  files MediaFile[] @relation("UserFiles")
+
+  @@map("users")
+}
+
+model MediaFile {
+  id           String     @id @default(uuid())
+  bucket       String
+  key          String
+  originalName String     @map("original_name")
+  mimeType     String     @map("mime_type")
+  size         Int
+  ownerId      String
+  owner        User       @relation("UserFiles", fields: [ownerId], references: [id])
+  access       FileAccess @default(PRIVATE)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@index([ownerId])
+  @@index([mimeType])
+  @@map("media_files")
 }

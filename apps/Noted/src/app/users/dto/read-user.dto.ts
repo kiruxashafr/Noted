@@ -1,0 +1,36 @@
+import { ApiProperty } from "@nestjs/swagger";
+import { Expose } from "class-transformer";
+import { UserAvatarsDto } from "./user-avatar.dto";
+
+export class ReadUserDto {
+  @ApiProperty({
+    description: "User id",
+    example: "user_123",
+  })
+  @Expose()
+  id: string;
+
+  @ApiProperty({
+    description: "User email address",
+    example: "user@example.com",
+  })
+  @Expose()
+  email: string;
+
+  @ApiProperty({
+    description: "User name",
+    example: "user",
+  })
+  @Expose()
+  name: string;
+
+  @Expose()
+  avatars: UserAvatarsDto;
+
+  @ApiProperty({
+    description: "Account creation date",
+    example: "2024-01-01T10:00:00.000Z",
+  })
+  @Expose()
+  createdAt: Date;
+}

@@ -29,11 +29,4 @@ export class ReadUserProfileDto {
   })
   @Expose()
   createdAt: Date;
-
-  @ApiProperty({
-    description: "Date of last profile update",
-    example: "2024-01-02T12:00:00.000Z",
-  })
-  @Expose()
-  updatedAt: Date;
 }

@@ -1,7 +1,7 @@
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { PrismaService } from "../prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterRequest } from "./dto/register.dto";
 import { AccessTokenPayload, RefreshTokenPayload } from "./interfaces/jwt.interface";
@@ -14,7 +14,8 @@ import { ReadRefreshDto } from "./dto/read-refresh.dto";
 import { ReadUserProfileDto } from "./dto/read-user-profile.dto";
 import { isDev } from "@noted/common/utils/is-dev";
 import type { Response } from "express";
-import { toDto } from "../utils/to-dto";
+import { ErrorCodes } from "@noted/common/errors/error-codes.const";
+import { toDto } from "@noted/common/utils/to-dto";
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,7 @@ export class AuthService {
   private readonly jwtAccessTokenTTL: number;
   private readonly jwtRefreshTokenTTL: number;
   private readonly cookieDomain: string;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -60,9 +62,11 @@ export class AuthService {
         refreshToken: tokens.refreshToken,
         userId: user.id,
       };
+      this.logger.log(`register() | User ${user.id} registered`);
 
       return toDto(registerData, ReadAuthDto);
     } catch (error) {
+      this.logger.error(`register() | User ${email} register failed with error ${error.message}}`);
       this.handleAccountConstraintError(error);
     }
   }
@@ -76,13 +80,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new ApiException("INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED);
+      throw new ApiException(ErrorCodes.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
     }
 
     const isPasswordValid = await argon2.verify(user.password, password);
 
     if (!isPasswordValid) {
-      throw new ApiException("INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED);
+      throw new ApiException(ErrorCodes.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
     }
 
     const tokens = {
@@ -104,7 +108,7 @@ export class AuthService {
     try {
       payload = await this.jwtService.verifyAsync(refreshToken, { secret: this.refreshSecret });
     } catch {
-      throw new ApiException("INVALID_REFRESH_TOKEN", HttpStatus.UNAUTHORIZED);
+      throw new ApiException(ErrorCodes.INVALID_REFRESH_TOKEN, HttpStatus.UNAUTHORIZED);
     }
 
     const user = await this.prisma.user.findUnique({
@@ -113,7 +117,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new ApiException("USER_NOT_FOUND", HttpStatus.UNAUTHORIZED);
+      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.UNAUTHORIZED);
     }
 
     const accessToken = await this.generateAccessToken(user.id);
@@ -129,12 +133,11 @@ export class AuthService {
         email: true,
         name: true,
         createdAt: true,
-        updatedAt: true,
       },
     });
 
     if (!user) {
-      throw new ApiException("USER_NOT_FOUND", HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     return toDto(user, ReadUserProfileDto);
@@ -185,13 +188,13 @@ export class AuthService {
 
   private handleAccountConstraintError(error: unknown): never {
     if (!isPrismaConstraintError(error)) {
-      throw new ApiException("REGISTRATION_FAILED", HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new ApiException(ErrorCodes.REGISTRATION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "User") {
-      throw new ApiException("EMAIL_ALREADY_EXISTS", HttpStatus.CONFLICT);
+      throw new ApiException(ErrorCodes.EMAIL_ALREADY_EXISTS, HttpStatus.CONFLICT);
     }
 
-    throw new ApiException("DUPLICATE_VALUE", HttpStatus.CONFLICT);
+    throw new ApiException(ErrorCodes.DUPLICATE_VALUE, HttpStatus.CONFLICT);
   }
 }
