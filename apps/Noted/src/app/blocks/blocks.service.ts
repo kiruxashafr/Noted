@@ -3,11 +3,12 @@ import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
-import { BlockPageKeys, PageBlockContent, TextBlockContent } from "@noted/types";
+import { BlockPageKeys, PageBlockContent, PageMetaContent, TextBlockContent, TextMetaContent, TextPageKeys } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Prisma } from "generated/prisma/client";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
+
 
 @Injectable()
 export class BlocksService {
@@ -32,7 +33,7 @@ export class BlocksService {
   
   async createPageBlock(userId: string, dto: CreateBlockDto) {
     const pageContent = dto.blockContent as PageBlockContent;
-    const meta: PageBlockContent = {
+    const meta: PageMetaContent = {
       [BlockPageKeys.TITLE]: pageContent.title
     }
     const page = await this.prisma.block.create({
@@ -46,35 +47,54 @@ export class BlocksService {
   }
 
   async createTextBlock(userId: string, dto: CreateBlockDto) {
-    const parent = await this.findParentPage(dto.parrentId)
+
+    const textBlockContent = dto.blockContent as TextBlockContent
+
+    const parent = await this.findParentPage(textBlockContent.parentId)
     this.checkAccess(userId, parent.id, BlockPermission.EDIT)
 
-    const blockContent = dto.blockContent as unknown as TextBlockContent;
+    const meta: TextMetaContent = {
+      [TextPageKeys.TEXT]: textBlockContent.text
+    }
     const block = await this.prisma.block.create({
       data: {
         type: BlockType.TEXT,
-        meta: blockContent.json as Prisma.InputJsonValue,
+        meta: meta as unknown as Prisma.InputJsonValue,
       },
     });
     this.prisma.blockRelation.create({
       data: {
-        fromId: dto.parrentId,
+        fromId: textBlockContent.parentId,
         toId: block.id,
-        order: dto.order,
+        order: textBlockContent.order,
       },
     });
   }
 
   async findPageTitle(userId: string) {
-    const pageTitle = await this.prisma.block.findMany({
-      where: { ownerId: userId },
+    const pages = await this.prisma.block.findMany({
+      where: {
+        ownerId: userId, 
+        type: BlockType.PAGE
+      },
       select: {
         id: true,
-        title: true
+        meta: true
       }
     })
 
-    return {pageTitle}
+ const pageTitles = pages.map(page => {
+    const meta = page.meta as unknown as PageMetaContent;
+    
+    const title = meta?.title
+
+    return {
+      id: page.id,
+      title: title
+    };
+  });
+
+  return { pageTitles };
   }
 
   async checkAccess(userId: string, blockId: string, permission?: BlockPermission) {
@@ -129,4 +149,6 @@ export class BlocksService {
       currentBlockId = parentBlock.id;
     }
   }
+
+  
 }
