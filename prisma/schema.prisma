@@ -95,6 +95,7 @@ model BlockRelation {
   child  Block @relation("ChildBlocks", fields: [toId], references: [id])
 
   @@unique([fromId, toId])
+  @@unique([toId])
   @@index([fromId])
   @@index([toId])
   @@map("block_relations")
