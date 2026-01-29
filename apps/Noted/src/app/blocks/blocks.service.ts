@@ -3,8 +3,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
-import { PageBlockContent, TextBlockContent } from "@noted/types";
-import { BlockType } from "generated/prisma/enums";
+import { BlockPageKeys, PageBlockContent, TextBlockContent } from "@noted/types";
+import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Prisma } from "generated/prisma/client";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
@@ -31,18 +31,24 @@ export class BlocksService {
   }
   
   async createPageBlock(userId: string, dto: CreateBlockDto) {
-    const pageContent = dto.blockContent as unknown as PageBlockContent;
-    this.prisma.block.create({
+    const pageContent = dto.blockContent as PageBlockContent;
+    const meta: PageBlockContent = {
+      [BlockPageKeys.TITLE]: pageContent.title
+    }
+    const page = await this.prisma.block.create({
       data: {
-        title: pageContent.title,
         type: BlockType.PAGE,
         ownerId: userId,
-        meta: pageContent.meta as Prisma.InputJsonValue,
+        meta: meta as unknown as Prisma.InputJsonValue,
       },
     });
+    this.logger.log(`createPageBlock() | user ${userId} create page ${page.id}`)
   }
 
   async createTextBlock(userId: string, dto: CreateBlockDto) {
+    const parent = await this.findParentPage(dto.parrentId)
+    this.checkAccess(userId, parent.id, BlockPermission.EDIT)
+
     const blockContent = dto.blockContent as unknown as TextBlockContent;
     const block = await this.prisma.block.create({
       data: {
@@ -59,7 +65,19 @@ export class BlocksService {
     });
   }
 
-  async checkAccess(blockId: string, userId) {
+  async findPageTitle(userId: string) {
+    const pageTitle = await this.prisma.block.findMany({
+      where: { ownerId: userId },
+      select: {
+        id: true,
+        title: true
+      }
+    })
+
+    return {pageTitle}
+  }
+
+  async checkAccess(userId: string, blockId: string, permission?: BlockPermission) {
     const parentPage = await this.findParentPage(blockId)
     if (parentPage.ownerId == userId) { return }
     const accessBlock = await this.prisma.blockAccess.findUnique({
@@ -71,7 +89,7 @@ export class BlocksService {
       }
     })
 
-    if (!accessBlock || !accessBlock.isActive || 
+    if (!accessBlock || !accessBlock.isActive || permission !== accessBlock.permission || 
       (accessBlock.expiresAt && accessBlock.expiresAt < new Date())) {
       this.logger.log(`checkAccess() | access denied: user ${userId} to block ${blockId} `)
       throw new ApiException(ErrorCodes.BLOCK_ACCESS_DENIED, HttpStatus.FORBIDDEN);

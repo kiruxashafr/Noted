@@ -69,7 +69,6 @@ model MediaFile {
 model Block {
   id              String          @id @default(uuid())
   type            BlockType
-  title           String?
   meta            Json?           @db.JsonB
   ownerId         String?         @map("owner_id")
   owner           User?           @relation("OwnedBlocks", fields: [ownerId], references: [id])

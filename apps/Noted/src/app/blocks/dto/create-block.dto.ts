@@ -3,7 +3,7 @@ import { BlockType } from "generated/prisma/enums";
 
 export class CreateBlockDto implements CreateBlockRequest {
   blockType: BlockType;
-  blockContent: Record<string, unknown>;
-  parrentId?: string;
+  blockContent: unknown;
+  parrentId: string;
   order?: number;
 }
