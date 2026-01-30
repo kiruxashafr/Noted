@@ -27,7 +27,6 @@ enum BlockPermission {
 enum BlockType {
   PAGE
   TEXT
-  PHOTO
 }
 
 model User {
@@ -42,8 +41,8 @@ model User {
   plan  UserPlan    @default(FREE)
   files MediaFile[] @relation("UserFiles")
 
-  ownedBlocks   Block[]       @relation("OwnedBlocks")
-  blockAccesses BlockAccess[]
+  ownedPages   Page[]       @relation("OwnedPages")
+  pageAccesses PageAccess[]
 
   @@map("users")
 }
@@ -66,19 +65,35 @@ model MediaFile {
   @@map("media_files")
 }
 
+model Page {
+  id        String       @id @default(uuid())
+  order     Int          @default(1)
+  title     String?
+  meta      Json?        @db.JsonB
+  ownerId   String       @map("owner_id")
+  owner     User         @relation("OwnedPages", fields: [ownerId], references: [id])
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  accesses  PageAccess[]
+  blocks    Block[]
+
+  @@index([ownerId])
+  @@map("pages")
+}
+
 model Block {
-  id              String          @id @default(uuid())
-  type            BlockType
-  meta            Json?           @db.JsonB
-  ownerId         String?         @map("owner_id")
-  owner           User?           @relation("OwnedBlocks", fields: [ownerId], references: [id])
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
-  accesses        BlockAccess[]
+  id        String    @id @default(uuid())
+  type      BlockType
+  meta      Json?     @db.JsonB
+  pageId    String?   @map("page_id")
+  page      Page?     @relation(fields: [pageId], references: [id])
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
   parentRelations BlockRelation[] @relation("ChildBlocks")
   childRelations  BlockRelation[] @relation("ParentBlocks")
 
-  @@index([ownerId])
+  @@index([pageId])
   @@map("blocks")
 }
 
@@ -100,10 +115,10 @@ model BlockRelation {
   @@map("block_relations")
 }
 
-model BlockAccess {
+model PageAccess {
   id         String          @id @default(uuid())
-  blockId    String          @map("block_id")
-  block      Block           @relation(fields: [blockId], references: [id])
+  pageId     String          @map("page_id")
+  page       Page            @relation(fields: [pageId], references: [id])
   userId     String          @map("user_id")
   user       User            @relation(fields: [userId], references: [id])
   permission BlockPermission @default(VIEW)
@@ -113,10 +128,10 @@ model BlockAccess {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([blockId, userId])
-  @@index([blockId])
+  @@unique([pageId, userId])
+  @@index([pageId])
   @@index([userId])
   @@index([expiresAt])
   @@index([isActive])
-  @@map("block_accesses")
+  @@map("page_accesses")
 }

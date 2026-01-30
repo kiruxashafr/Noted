@@ -2,8 +2,8 @@ import { BadRequestException,  HttpStatus, Injectable, Logger } from "@nestjs/co
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
-import { CreateBlockDto } from "./dto/create-block.dto";
-import { BlockMeta, BlockPageKeys, PageMetaContent, TextMetaContent, TextPageKeys } from "@noted/types";
+import { CreateBlockDto, CreatePageDto } from "./dto/create-block.dto";
+import { BlockMeta,  BlockPageKeys,  PageMetaContent,  requestBlockType,  TextMetaContent, TextPageKeys } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Prisma } from "generated/prisma/client";
 import { ApiException } from "@noted/common/errors/api-exception";
@@ -23,33 +23,30 @@ export class BlocksService {
     private readonly filesService: FilesService,
     private readonly queueService: PhotoQueueService,
   ) { }
-  
   async createBlock(userId: string, dto: CreateBlockDto) {
     this.validateBlockMeta(dto.blockType, dto.meta)
     switch (dto.blockType) {
-      case BlockType.PAGE:
-        return await this.createPageBlock(userId, dto);
       case BlockType.TEXT:
         return await this.createTextBlock(userId, dto);
       default:
         throw new BadRequestException(`Unsupported block type: ${dto.blockType}`);
     }
   }
-  
-  async createPageBlock(userId: string, dto: CreateBlockDto) {
-    const pageBlockMeta = dto.meta as PageMetaContent;
+    async createPage(userId: string, dto: CreatePageDto) {
+        const pageBlockMeta = dto.meta as PageMetaContent;
     const meta: PageMetaContent = {
-      [BlockPageKeys.TITLE]: pageBlockMeta.title
+      [BlockPageKeys.JSON]: pageBlockMeta.json
     }
-    const page = await this.prisma.block.create({
+    const page = await this.prisma.page.create({
       data: {
-        type: BlockType.PAGE,
         ownerId: userId,
         meta: meta as unknown as Prisma.InputJsonValue,
+
       },
     });
     this.logger.log(`createPageBlock() | user ${userId} create page ${page.id}`)
   }
+
 
   async createTextBlock(userId: string, dto: CreateBlockDto) {
 
@@ -77,33 +74,29 @@ export class BlocksService {
   }
 
   async findPageTitle(userId: string) {
-    const pages = await this.prisma.block.findMany({
+    const pages = await this.prisma.page.findMany({
       where: {
         ownerId: userId, 
-        type: BlockType.PAGE
       },
       select: {
         id: true,
-        meta: true
+        title: true
       }
     })
 
  const pageTitles = pages.map(page => {
-    const meta = page.meta as unknown as PageMetaContent;
-    
-    const title = meta?.title
-
     return {
       id: page.id,
-      title: title
+      title: page.title
     };
   });
 
   return { pageTitles };
   }
-
+  //сделать функцию поиска топ блока и родительской страницы или сделать отдельно найти родительскую страницу но должно быть просто
+  //проверка доступа должна быть не от ролительского блока а от любого пусть check access сам ищет
   async checkAccess(userId: string, blockId: string, permission?: BlockPermission) {
-    const parentPage = await this.findParentPage(blockId)
+    const topBlock = await this.findTopBlock(blockId)
     if (parentPage.ownerId == userId) { return }
     const accessBlock = await this.prisma.blockAccess.findUnique({
       where: {
@@ -122,7 +115,7 @@ export class BlocksService {
     return
   }
 
-  async findParentPage(blockId: string) {
+  async findTopBlock(blockId: string) {
     let currentBlockId = blockId;
     const startBlock = await this.prisma.block.findUnique({
       where: { id: blockId }
@@ -130,7 +123,7 @@ export class BlocksService {
     if (!startBlock) {
       throw new ApiException(ErrorCodes.BLOCK_NOT_FOUND, HttpStatus.NOT_FOUND)
     }
-    if (startBlock.ownerId !== null && startBlock.type == 'PAGE') {
+    if (startBlock.pageId !== null) {
       return(startBlock)
     }
     while (true) {
@@ -148,7 +141,7 @@ export class BlocksService {
     
       const parentBlock = parentRelation.parent;
     
-      if (parentBlock.ownerId !== null && parentBlock.type === 'PAGE') {
+      if (parentBlock.pageId !== null ) {
         return (parentBlock)
       }
       currentBlockId = parentBlock.id;
@@ -177,5 +170,18 @@ export class BlocksService {
       this.logger.warn(`Validation failed for block type ${type}: ${messages}`);
       throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
     }
+    }
+  
+  private async validateReqBlockRype(dto: CreateBlockDto) {
+    if (!dto.parentId && !dto.pageId) {
+      this.logger.error(`create block error | request hasnt parentId or pageId`)
+      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST)
+    }
+    if (dto.parentId && dto.pageId) {
+      this.logger.error(`create block error | request should has parentId or pageId not together`)
+      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST )
+    }
+    if (dto.pageId) { return requestBlockType.TOP }
+    if (dto.parentId) { return requestBlockType.CHILD }
   }
 }
