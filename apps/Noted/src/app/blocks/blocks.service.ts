@@ -3,11 +3,15 @@ import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
-import { BlockPageKeys, PageBlockContent, PageMetaContent, TextBlockContent, TextMetaContent, TextPageKeys } from "@noted/types";
+import { BlockMeta, BlockPageKeys, PageMetaContent, TextMetaContent, TextPageKeys } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Prisma } from "generated/prisma/client";
 import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
+
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
+import { PageBlockMetaDto, TextBlockMetaDto } from "./dto/content-payload.dto";
 
 
 @Injectable()
@@ -21,6 +25,7 @@ export class BlocksService {
   ) { }
   
   async createBlock(userId: string, dto: CreateBlockDto) {
+    this.validateBlockMeta(dto.blockType, dto.meta)
     switch (dto.blockType) {
       case BlockType.PAGE:
         return await this.createPageBlock(userId, dto);
@@ -32,9 +37,9 @@ export class BlocksService {
   }
   
   async createPageBlock(userId: string, dto: CreateBlockDto) {
-    const pageContent = dto.blockContent as PageBlockContent;
+    const pageBlockMeta = dto.meta as PageMetaContent;
     const meta: PageMetaContent = {
-      [BlockPageKeys.TITLE]: pageContent.title
+      [BlockPageKeys.TITLE]: pageBlockMeta.title
     }
     const page = await this.prisma.block.create({
       data: {
@@ -48,13 +53,13 @@ export class BlocksService {
 
   async createTextBlock(userId: string, dto: CreateBlockDto) {
 
-    const textBlockContent = dto.blockContent as TextBlockContent
+    const textBlockMeta = dto.meta as TextMetaContent
 
-    const parent = await this.findParentPage(textBlockContent.parentId)
+    const parent = await this.findParentPage(dto.parentId)
     this.checkAccess(userId, parent.id, BlockPermission.EDIT)
 
     const meta: TextMetaContent = {
-      [TextPageKeys.TEXT]: textBlockContent.text
+      [TextPageKeys.JSON]: textBlockMeta.json
     }
     const block = await this.prisma.block.create({
       data: {
@@ -64,9 +69,9 @@ export class BlocksService {
     });
     this.prisma.blockRelation.create({
       data: {
-        fromId: textBlockContent.parentId,
+        fromId: dto.parentId,
         toId: block.id,
-        order: textBlockContent.order,
+        order: dto.order,
       },
     });
   }
@@ -150,5 +155,27 @@ export class BlocksService {
     }
   }
 
-  
+    private async validateBlockMeta(type: BlockType, content: BlockMeta): Promise<void> {
+    let dtoInstance: object;
+
+    switch (type) {
+      case BlockType.PAGE:
+        dtoInstance = plainToInstance(TextBlockMetaDto, content);
+        break;
+      case BlockType.TEXT:
+        dtoInstance = plainToInstance(PageBlockMetaDto, content);
+        break;
+      default:
+        return;
+    }
+
+    const errors = await validate(dtoInstance);
+
+    if (errors.length > 0) {
+      const messages = errors.map(err => Object.values(err.constraints || {}).join(", ")).join("; ");
+
+      this.logger.warn(`Validation failed for block type ${type}: ${messages}`);
+      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+    }
+  }
 }

@@ -2,13 +2,11 @@ import { BlockType } from "generated/prisma/enums";
 
 export interface CreateBlockRequest {
   blockType: BlockType;
-  blockContent: unknown;
+  meta: unknown;
+  parentId: string;
+  order: number;
 }
 //Page
-export interface PageBlockContent{
-  title: string
-}
-
 export interface PageMetaContent {
   title: string;
 }
@@ -18,17 +16,12 @@ export enum BlockPageKeys {
 }
 
 //Text
-export interface TextBlockContent {
-  text: string
-  parentId: string
-  order: number
-}
-
 export interface TextMetaContent{
-  text: string
+  json: Record<string, unknown>;
 }
 
 export enum TextPageKeys {
-  TEXT = "text"
+  JSON = "json"
 }
 
+export type BlockMeta = PageMetaContent | TextMetaContent
