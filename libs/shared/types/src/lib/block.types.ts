@@ -11,28 +11,29 @@ export interface CreateBlockRequest {
 export interface CreatePageRequest {
   title: string;
   order: number;
-  meta: unknown
+  meta: unknown;
 }
 //Page
 export interface PageMetaContent {
-  json: Record<string, unknown>;}
+  json: Record<string, unknown>;
+}
 
 export enum BlockPageKeys {
-  JSON = "json"
+  JSON = "json",
 }
 
 //Text
-export interface TextMetaContent{
+export interface TextMetaContent {
   json: Record<string, unknown>;
 }
 
 export enum TextPageKeys {
-  JSON = "json"
+  JSON = "json",
 }
 
-export enum requestBlockType {
+export enum BlockNesting {
   TOP,
-  CHILD
+  CHILD,
 }
 
-export type BlockMeta = PageMetaContent | TextMetaContent
+export type BlockMeta = PageMetaContent | TextMetaContent;

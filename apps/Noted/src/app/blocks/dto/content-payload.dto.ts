@@ -7,6 +7,6 @@ export class TextBlockMetaDto implements TextMetaContent {
 }
 
 export class PageBlockMetaDto implements PageMetaContent {
-    @IsNotEmpty()
-    title: string;
+  @IsNotEmpty()
+  title: string;
 }

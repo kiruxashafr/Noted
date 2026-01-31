@@ -6,13 +6,11 @@ import { Request } from "express";
 
 @Controller("blocks")
 export class BlocksController {
-  constructor(private readonly blocksServise: BlocksService) { }
+  constructor(private readonly blocksServise: BlocksService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Req() req: Request,
-    @Body() dto: CreateBlockDto) {
+  async create(@Req() req: Request, @Body() dto: CreateBlockDto) {
     return this.blocksServise.createBlock(req.user.sub, dto);
   }
-
 }
