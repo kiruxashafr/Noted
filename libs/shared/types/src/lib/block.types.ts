@@ -13,14 +13,6 @@ export interface CreatePageRequest {
   order: number;
   meta: unknown;
 }
-//Page
-export interface PageMetaContent {
-  json: Record<string, unknown>;
-}
-
-export enum BlockPageKeys {
-  JSON = "json",
-}
 
 //Text
 export interface TextMetaContent {
@@ -36,4 +28,4 @@ export enum BlockNesting {
   CHILD,
 }
 
-export type BlockMeta = PageMetaContent | TextMetaContent;
+export type BlockMeta =  TextMetaContent;

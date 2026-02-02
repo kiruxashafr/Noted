@@ -2,8 +2,8 @@ import { BadRequestException, HttpStatus, Injectable, Logger } from "@nestjs/com
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
-import { CreateBlockDto, CreatePageDto } from "./dto/create-block.dto";
-import { BlockMeta, BlockPageKeys, PageMetaContent, BlockNesting, TextMetaContent, TextPageKeys } from "@noted/types";
+import { CreateBlockDto} from "./dto/create-block.dto";
+import { BlockMeta, BlockNesting, TextMetaContent, TextPageKeys } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Prisma } from "generated/prisma/client";
 import { ApiException } from "@noted/common/errors/api-exception";
@@ -11,7 +11,8 @@ import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
-import { PageBlockMetaDto, TextBlockMetaDto } from "./dto/content-payload.dto";
+import {  TextBlockMetaDto } from "./dto/content-payload.dto";
+import { CreatePageDto } from "./dto/create-page.dto";
 
 @Injectable()
 export class BlocksService {
@@ -34,14 +35,11 @@ export class BlocksService {
     }
   }
   async createPage(userId: string, dto: CreatePageDto) {
-    const pageBlockMeta = dto.meta as PageMetaContent;
-    const meta: PageMetaContent = {
-      [BlockPageKeys.JSON]: pageBlockMeta.json,
-    };
+
     const page = await this.prisma.page.create({
       data: {
         ownerId: userId,
-        meta: meta as unknown as Prisma.InputJsonValue,
+        title: dto.title
       },
     });
     this.logger.log(`createPageBlock() | user ${userId} create page ${page.id}`);
@@ -229,9 +227,6 @@ export class BlocksService {
     let dtoInstance: object;
 
     switch (type) {
-      case BlockType.PAGE:
-        dtoInstance = plainToInstance(PageBlockMetaDto, content);
-        break;
       case BlockType.TEXT:
         dtoInstance = plainToInstance(TextBlockMetaDto, content);
         break;

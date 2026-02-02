@@ -69,7 +69,6 @@ model Page {
   id        String       @id @default(uuid())
   order     Int          @default(1)
   title     String?
-  meta      Json?        @db.JsonB
   ownerId   String       @map("owner_id")
   owner     User         @relation("OwnedPages", fields: [ownerId], references: [id])
   createdAt DateTime     @default(now()) @map("created_at")
