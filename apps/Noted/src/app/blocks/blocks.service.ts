@@ -190,39 +190,62 @@ export class BlocksService {
     return parentPage;
   }
 
-  private async findTopBlock(blockId: string) {
-    let currentBlockId = blockId;
-    const startBlock = await this.prisma.block.findUnique({
-      where: { id: blockId },
-    });
-    if (!startBlock) {
-      throw new ApiException(ErrorCodes.BLOCK_NOT_FOUND, HttpStatus.NOT_FOUND);
-    }
-    if (startBlock.pageId !== null) {
-      return startBlock;
-    }
-    while (true) {
-      const parentRelation = await this.prisma.blockRelation.findFirst({
-        where: { toId: currentBlockId },
-        include: {
-          parent: true,
-        },
-      });
 
-      if (!parentRelation) {
-        this.logger.error(`findParentPage | block without parent`);
-        throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
-      }
 
-      const topBlock = parentRelation.parent;
+private async findTopBlock(blockId: string) {
+  const block = await this.prisma.block.findUnique({
+    where: { id: blockId }
+  });
 
-      if (topBlock.pageId !== null) {
-        return topBlock;
-      }
-      currentBlockId = topBlock.id;
-    }
+  if (!block) {
+    throw new ApiException(ErrorCodes.BLOCK_NOT_FOUND, HttpStatus.NOT_FOUND);
   }
 
+  if (block.pageId) {
+    return block;
+  }
+
+  const result = await this.prisma.$queryRaw<Array<{id: string}>>`
+    WITH RECURSIVE block_hierarchy AS (
+      SELECT 
+        b.id,
+        b.page_id as "pageId",
+        br.from_id as "parentId",
+        1 as depth
+      FROM blocks b
+      LEFT JOIN block_relations br ON br.to_id = b.id
+      WHERE b.id = ${blockId}
+      
+      UNION ALL
+      
+      SELECT 
+        b.id,
+        b.page_id as "pageId",
+        br.from_id as "parentId",
+        bh.depth + 1
+      FROM blocks b
+      INNER JOIN block_relations br ON br.to_id = b.id
+      INNER JOIN block_hierarchy bh ON b.id = bh."parentId"
+      WHERE bh."pageId" IS NULL 
+      AND bh.depth < 100 
+    )
+
+    SELECT id
+    FROM block_hierarchy
+    WHERE "pageId" IS NOT NULL
+    LIMIT 1;
+  `;
+
+  if (!result || result.length === 0) {
+    this.logger.error(`findTopBlock: No parent block with page found for block ${blockId}`);
+    throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+  }
+
+  return this.prisma.block.findUnique({
+    where: { id: result[0].id }
+  });
+}
+  
   private async validateBlockMeta(type: BlockType, content: BlockMeta): Promise<void> {
     let dtoInstance: object;
 
