@@ -2,16 +2,15 @@ import { BlockType } from "generated/prisma/enums";
 
 export interface CreateBlockRequest {
   blockType: BlockType;
-  meta: unknown;
+  meta?: unknown;
   parentId?: string;
   pageId?: string;
-  order: number;
+  order?: number;
 }
 
 export interface CreatePageRequest {
   title: string;
   order: number;
-  meta: unknown;
 }
 
 //Text
