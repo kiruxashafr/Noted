@@ -26,7 +26,7 @@ export class BlocksService {
   async createBlock(userId: string, dto: CreateBlockDto) {
     const blockNesting = await this.validateReqBlockNesting(dto);
     this.validateBlockMeta(dto.blockType, dto.meta);
-    this.checkAccess(userId, blockNesting, BlockPermission.EDIT, dto.parentId, dto.pageId);
+    await this.checkAccess(userId, blockNesting, BlockPermission.EDIT, dto.parentId, dto.pageId);
     switch (dto.blockType) {
       case BlockType.TEXT:
         return await this.createTextBlock(userId, dto, blockNesting);
@@ -122,7 +122,23 @@ export class BlocksService {
   ) {
     switch (blockNesting) {
       case BlockNesting.CHILD: {
-        const parentPage = await this.findParentPage(blockId);
+        await this.applyChildAccessCheck(userId, permission, blockId);
+        break;
+      }
+      case BlockNesting.TOP: {
+        await this.applyTopAccessCheck(userId, permission, blockId, pageId);
+        break; 
+      }
+      default:
+        return;
+    }
+}
+
+  private async applyChildAccessCheck(
+    userId: string,
+    permission: BlockPermission,
+    blockId?: string,) {
+    const parentPage = await this.findParentPage(blockId);
 
         if (parentPage.ownerId == userId) {
           return;
@@ -146,11 +162,15 @@ export class BlocksService {
           this.logger.log(`checkAccess() | access denied: user ${userId} to block ${blockId} `);
           throw new ApiException(ErrorCodes.BLOCK_ACCESS_DENIED, HttpStatus.FORBIDDEN);
         }
-        return;
-      }
-
-      case BlockNesting.TOP: {
-        const parentPageForTop = await this.prisma.page.findUnique({
+    return
+  }
+  private async applyTopAccessCheck(
+    userId: string,
+    permission: BlockPermission,
+    blockId?: string,
+    pageId?: string,
+  ) {
+     const parentPageForTop = await this.prisma.page.findUnique({
           where: { id: pageId },
         });
         if (parentPageForTop.ownerId == userId) {
@@ -174,10 +194,6 @@ export class BlocksService {
           throw new ApiException(ErrorCodes.BLOCK_ACCESS_DENIED, HttpStatus.FORBIDDEN);
         }
         return;
-      }
-      default:
-        return;
-    }
   }
 
   private async findParentPage(blockId: string) {
