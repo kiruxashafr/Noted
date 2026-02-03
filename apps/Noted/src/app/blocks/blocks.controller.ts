@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Post, Req, UseGuards } from "@nestjs/common";
 import { BlocksService } from "./blocks.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";

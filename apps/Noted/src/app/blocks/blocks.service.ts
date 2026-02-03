@@ -24,8 +24,11 @@ export class BlocksService {
     private readonly queueService: PhotoQueueService,
   ) {}
   async createBlock(userId: string, dto: CreateBlockDto) {
+    this.logger.debug(`pageId ${dto.pageId} parentId ${dto.parentId} meta ${dto.meta}, type ${dto.blockType} order ${dto.order}`)
     const blockNesting = await this.validateReqBlockNesting(dto);
-    this.validateBlockMeta(dto.blockType, dto.meta);
+    if (dto.meta) {
+      await this.validateBlockMeta(dto.blockType, dto.meta);
+    }
     await this.checkAccess(userId, blockNesting, BlockPermission.EDIT, dto.parentId, dto.pageId);
     switch (dto.blockType) {
       case BlockType.TEXT:
@@ -281,6 +284,7 @@ private async findTopBlock(blockId: string) {
       this.logger.warn(`Validation failed for block type ${type}: ${messages}`);
       throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
     }
+    return
   }
 
   private async validateReqBlockNesting(dto: CreateBlockDto) {
