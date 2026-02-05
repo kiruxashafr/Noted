@@ -97,17 +97,18 @@ model Block {
 }
 
 model BlockRelation {
-  id     String @id @default(uuid())
-  fromId String @map("from")
-  toId   String @map("to")
-  order  Int    @default(1)
+  id     String  @id @default(uuid())
+  fromId String? @map("from")
+  toId   String  @map("to")
+  order  Int     @default(1)
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  parent Block @relation("ParentBlocks", fields: [fromId], references: [id])
-  child  Block @relation("ChildBlocks", fields: [toId], references: [id])
+  parent Block? @relation("ParentBlocks", fields: [fromId], references: [id])
+  child  Block  @relation("ChildBlocks", fields: [toId], references: [id])
 
   @@unique([fromId, toId])
+  @@unique([fromId, order])
   @@unique([toId])
   @@index([fromId])
   @@index([toId])

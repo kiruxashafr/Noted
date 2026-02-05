@@ -66,6 +66,22 @@ export class BlocksService {
     return await this.saveBlockByNesting(userId, blockNesting, createBlock);
   }
 
+  async getPage(userId: string, pageId: string) {
+
+    await this.applyPageAccessCheck(userId, BlockPermission.VIEW, pageId)
+
+    const page = await this.prisma.page.findUnique({
+      where: {id: pageId}
+    })
+
+    const topBlock = await this.prisma.block.findMany({
+      where: {pageId: pageId}
+    })
+
+ 
+
+  }
+
   async findPageTitle(userId: string) {
     try {
       const pages = await this.prisma.page.findMany({
@@ -124,6 +140,12 @@ export class BlocksService {
               pageId: dto.pageId,
             },
           });
+          await this.prisma.blockRelation.create({
+            data: {
+              toId: block.id,
+              order: dto.order
+            }
+          })
           this.logger.log(`saveBlockByNesting() | user: ${userId} create ${blockNesting} block: ${block.id}`);
           return block;
         }
