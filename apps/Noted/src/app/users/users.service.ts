@@ -1,8 +1,6 @@
-import { HttpStatus, Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
-import { ApiException } from "@noted/common/errors/api-exception";
-import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import { toDto } from "@noted/common/utils/to-dto";
 import * as argon2 from "argon2";
 import { ReadUserDto } from "./dto/read-user.dto";
@@ -17,7 +15,13 @@ import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
 import { PHOTO_PROFILES } from "../shared/photo-profiles";
 import { UserAvatar, UserAvatarKeys } from "@noted/types";
-import { UserNotFoundException } from "@noted/common/errors/domain-exception";
+import {
+  DuplicateValueException,
+  EmailAlreadyExistsException,
+  UpdateUserAvatarException,
+  UpdateUserException,
+  UserNotFoundException,
+} from "@noted/common/errors/domain-exception";
 
 @Injectable()
 export class UsersService {
@@ -50,7 +54,7 @@ export class UsersService {
       this.queueService.sendToPhotoEditor(data);
     } catch (error) {
       this.logger.error(`updateAvatar() | Failed to update avatar: ${error.message}`, error.stack);
-      throw error;
+      throw UpdateUserAvatarException;
     }
   }
 
@@ -139,13 +143,13 @@ export class UsersService {
 
   private handleAccountConstraintError(error: unknown): never {
     if (!isPrismaConstraintError(error)) {
-      throw new ApiException(ErrorCodes.REGISTRATION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new UpdateUserException();
     }
 
     if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "User") {
-      throw new ApiException(ErrorCodes.EMAIL_ALREADY_EXISTS, HttpStatus.CONFLICT);
+      throw new EmailAlreadyExistsException();
     }
 
-    throw new ApiException(ErrorCodes.DUPLICATE_VALUE, HttpStatus.CONFLICT);
+    throw new DuplicateValueException();
   }
 }

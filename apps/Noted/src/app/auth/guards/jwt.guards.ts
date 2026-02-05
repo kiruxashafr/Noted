@@ -1,9 +1,12 @@
 import { AccessTokenPayload } from "../interfaces/jwt.interface";
-import { CanActivate, ExecutionContext, HttpStatus, Injectable, Logger } from "@nestjs/common";
+import { CanActivate, ExecutionContext, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { ApiException } from "@noted/common/errors/api-exception";
-import { ErrorCodes } from "@noted/common/errors/error-codes.const";
+import {
+  InvalidAuthSchemeException,
+  InvalidTokenException,
+  MissingTokenException,
+} from "@noted/common/errors/domain-exception";
 import type { Request } from "express";
 
 @Injectable()
@@ -24,16 +27,16 @@ export class JwtAuthGuard implements CanActivate {
 
     if (!authHeader) {
       this.logger.warn("JwtGuard canActivate() | Missing Authorization header");
-      throw new ApiException(ErrorCodes.MISSING_TOKEN, HttpStatus.UNAUTHORIZED);
+      throw new MissingTokenException();
     }
 
     const [scheme, token] = authHeader.split(" ");
     if (scheme !== "Bearer") {
-      throw new ApiException(ErrorCodes.INVALID_AUTH_SCHEME, HttpStatus.UNAUTHORIZED);
+      throw new InvalidAuthSchemeException();
     }
 
     if (!token) {
-      throw new ApiException(ErrorCodes.INVALID_TOKEN, HttpStatus.UNAUTHORIZED);
+      throw new InvalidTokenException();
     }
 
     try {
@@ -43,7 +46,7 @@ export class JwtAuthGuard implements CanActivate {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "unknown error";
       this.logger.warn(`JwtGuard canActivate() | Token verification failed: ${message}`);
-      throw new ApiException(ErrorCodes.INVALID_TOKEN, HttpStatus.UNAUTHORIZED);
+      throw new InvalidTokenException();
     }
   }
 }

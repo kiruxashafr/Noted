@@ -21,29 +21,26 @@ export class DomainExceptionFilter implements ExceptionFilter {
       status = exception.httpStatus;
       errorCode = exception.code;
       message = exception.message;
-    }
-    else if (exception instanceof BadRequestException) {
+    } else if (exception instanceof BadRequestException) {
       status = exception.getStatus();
       errorCode = "VALIDATION_ERROR";
       message = "Validation failed";
-      
+
       const res = exception.getResponse();
       if (typeof res === "object" && res !== null && "message" in res) {
         const validationRes = res as ValidationErrorResponse;
-        
+
         if (Array.isArray(validationRes.message)) {
           details = validationRes.message;
         } else if (typeof validationRes.message === "string") {
           details = [validationRes.message];
         }
       }
-    }
-    else if (exception instanceof HttpException) {
+    } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       errorCode = "HTTP_ERROR";
       message = exception.message;
-    }
-    else if (exception instanceof Error) {
+    } else if (exception instanceof Error) {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       errorCode = "INTERNAL_ERROR";
       message = "Internal server error";

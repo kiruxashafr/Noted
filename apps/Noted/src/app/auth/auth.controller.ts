@@ -6,13 +6,12 @@ import { RegisterRequest } from "./dto/register.dto";
 
 import type { Request, Response } from "express";
 import { ConfigService } from "@nestjs/config";
-import { ApiException } from "@noted/common/errors/api-exception";
 import { ApiBearerAuth, ApiBody, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ReadAuthDto } from "./dto/read-auth.dto";
 import { ReadRefreshDto } from "./dto/read-refresh.dto";
 import { JwtAuthGuard } from "./guards/jwt.guards";
 import { ReadUserProfileDto } from "./dto/read-user-profile.dto";
-import { ErrorCodes } from "@noted/common/errors/error-codes.const";
+import { RefreshTokenMissingException } from "@noted/common/errors/domain-exception";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -97,7 +96,7 @@ export class AuthController {
     const refreshToken = req.cookies["refreshToken"];
 
     if (!refreshToken) {
-      throw new ApiException(ErrorCodes.REFRESH_TOKEN_MISSING, HttpStatus.UNAUTHORIZED);
+      throw new RefreshTokenMissingException();
     }
 
     return await this.authService.refresh(refreshToken);

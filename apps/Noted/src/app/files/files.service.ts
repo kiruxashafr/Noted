@@ -1,8 +1,7 @@
-import { HttpStatus, Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { v4 as uuid } from "uuid";
 import { Upload } from "@aws-sdk/lib-storage";
-import { ApiException } from "@noted/common/errors/api-exception";
-import { ErrorCodes } from "@noted/common/errors/error-codes.const";
+
 import {
   CreateBucketCommand,
   DeleteObjectCommand,
@@ -21,6 +20,14 @@ import { toDto } from "@noted/common/utils/to-dto";
 import { FileAccess } from "generated/prisma/enums";
 import { MediaFile } from "generated/prisma/client";
 import { Readable } from "stream";
+import {
+  BadRequestException,
+  FileAccessDeniedException,
+  FileNotFoundException,
+  FileRetrievalFailedException,
+  FileUploadFailedException,
+  PayloadTooLargeException,
+} from "@noted/common/errors/domain-exception";
 
 @Injectable()
 export class FilesService implements OnModuleInit {
@@ -73,7 +80,8 @@ export class FilesService implements OnModuleInit {
       });
       await upload.done();
     } catch (error) {
-      throw new ApiException(ErrorCodes.FILE_UPLOAD_FAILED, HttpStatus.INTERNAL_SERVER_ERROR, error.message);
+      this.logger.error(`uploadFile() | upload file error ${(error as Error).message}`);
+      throw new FileUploadFailedException();
     }
 
     try {
@@ -100,14 +108,13 @@ export class FilesService implements OnModuleInit {
       } catch (cleanupError) {
         this.logger.error(`upload() | CRITICAL: Failed to cleanup S3 after DB error | key=${fileKey}`, cleanupError);
       }
-      if (error instanceof ApiException) throw error;
-      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+      throw new BadRequestException();
     }
   }
 
   async findOne(fileId: string, userId): Promise<ReadFileDto> {
     const file = await this.prisma.mediaFile.findUnique({ where: { id: fileId } });
-    if (!file) throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND);
+    if (!file) throw new FileNotFoundException();
     this.checkAccess(file, userId);
     const dto = toDto(file, ReadFileDto);
     dto.url = this.generatePublicUrl(file);
@@ -117,7 +124,7 @@ export class FilesService implements OnModuleInit {
   async getFileStream(fileId: string, userId: string) {
     const file = await this.prisma.mediaFile.findUnique({ where: { id: fileId } });
     if (!file) {
-      throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND);
+      throw new FileNotFoundException();
     }
     this.checkAccess(file, userId);
     try {
@@ -134,17 +141,17 @@ export class FilesService implements OnModuleInit {
       };
     } catch (error) {
       this.logger.error(`getFileStream() | S3 Error for id=${fileId}`, error);
-      throw new ApiException(ErrorCodes.FILE_RETRIEVAL_FAILED, HttpStatus.BAD_REQUEST);
+      throw new FileRetrievalFailedException();
     }
   }
 
   async getFileBuffer(fileId: string, userId: string) {
     const file = await this.prisma.mediaFile.findUnique({ where: { id: fileId } });
     if (!file) {
-      throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND);
+      throw new FileNotFoundException();
     }
     if (file.size > 20 * 1024 * 1024) {
-      throw new ApiException(ErrorCodes.FILE_TOO_LARGE, HttpStatus.PAYLOAD_TOO_LARGE);
+      throw new PayloadTooLargeException();
     }
     this.checkAccess(file, userId);
     try {
@@ -163,7 +170,7 @@ export class FilesService implements OnModuleInit {
       return Buffer.concat(chunks);
     } catch (error) {
       this.logger.error(`getFileBuffer() | S3 Error for id=${fileId}`, error);
-      throw new ApiException(ErrorCodes.FILE_RETRIEVAL_FAILED, HttpStatus.BAD_REQUEST);
+      throw new FileRetrievalFailedException();
     }
   }
 
@@ -172,10 +179,10 @@ export class FilesService implements OnModuleInit {
       where: { id: fileId },
     });
     if (!file) {
-      throw new ApiException(ErrorCodes.FILE_NOT_FOUND, HttpStatus.NOT_FOUND);
+      throw new FileNotFoundException();
     }
     if (file.ownerId !== userId) {
-      throw new ApiException(ErrorCodes.FILE_ACCESS_DENIED, HttpStatus.FORBIDDEN);
+      throw new FileAccessDeniedException();
     }
     try {
       await this.s3.send(
@@ -186,7 +193,7 @@ export class FilesService implements OnModuleInit {
       );
     } catch {
       this.logger.warn(`deleteFile() | Failed to delete from S3 | key=${file.key}`);
-      throw new ApiException(ErrorCodes.FILE_DELETE_FAILED, HttpStatus.BAD_REQUEST);
+      throw new BadRequestException();
     }
 
     await this.prisma.mediaFile.delete({ where: { id: fileId } });
@@ -253,9 +260,7 @@ export class FilesService implements OnModuleInit {
     if (newFileSize > available) {
       const limitMb = Math.round(limitBytes / 1024 / 1024);
       const usedMb = Math.round(usedBytes / 1024 / 1024);
-      throw new ApiException(ErrorCodes.PAILOAD_TOO_LARGE, HttpStatus.PAYLOAD_TOO_LARGE, [
-        `Storage quota exceeded. Limit: ${limitMb}MB, Used: ${usedMb}MB`,
-      ]);
+      throw new PayloadTooLargeException(`Storage quota exceeded. Limit: ${limitMb}MB, Used: ${usedMb}MB`);
     }
   }
 
@@ -295,7 +300,7 @@ export class FilesService implements OnModuleInit {
   private checkAccess(file: MediaFile, userId: string) {
     if (file.access === "PUBLIC") return;
     if (file.ownerId !== userId) {
-      throw new ApiException(ErrorCodes.FILE_ACCESS_DENIED, HttpStatus.FORBIDDEN);
+      throw new FileAccessDeniedException();
     }
   }
 

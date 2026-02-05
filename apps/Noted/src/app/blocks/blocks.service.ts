@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
@@ -6,15 +6,18 @@ import { CreateBlockDto } from "./dto/create-block.dto";
 import { BlockMeta, BlockNesting, TextMetaContent, TextPageKeys } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Prisma } from "generated/prisma/client";
-import { ApiException } from "@noted/common/errors/api-exception";
-import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { TextBlockMetaDto } from "./dto/content-payload.dto";
 import { CreatePageDto } from "./dto/create-page.dto";
-import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
-import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
+import {
+  BlockAccessDeniedException,
+  BlockNotFoundException,
+  FailedToCreateBlockException,
+  FailedToFindBlockException,
+  FailedToFindPageException,
+} from "@noted/common/errors/domain-exception";
 
 @Injectable()
 export class BlocksService {
@@ -24,7 +27,7 @@ export class BlocksService {
     private readonly prisma: PrismaService,
     private readonly filesService: FilesService,
     private readonly queueService: PhotoQueueService,
-  ) { }
+  ) {}
   async createBlock(userId: string, dto: CreateBlockDto) {
     const blockNesting = await this.validateReqBlockNesting(dto);
     await this.validateBlockMeta(dto.blockType, dto.meta);
@@ -74,7 +77,9 @@ export class BlocksService {
           title: true,
         },
       });
-      if(!pages){throw new ApiException(ErrorCodes.FAILED_TO_FIND_PAGE, HttpStatus.BAD_REQUEST)}
+      if (!pages) {
+        throw new FailedToFindPageException();
+      }
 
       const pageTitles = pages.map(page => {
         return {
@@ -85,9 +90,9 @@ export class BlocksService {
 
       return { pageTitles };
     } catch (error) {
-      if (error instanceof ApiException) throw error
+      if (error instanceof FailedToFindPageException) throw error;
       this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
-      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST)
+      throw new BadRequestException();
     }
   }
 
@@ -108,7 +113,7 @@ export class BlocksService {
               order: dto.order,
             },
           });
-          this.logger.log(`saveBlockByNesting() | user: ${userId} create block: ${block.id}`)
+          this.logger.log(`saveBlockByNesting() | user: ${userId} create block: ${block.id}`);
           return block;
         }
         case BlockNesting.TOP: {
@@ -119,14 +124,13 @@ export class BlocksService {
               pageId: dto.pageId,
             },
           });
-          this.logger.log(`saveBlockByNesting() | user: ${userId} create ${blockNesting} block: ${block.id}`)
+          this.logger.log(`saveBlockByNesting() | user: ${userId} create ${blockNesting} block: ${block.id}`);
           return block;
         }
       }
     } catch (error) {
-      if (error instanceof ApiException) throw error
       this.logger.error(`saveBlockByNesting() | ${(error as Error).message}`, (error as Error).stack);
-      throw new ApiException(ErrorCodes.FAILED_TO_CREATE_BLOCK, HttpStatus.BAD_REQUEST)
+      throw new FailedToCreateBlockException();
     }
   }
 
@@ -175,18 +179,18 @@ export class BlocksService {
         (accessBlock.expiresAt && accessBlock.expiresAt < new Date())
       ) {
         this.logger.log(`checkAccess() | access denied: user ${userId} to block ${blockId} `);
-        throw new ApiException(ErrorCodes.BLOCK_ACCESS_DENIED, HttpStatus.FORBIDDEN);
+        throw new BlockAccessDeniedException();
       }
       return;
     } catch (error) {
-      if (error instanceof ApiException) throw error;
+      if (error instanceof BlockAccessDeniedException) throw error;
       this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
-      throw new ApiException(ErrorCodes.FAILED_TO_CREATE_BLOCK, HttpStatus.BAD_REQUEST);
+      throw new FailedToCreateBlockException();
     }
   }
   private async applyTopAccessCheck(userId: string, permission: BlockPermission, pageId: string) {
-      try{
-    const parentPageForTop = await this.prisma.page.findUnique({
+    try {
+      const parentPageForTop = await this.prisma.page.findUnique({
         where: { id: pageId },
       });
       if (parentPageForTop.ownerId == userId) {
@@ -207,13 +211,13 @@ export class BlocksService {
         (accessBlockForTop.expiresAt && accessBlockForTop.expiresAt < new Date())
       ) {
         this.logger.log(`checkAccess() | access denied: user ${userId} to page ${pageId} `);
-        throw new ApiException(ErrorCodes.BLOCK_ACCESS_DENIED, HttpStatus.FORBIDDEN);
+        throw new BlockAccessDeniedException();
       }
-    return;
-        } catch (error) {
-      if (error instanceof ApiException) throw error;
+      return;
+    } catch (error) {
+      if (error instanceof BlockAccessDeniedException) throw error;
       this.logger.error(`applyTopAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
-      throw new ApiException(ErrorCodes.FAILED_TO_CREATE_BLOCK, HttpStatus.BAD_REQUEST);
+      throw new FailedToCreateBlockException();
     }
   }
 
@@ -238,7 +242,7 @@ export class BlocksService {
       });
 
       if (!block) {
-        throw new ApiException(ErrorCodes.BLOCK_NOT_FOUND, HttpStatus.NOT_FOUND);
+        throw new BlockNotFoundException();
       }
 
       if (block.pageId) {
@@ -278,16 +282,16 @@ export class BlocksService {
 
       if (!result || result.length === 0) {
         this.logger.error(`findTopBlock: No parent block with page found for block ${blockId}`);
-        throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+        throw new BadRequestException();
       }
 
       return this.prisma.block.findUnique({
         where: { id: result[0].id },
       });
     } catch (error) {
-      if (error instanceof ApiException) throw error;
+      if (error instanceof BadRequestException) throw error;
       this.logger.error(`findTopBlock() | ${(error as Error).message}`, (error as Error).stack);
-      throw new ApiException(ErrorCodes.FAILED_TO_FIND_BLOCK, HttpStatus.BAD_REQUEST);
+      throw new FailedToFindBlockException();
     }
   }
 
@@ -311,7 +315,7 @@ export class BlocksService {
       const messages = errors.map(err => Object.values(err.constraints || {}).join(", ")).join("; ");
 
       this.logger.warn(`Validation failed for block type ${type}: ${messages}`);
-      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+      throw new BadRequestException();
     }
     return;
   }
@@ -319,13 +323,13 @@ export class BlocksService {
   private async validateReqBlockNesting(dto: CreateBlockDto): Promise<BlockNesting> {
     if (!dto.parentId && !dto.pageId) {
       this.logger.error(`validateReqBlockNesting() | create block error request hasnt parentId or pageId`);
-      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+      throw new BadRequestException();
     }
     if (dto.parentId && dto.pageId) {
       this.logger.error(
         `validateReqBlockNesting() | create block error request should has parentId or pageId not together`,
       );
-      throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+      throw new BadRequestException();
     }
     if (dto.pageId) {
       return BlockNesting.TOP;
@@ -333,19 +337,6 @@ export class BlocksService {
     if (dto.parentId) {
       return BlockNesting.CHILD;
     }
-    throw new ApiException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
+    throw new BadRequestException();
   }
-
-    private handleBlockConstraintError(error: unknown): never {
-      if (!isPrismaConstraintError(error)) {
-        throw new ApiException(ErrorCodes.REGISTRATION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
-      }
-  
-      if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "Block") {
-        throw new ApiException(ErrorCodes.EMAIL_ALREADY_EXISTS, HttpStatus.CONFLICT);
-      }
-
-  
-      throw new ApiException(ErrorCodes.DUPLICATE_VALUE, HttpStatus.CONFLICT);
-    }
 }

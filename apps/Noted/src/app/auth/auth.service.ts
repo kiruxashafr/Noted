@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "../prisma/prisma.service";
@@ -9,13 +9,22 @@ import * as argon2 from "argon2";
 import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { ReadAuthDto } from "./dto/read-auth.dto";
-import { ApiException } from "@noted/common/errors/api-exception";
 import { ReadRefreshDto } from "./dto/read-refresh.dto";
 import { ReadUserProfileDto } from "./dto/read-user-profile.dto";
 import { isDev } from "@noted/common/utils/is-dev";
 import type { Response } from "express";
-import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import { toDto } from "@noted/common/utils/to-dto";
+import {
+  DuplicateValueException,
+  EmailAlreadyExistsException,
+  GetProfileException,
+  InvalidCredentialsException,
+  InvalidRefreshTokenException,
+  LoginFailedException,
+  RefreshFailedException,
+  RegistrationFailedException,
+  UserNotFoundException,
+} from "@noted/common/errors/domain-exception";
 
 @Injectable()
 export class AuthService {
@@ -66,7 +75,6 @@ export class AuthService {
 
       return toDto(registerData, ReadAuthDto);
     } catch (error) {
-      if (error instanceof ApiException) throw error
       this.logger.error(`register() | User ${email} register failed with error ${error.message}}`);
       this.handleAccountConstraintError(error);
     }
@@ -74,74 +82,88 @@ export class AuthService {
 
   async login(dto: LoginDto): Promise<ReadAuthDto> {
     const { email, password } = dto;
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        select: { id: true, password: true },
+      });
 
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-      select: { id: true, password: true },
-    });
+      if (!user) {
+        throw new InvalidCredentialsException();
+      }
 
-    if (!user) {
-      throw new ApiException(ErrorCodes.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
+      const isPasswordValid = await argon2.verify(user.password, password);
+
+      if (!isPasswordValid) {
+        throw new InvalidCredentialsException();
+      }
+
+      const tokens = {
+        accessToken: await this.generateAccessToken(user.id),
+        refreshToken: await this.generateRefreshToken(user.id),
+      };
+
+      const authData = {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        userId: user.id,
+      };
+
+      return toDto(authData, ReadAuthDto);
+    } catch (error) {
+      if (error instanceof InvalidCredentialsException) throw error;
+      this.logger.error(`login() | error: ${(error as Error).message}`);
+      throw new LoginFailedException("Login failed due to technical issues");
     }
-
-    const isPasswordValid = await argon2.verify(user.password, password);
-
-    if (!isPasswordValid) {
-      throw new ApiException(ErrorCodes.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
-    }
-
-    const tokens = {
-      accessToken: await this.generateAccessToken(user.id),
-      refreshToken: await this.generateRefreshToken(user.id),
-    };
-
-    const authData = {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      userId: user.id,
-    };
-
-    return toDto(authData, ReadAuthDto);
   }
 
   async refresh(refreshToken: string) {
     let payload: RefreshTokenPayload;
     try {
       payload = await this.jwtService.verifyAsync(refreshToken, { secret: this.refreshSecret });
-    } catch {
-      throw new ApiException(ErrorCodes.INVALID_REFRESH_TOKEN, HttpStatus.UNAUTHORIZED);
+      if (!payload) throw new InvalidRefreshTokenException();
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new UserNotFoundException();
+      }
+
+      const accessToken = await this.generateAccessToken(user.id);
+
+      return toDto({ accessToken }, ReadRefreshDto);
+    } catch (error) {
+      if (error instanceof InvalidCredentialsException || UserNotFoundException) throw error;
+      this.logger.error(`login() | error: ${(error as Error).message}`);
+      throw new RefreshFailedException("refresh failed due to technical issues");
     }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-      select: { id: true },
-    });
-
-    if (!user) {
-      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.UNAUTHORIZED);
-    }
-
-    const accessToken = await this.generateAccessToken(user.id);
-
-    return toDto({ accessToken }, ReadRefreshDto);
   }
 
   async getUserProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        createdAt: true,
-      },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          createdAt: true,
+        },
+      });
 
-    if (!user) {
-      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.INTERNAL_SERVER_ERROR);
+      if (!user) {
+        throw new UserNotFoundException();
+      }
+
+      return toDto(user, ReadUserProfileDto);
+    } catch (error) {
+      if (error instanceof UserNotFoundException) throw error;
+      this.logger.error(`login() | error: ${(error as Error).message}`);
+      throw new GetProfileException("Get user profile failed due to technical issues");
     }
-
-    return toDto(user, ReadUserProfileDto);
   }
   async generateRefreshToken(userId: string): Promise<string> {
     const payload: RefreshTokenPayload = {
@@ -189,13 +211,13 @@ export class AuthService {
 
   private handleAccountConstraintError(error: unknown): never {
     if (!isPrismaConstraintError(error)) {
-      throw new ApiException(ErrorCodes.REGISTRATION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new RegistrationFailedException();
     }
 
     if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "User") {
-      throw new ApiException(ErrorCodes.EMAIL_ALREADY_EXISTS, HttpStatus.CONFLICT);
+      throw new EmailAlreadyExistsException();
     }
 
-    throw new ApiException(ErrorCodes.DUPLICATE_VALUE, HttpStatus.CONFLICT);
+    throw new DuplicateValueException();
   }
 }
