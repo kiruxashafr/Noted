@@ -29,9 +29,9 @@ export class BlocksService {
     private readonly queueService: PhotoQueueService,
   ) {}
   async createBlock(userId: string, dto: CreateBlockDto) {
-    const blockNesting = await this.validateReqBlockNesting(dto);
+    const blockNesting = await this.validateReqBlockNesting(dto.parentId, dto.pageId);
     await this.validateBlockMeta(dto.blockType, dto.meta);
-    await this.checkAccess(userId, blockNesting, BlockPermission.EDIT, dto.parentId, dto.pageId);
+    await this.checkCreateBlockAccess(userId, BlockPermission.EDIT, dto);
     switch (dto.blockType) {
       case BlockType.TEXT:
         return await this.createTextBlock(userId, dto, blockNesting);
@@ -134,20 +134,19 @@ export class BlocksService {
     }
   }
 
-  private async checkAccess(
+  private async checkCreateBlockAccess(
     userId: string,
-    blockNesting: BlockNesting,
     permission: BlockPermission,
-    blockId?: string,
-    pageId?: string,
+    dto: CreateBlockDto
   ) {
+    const blockNesting = await this.validateReqBlockNesting(dto.parentId, dto.pageId)
     switch (blockNesting) {
       case BlockNesting.CHILD: {
-        await this.applyChildAccessCheck(userId, permission, blockId);
+        await this.applyBlockAccessCheck(userId, permission, dto.parentId);
         break;
       }
       case BlockNesting.TOP: {
-        await this.applyTopAccessCheck(userId, permission, pageId);
+        await this.applyPageAccessCheck(userId, permission, dto.pageId);
         break;
       }
       default:
@@ -155,7 +154,7 @@ export class BlocksService {
     }
   }
 
-  private async applyChildAccessCheck(userId: string, permission: BlockPermission, blockId?: string) {
+  private async applyBlockAccessCheck(userId: string, permission: BlockPermission, blockId?: string) {
     try {
       const parentPage = await this.findParentPage(blockId);
 
@@ -188,7 +187,7 @@ export class BlocksService {
       throw new FailedToCreateBlockException();
     }
   }
-  private async applyTopAccessCheck(userId: string, permission: BlockPermission, pageId: string) {
+  private async applyPageAccessCheck(userId: string, permission: BlockPermission, pageId: string) {
     try {
       const parentPageForTop = await this.prisma.page.findUnique({
         where: { id: pageId },
@@ -320,21 +319,21 @@ export class BlocksService {
     return;
   }
 
-  private async validateReqBlockNesting(dto: CreateBlockDto): Promise<BlockNesting> {
-    if (!dto.parentId && !dto.pageId) {
+  private async validateReqBlockNesting(parentId?: string, pageId?: string): Promise<BlockNesting> {
+    if (!parentId && !pageId) {
       this.logger.error(`validateReqBlockNesting() | create block error request hasnt parentId or pageId`);
-      throw new BadRequestException();
+      throw new BadRequestException("request hasnt parentId or pageId");
     }
-    if (dto.parentId && dto.pageId) {
+    if (parentId && pageId) {
       this.logger.error(
         `validateReqBlockNesting() | create block error request should has parentId or pageId not together`,
       );
-      throw new BadRequestException();
+      throw new BadRequestException("request should has parentId or pageId not together");
     }
-    if (dto.pageId) {
+    if (pageId) {
       return BlockNesting.TOP;
     }
-    if (dto.parentId) {
+    if (parentId) {
       return BlockNesting.CHILD;
     }
     throw new BadRequestException();
