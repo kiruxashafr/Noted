@@ -17,6 +17,7 @@ import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
 import { PHOTO_PROFILES } from "../shared/photo-profiles";
 import { UserAvatar, UserAvatarKeys } from "@noted/types";
+import { UserNotFoundException } from "@noted/common/errors/domain-exception";
 
 @Injectable()
 export class UsersService {
@@ -122,7 +123,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+      throw new UserNotFoundException(`user ${userId} not found`);
     }
 
     const result = await this.filesService.deleteAllUserFiles(userId);

@@ -66,6 +66,7 @@ export class AuthService {
 
       return toDto(registerData, ReadAuthDto);
     } catch (error) {
+      if (error instanceof ApiException) throw error
       this.logger.error(`register() | User ${email} register failed with error ${error.message}}`);
       this.handleAccountConstraintError(error);
     }
