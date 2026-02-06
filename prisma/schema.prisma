@@ -109,6 +109,7 @@ model BlockRelation {
 
   @@unique([fromId, toId])
   @@unique([fromId, order])
+  @@unique([toId, order])
   @@unique([toId])
   @@index([fromId])
   @@index([toId])

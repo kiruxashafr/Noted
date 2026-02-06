@@ -18,6 +18,8 @@ import {
   FailedToFindBlockException,
   FailedToFindPageException,
 } from "@noted/common/errors/domain-exception";
+import { toDto } from "../utils/to-dto";
+import { ReadTopBlockDto } from "./dto/read-top-block.dto";
 
 @Injectable()
 export class BlocksService {
@@ -66,20 +68,29 @@ export class BlocksService {
     return await this.saveBlockByNesting(userId, blockNesting, createBlock);
   }
 
-  async getPage(userId: string, pageId: string) {
-
-    await this.applyPageAccessCheck(userId, BlockPermission.VIEW, pageId)
-
+  async getTopBlock(userId: string, pageId: string) {
     const page = await this.prisma.page.findUnique({
-      where: {id: pageId}
-    })
+      where: { id: pageId },
+    });
 
-    const topBlock = await this.prisma.block.findMany({
-      where: {pageId: pageId}
-    })
+    if (!page) {
+      throw new BlockNotFoundException("Page not found");
+    }
 
- 
+    await this.applyPageAccessCheck(userId, BlockPermission.VIEW, pageId);
 
+    const blocksWithRelations = await this.prisma.block.findMany({
+      where: { pageId: pageId },
+      include: {
+        parentRelations: {
+          select: {
+            order: true,
+          },
+        },
+      },
+    });
+
+    return toDto(blocksWithRelations, ReadTopBlockDto);
   }
 
   async findPageTitle(userId: string) {
@@ -143,9 +154,9 @@ export class BlocksService {
           await this.prisma.blockRelation.create({
             data: {
               toId: block.id,
-              order: dto.order
-            }
-          })
+              order: dto.order,
+            },
+          });
           this.logger.log(`saveBlockByNesting() | user: ${userId} create ${blockNesting} block: ${block.id}`);
           return block;
         }
@@ -156,12 +167,8 @@ export class BlocksService {
     }
   }
 
-  private async checkCreateBlockAccess(
-    userId: string,
-    permission: BlockPermission,
-    dto: CreateBlockDto
-  ) {
-    const blockNesting = await this.validateReqBlockNesting(dto.parentId, dto.pageId)
+  private async checkCreateBlockAccess(userId: string, permission: BlockPermission, dto: CreateBlockDto) {
+    const blockNesting = await this.validateReqBlockNesting(dto.parentId, dto.pageId);
     switch (blockNesting) {
       case BlockNesting.CHILD: {
         await this.applyBlockAccessCheck(userId, permission, dto.parentId);
@@ -211,10 +218,12 @@ export class BlocksService {
   }
   private async applyPageAccessCheck(userId: string, permission: BlockPermission, pageId: string) {
     try {
-      const parentPageForTop = await this.prisma.page.findUnique({
+      const pageOwner = await this.prisma.page.findUnique({
         where: { id: pageId },
+        select: { ownerId: true },
       });
-      if (parentPageForTop.ownerId == userId) {
+
+      if (userId == pageOwner.ownerId) {
         return;
       }
       const accessBlockForTop = await this.prisma.pageAccess.findUnique({
@@ -237,8 +246,8 @@ export class BlocksService {
       return;
     } catch (error) {
       if (error instanceof BlockAccessDeniedException) throw error;
-      this.logger.error(`applyTopAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
-      throw new FailedToCreateBlockException();
+      this.logger.error(`applyPageAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
+      throw new FailedToFindBlockException();
     }
   }
 
