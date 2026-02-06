@@ -1,6 +1,6 @@
 import { Expose, Transform } from "class-transformer";
 
-export class ReadTopBlockDto {
+export class ReadBlockDto {
   @Expose()
   id: string;
 
@@ -20,6 +20,5 @@ export class ReadTopBlockDto {
   updatedAt: Date;
 
   @Expose()
-  @Transform(({ obj }) => obj.parentRelations?.[0]?.order)
   order: number;
 }

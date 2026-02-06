@@ -4,7 +4,7 @@ import { CreateBlockDto } from "./dto/create-block.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
 import { Request } from "express";
 import { CreatePageDto } from "./dto/create-page.dto";
-import { GetPageTopBlocks } from "./dto/get-page-top-blocks.dto";
+import { GetChildBlocksDto, GetTopBlocksDto } from "./dto/get-blocks.dto";
 
 @Controller("blocks")
 export class BlocksController {
@@ -22,9 +22,15 @@ export class BlocksController {
     return this.blocksServise.createPage(req.user.sub, dto);
   }
 
+    @Get("child")
+  @UseGuards(JwtAuthGuard)
+  async getChildBlock(@Req() req: Request, @Body() dto: GetChildBlocksDto) {
+    return this.blocksServise.getChildBlock(req.user.sub, dto.blockId);
+  }
+
   @Get("page/block")
   @UseGuards(JwtAuthGuard)
-  async getPageTopBlock(@Req() req: Request, @Body() dto: GetPageTopBlocks) {
+  async getTopBlock(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
     return this.blocksServise.getTopBlock(req.user.sub, dto.pageId);
   }
 
