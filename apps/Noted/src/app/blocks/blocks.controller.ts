@@ -22,16 +22,22 @@ export class BlocksController {
     return this.blocksServise.createPage(req.user.sub, dto);
   }
 
-    @Get("child")
+  @Get("child")
   @UseGuards(JwtAuthGuard)
-  async getChildBlock(@Req() req: Request, @Body() dto: GetChildBlocksDto) {
-    return this.blocksServise.getChildBlock(req.user.sub, dto.blockId);
+  async getChildBlocks(@Req() req: Request, @Body() dto: GetChildBlocksDto) {
+    return this.blocksServise.getChildBlocks(req.user.sub, dto.blockId);
+  }
+
+  @Get("testchild")
+  @UseGuards(JwtAuthGuard)
+  async getChildBlocksTest(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
+    return this.blocksServise.findAllChildBlockForPage(req.user.sub, dto.pageId);
   }
 
   @Get("page/block")
   @UseGuards(JwtAuthGuard)
-  async getTopBlock(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
-    return this.blocksServise.getTopBlock(req.user.sub, dto.pageId);
+  async getTopBlocks(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
+    return this.blocksServise.getTopBlocksForPage(req.user.sub, dto.pageId);
   }
 
   @Get("page/title")

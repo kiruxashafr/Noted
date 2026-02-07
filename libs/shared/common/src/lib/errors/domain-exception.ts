@@ -127,6 +127,16 @@ export const FailedToCreateBlockException = createException(
   HttpStatus.INTERNAL_SERVER_ERROR,
 );
 
+export const FailedToCheckBlockAccessException = createException(
+  ErrorCodes.FAILED_TO_CHECK_ACCESS_BLOCK,
+  HttpStatus.INTERNAL_SERVER_ERROR,
+);
+
+export const FailedToCheckPageAccessException = createException(
+  ErrorCodes.FAILED_TO_CHECK_ACCESS_PAGE,
+  HttpStatus.INTERNAL_SERVER_ERROR,
+);
+
 export const FailedToFindPageException = createException(ErrorCodes.FAILED_TO_FIND_PAGE, HttpStatus.NOT_FOUND);
 
 export const FailedToFindBlockException = createException(ErrorCodes.FAILED_TO_FIND_BLOCK, HttpStatus.NOT_FOUND);

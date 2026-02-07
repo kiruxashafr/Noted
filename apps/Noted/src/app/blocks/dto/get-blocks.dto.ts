@@ -8,5 +8,5 @@ export class GetTopBlocksDto {
 export class GetChildBlocksDto {
   @IsString()
   @IsNotEmpty()
-  blockId: string
+  blockId: string;
 }

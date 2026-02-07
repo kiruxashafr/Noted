@@ -3,10 +3,9 @@ import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
-import { BlockMeta, BlockNesting, TextMetaContent, TextPageKeys } from "@noted/types";
+import { BlockMeta, PageOrBlock, TextMetaContent, TextPageKeys, BlockWithOrder } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Block, Prisma } from "generated/prisma/client";
-
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { TextBlockMetaDto } from "./dto/content-payload.dto";
@@ -14,9 +13,12 @@ import { CreatePageDto } from "./dto/create-page.dto";
 import {
   BlockAccessDeniedException,
   BlockNotFoundException,
+  FailedToCheckBlockAccessException,
+  FailedToCheckPageAccessException,
   FailedToCreateBlockException,
   FailedToFindBlockException,
   FailedToFindPageException,
+  InternalErrorException,
 } from "@noted/common/errors/domain-exception";
 import { toDto } from "../utils/to-dto";
 import { ReadBlockDto } from "./dto/read-top-block.dto";
@@ -33,7 +35,7 @@ export class BlocksService {
   async createBlock(userId: string, dto: CreateBlockDto) {
     const blockNesting = await this.validateReqBlockNesting(dto.parentId, dto.pageId);
     await this.validateBlockMeta(dto.blockType, dto.meta);
-    await this.checkCreateBlockAccess(userId, BlockPermission.EDIT, dto);
+    await this.checkPageOrBlockAccess(userId, BlockPermission.EDIT, dto.parentId, dto.pageId);
     switch (dto.blockType) {
       case BlockType.TEXT:
         return await this.createTextBlock(userId, dto, blockNesting);
@@ -52,7 +54,7 @@ export class BlocksService {
     return page;
   }
 
-  async createTextBlock(userId: string, dto: CreateBlockDto, blockNesting: BlockNesting) {
+  async createTextBlock(userId: string, dto: CreateBlockDto, blockNesting: PageOrBlock) {
     const textBlockMeta = dto.meta as TextMetaContent;
 
     const meta: TextMetaContent = {
@@ -68,7 +70,7 @@ export class BlocksService {
     return await this.saveBlockByNesting(userId, blockNesting, createBlock);
   }
 
-  async getTopBlock(userId: string, pageId: string) {
+  async getTopBlocksForPage(userId: string, pageId: string) {
     try {
       const page = await this.prisma.page.findUnique({
         where: { id: pageId },
@@ -93,7 +95,7 @@ export class BlocksService {
         LEFT JOIN block_relations br ON b.id = br.to
         WHERE b.page_id = ${pageId}
 `;
-      return toDto(topBlocks, ReadBlockDto);
+      return topBlocks;
     } catch (error) {
       if (error instanceof BlockNotFoundException) throw error;
       this.logger.error(`getTopBlock() | ${(error as Error).message}`, (error as Error).stack);
@@ -101,18 +103,18 @@ export class BlocksService {
     }
   }
 
-  async getChildBlock(userId: string, blockId: string) {
-        try {
-          const block = await this.prisma.block.findUnique({
-            where:{id: blockId}
-          })
-          if (!block) {
-             throw new BlockNotFoundException();
-          }
+  async getChildBlocks(userId: string, blockId: string) {
+    try {
+      const block = await this.prisma.block.findUnique({
+        where: { id: blockId },
+      });
+      if (!block) {
+        throw new BlockNotFoundException();
+      }
 
-          await this.applyBlockAccessCheck(userId, BlockPermission.VIEW, blockId)
+      await this.applyBlockAccessCheck(userId, BlockPermission.VIEW, blockId);
 
-          const childBlocks = await this.prisma.$queryRaw<Array<Block>>`
+      const childBlocks = await this.prisma.$queryRaw<Array<BlockWithOrder>>`
           SELECT
             b.id,
             b.type,
@@ -124,8 +126,8 @@ export class BlocksService {
           FROM blocks b
           INNER JOIN block_relations br ON b.id = br.to
           WHERE br.from = ${blockId}
-          `
-          return toDto (childBlocks, ReadBlockDto)
+          `;
+      return toDto(childBlocks, ReadBlockDto);
     } catch (error) {
       if (error instanceof BlockNotFoundException) throw error;
       this.logger.error(`getTopBlock() | ${(error as Error).message}`, (error as Error).stack);
@@ -163,10 +165,10 @@ export class BlocksService {
     }
   }
 
-  private async saveBlockByNesting(userId: string, blockNesting: BlockNesting, dto: CreateBlockDto) {
+  private async saveBlockByNesting(userId: string, blockNesting: PageOrBlock, dto: CreateBlockDto) {
     try {
       switch (blockNesting) {
-        case BlockNesting.CHILD: {
+        case PageOrBlock.BLOCK: {
           const block = await this.prisma.block.create({
             data: {
               type: dto.blockType,
@@ -183,7 +185,7 @@ export class BlocksService {
           this.logger.log(`saveBlockByNesting() | user: ${userId} create block: ${block.id}`);
           return block;
         }
-        case BlockNesting.TOP: {
+        case PageOrBlock.PAGE: {
           const block = await this.prisma.block.create({
             data: {
               type: dto.blockType,
@@ -207,15 +209,16 @@ export class BlocksService {
     }
   }
 
-  private async checkCreateBlockAccess(userId: string, permission: BlockPermission, dto: CreateBlockDto) {
-    const blockNesting = await this.validateReqBlockNesting(dto.parentId, dto.pageId);
+  private async checkPageOrBlockAccess(userId: string, permission: BlockPermission, blockId?: string, pageId?: string) {
+    this.logger.debug(`checkPageOrBlockAccess ${blockId} ${pageId}`);
+    const blockNesting = await this.validateReqBlockNesting(blockId, pageId);
     switch (blockNesting) {
-      case BlockNesting.CHILD: {
-        await this.applyBlockAccessCheck(userId, permission, dto.parentId);
+      case PageOrBlock.BLOCK: {
+        await this.applyBlockAccessCheck(userId, permission, blockId);
         break;
       }
-      case BlockNesting.TOP: {
-        await this.applyPageAccessCheck(userId, permission, dto.pageId);
+      case PageOrBlock.PAGE: {
+        await this.applyPageAccessCheck(userId, permission, pageId);
         break;
       }
       default:
@@ -253,7 +256,7 @@ export class BlocksService {
     } catch (error) {
       if (error instanceof BlockAccessDeniedException) throw error;
       this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
-      throw new FailedToCreateBlockException();
+      throw new FailedToCheckBlockAccessException();
     }
   }
   private async applyPageAccessCheck(userId: string, permission: BlockPermission, pageId: string) {
@@ -287,13 +290,13 @@ export class BlocksService {
     } catch (error) {
       if (error instanceof BlockAccessDeniedException) throw error;
       this.logger.error(`applyPageAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
-      throw new FailedToFindBlockException();
+      throw new FailedToCheckPageAccessException();
     }
   }
 
   private async findParentPage(blockId: string) {
     try {
-      const topBlock = await this.findTopBlock(blockId);
+      const topBlock = await this.findTopBlockForBlock(blockId);
 
       const parentPage = await this.prisma.page.findUnique({
         where: { id: topBlock.pageId },
@@ -305,7 +308,7 @@ export class BlocksService {
     }
   }
 
-  private async findTopBlock(blockId: string) {
+  private async findTopBlockForBlock(blockId: string) {
     try {
       const block = await this.prisma.block.findUnique({
         where: { id: blockId },
@@ -319,15 +322,15 @@ export class BlocksService {
         return block;
       }
 
-      const result = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      const topBlock = await this.prisma.$queryRaw<Array<{ id: string }>>`
     WITH RECURSIVE block_hierarchy AS (
       SELECT 
         b.id,
         b.page_id as "pageId",
-        br.from_id as "parentId",
+        br.from as "parentId",
         1 as depth
       FROM blocks b
-      LEFT JOIN block_relations br ON br.to_id = b.id
+      LEFT JOIN block_relations br ON br.to = b.id
       WHERE b.id = ${blockId}
       
       UNION ALL
@@ -335,10 +338,10 @@ export class BlocksService {
       SELECT 
         b.id,
         b.page_id as "pageId",
-        br.from_id as "parentId",
+        br.from as "parentId",
         bh.depth + 1
       FROM blocks b
-      INNER JOIN block_relations br ON br.to_id = b.id
+      INNER JOIN block_relations br ON br.to = b.id
       INNER JOIN block_hierarchy bh ON b.id = bh."parentId"
       WHERE bh."pageId" IS NULL 
       AND bh.depth < 100 
@@ -350,20 +353,87 @@ export class BlocksService {
     LIMIT 1;
   `;
 
-      if (!result || result.length === 0) {
-        this.logger.error(`findTopBlock: No parent block with page found for block ${blockId}`);
+      if (!topBlock || topBlock.length === 0) {
+        this.logger.error(`findTopBlockForBlock: No parent block with page found for block ${blockId}`);
         throw new BadRequestException();
       }
 
       return this.prisma.block.findUnique({
-        where: { id: result[0].id },
+        where: { id: topBlock[0].id },
       });
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
-      this.logger.error(`findTopBlock() | ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(`findTopBlockForBlock() | ${(error as Error).message}`, (error as Error).stack);
       throw new FailedToFindBlockException();
     }
   }
+
+  async findAllChildBlockForBlock(userId: string, blockId: string) {
+    await this.applyBlockAccessCheck(userId, BlockPermission.VIEW, blockId)
+    try {
+      const childBlocks = await this.prisma.$queryRaw<Array<{ id: string }>>`
+    WITH RECURSIVE child_hierarchy AS (
+      SELECT 
+        b.id as "parent_id",
+        br.to as "child_id",
+        1 as depth
+      FROM blocks b
+      INNER JOIN block_relations br ON br.from = b.id
+      WHERE b.id = ${blockId}
+      
+      UNION ALL
+      
+      SELECT 
+        b.id as "parent_id",
+        br.to as "child_id",
+        ch.depth + 1
+      FROM blocks b
+      INNER JOIN block_relations br ON br.from = b.id
+      INNER JOIN child_hierarchy ch ON b.id = ch."child_id"
+      WHERE ch.depth < 100
+    )
+
+    SELECT DISTINCT child_id as id
+    FROM child_hierarchy
+    WHERE "child_id" IS NOT NULL
+`;
+      const childBlocksArray = childBlocks.map(item => item.id);
+      return childBlocksArray;
+    } catch (error) {
+      this.logger.error(`findAllChildBlock() | ${(error as Error).message}`, (error as Error).stack);
+      throw new FailedToFindBlockException();
+    }
+  }
+
+async findAllChildBlockForPage(userId: string, pageId: string): Promise<string[]> {
+  await this.applyPageAccessCheck(userId, BlockPermission.VIEW, pageId);
+  
+  try {
+    const topBlocks = await this.getTopBlocksForPage(userId, pageId);
+    
+    if (!topBlocks || topBlocks.length === 0) {
+      return [];
+    }
+    
+    const allIds = new Set<string>();
+    
+    topBlocks.forEach(block => allIds.add(block.id));
+    
+
+    for (const topBlock of topBlocks) {
+      const childIds = await this.findAllChildBlockForBlock(userId, topBlock.id);
+      childIds.forEach(id => allIds.add(id));
+    }
+    
+    const result = Array.from(allIds);
+    
+    return result;
+    
+  } catch (error) {
+    this.logger.error(`findAllChildBlockForPage() | ${(error as Error).message}`, (error as Error).stack);
+    throw new InternalErrorException();
+  }
+}
 
   private async validateBlockMeta(type: BlockType, content: BlockMeta): Promise<void> {
     let dtoInstance: object;
@@ -390,7 +460,7 @@ export class BlocksService {
     return;
   }
 
-  private async validateReqBlockNesting(parentId?: string, pageId?: string): Promise<BlockNesting> {
+  private async validateReqBlockNesting(parentId?: string, pageId?: string): Promise<PageOrBlock> {
     if (!parentId && !pageId) {
       this.logger.error(`validateReqBlockNesting() | create block error request hasnt parentId or pageId`);
       throw new BadRequestException("request hasnt parentId or pageId");
@@ -402,10 +472,10 @@ export class BlocksService {
       throw new BadRequestException("request should has parentId or pageId not together");
     }
     if (pageId) {
-      return BlockNesting.TOP;
+      return PageOrBlock.PAGE;
     }
     if (parentId) {
-      return BlockNesting.CHILD;
+      return PageOrBlock.BLOCK;
     }
     throw new BadRequestException();
   }
