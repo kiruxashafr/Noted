@@ -14,8 +14,13 @@ export interface CreatePageRequest {
   order: number;
 }
 
-export interface BlockWithOrder extends Block {
-  order: number;
+//Page
+export interface PageMetaContent {
+  title: string;
+}
+
+export enum PageMetakeys {
+  Title = "title"
 }
 
 //Text
@@ -23,7 +28,7 @@ export interface TextMetaContent {
   json: Record<string, unknown>;
 }
 
-export enum TextPageKeys {
+export enum TextMetaKeys {
   Json = "json",
 }
 
@@ -32,4 +37,8 @@ export enum PageOrBlock {
   BLOCK,
 }
 
-export type BlockMeta = TextMetaContent;
+export interface BlockWithOrder extends Block {
+  order: number;
+}
+
+export type BlockMeta = TextMetaContent | PageMetaContent;

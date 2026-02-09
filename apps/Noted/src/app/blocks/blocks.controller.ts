@@ -31,7 +31,7 @@ export class BlocksController {
   @Get("testchild")
   @UseGuards(JwtAuthGuard)
   async getChildBlocksTest(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
-    return this.blocksServise.findAllChildBlockForPage(req.user.sub, dto.pageId);
+    return this.blocksServise.findAllChildForPage(req.user.sub, dto.pageId);
   }
 
   @Get("page/block")

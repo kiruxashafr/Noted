@@ -3,13 +3,12 @@ import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
-import { BlockMeta, PageOrBlock, TextMetaContent, TextPageKeys, BlockWithOrder } from "@noted/types";
+import { BlockMeta, PageOrBlock, TextMetaContent, BlockWithOrder, TextMetaKeys, PageMetaContent, PageMetakeys } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Block, Prisma } from "generated/prisma/client";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { TextBlockMetaDto } from "./dto/content-payload.dto";
-import { CreatePageDto } from "./dto/create-page.dto";
 import {
   BlockAccessDeniedException,
   BlockNotFoundException,
@@ -43,22 +42,27 @@ export class BlocksService {
         throw new BadRequestException(`Unsupported block type: ${dto.blockType}`);
     }
   }
-  async createPage(userId: string, dto: CreatePageDto) {
-    const page = await this.prisma.page.create({
-      data: {
-        ownerId: userId,
-        title: dto.title,
-      },
-    });
-    this.logger.log(`createPageBlock() | user ${userId} create page ${page.id}`);
-    return page;
-  }
+  async createPageBlock(userId: string, dto: CreateBlockDto, blockNesting: PageOrBlock) {
+    const pageBlockMeta = dto.meta as PageMetaContent;
 
+    const meta: PageMetaContent = {
+      [PageMetakeys.Title]: pageBlockMeta.title
+    }
+
+    const createBlock: CreateBlockDto = {
+      blockType: dto.blockType,
+      meta: meta,
+      order: dto.order,
+      pageId: dto.pageId,
+      parentId: dto.parentId,
+    };
+    return await this.saveBlockByNesting(userId, blockNesting, createBlock);
+  }
   async createTextBlock(userId: string, dto: CreateBlockDto, blockNesting: PageOrBlock) {
     const textBlockMeta = dto.meta as TextMetaContent;
 
     const meta: TextMetaContent = {
-      [TextPageKeys.Json]: textBlockMeta.json,
+      [TextMetaKeys.Json]: textBlockMeta.json,
     };
     const createBlock: CreateBlockDto = {
       blockType: dto.blockType,
@@ -368,7 +372,7 @@ export class BlocksService {
     }
   }
 
-  async findAllChildBlockForBlock(userId: string, blockId: string) {
+  async findAllChildForBlock(userId: string, blockId: string) {
     await this.applyBlockAccessCheck(userId, BlockPermission.VIEW, blockId)
     try {
       const childBlocks = await this.prisma.$queryRaw<Array<{ id: string }>>`
@@ -405,7 +409,7 @@ export class BlocksService {
     }
   }
 
-async findAllChildBlockForPage(userId: string, pageId: string): Promise<string[]> {
+async findAllChildForPage(userId: string, pageId: string): Promise<string[]> {
   await this.applyPageAccessCheck(userId, BlockPermission.VIEW, pageId);
   
   try {
@@ -421,7 +425,7 @@ async findAllChildBlockForPage(userId: string, pageId: string): Promise<string[]
     
 
     for (const topBlock of topBlocks) {
-      const childIds = await this.findAllChildBlockForBlock(userId, topBlock.id);
+      const childIds = await this.findAllChildForBlock(userId, topBlock.id);
       childIds.forEach(id => allIds.add(id));
     }
     
