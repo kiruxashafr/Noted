@@ -8,6 +8,67 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  password      String
+  name          String
+  createdAt     DateTime      @default(now()) @map("created_at")
+  plan          UserPlan      @default(FREE)
+  /// @type {UserAvatar}
+  avatars       Json?         @map("avatars")
+  blockAccesses BlockAccess[]
+  files         MediaFile[]   @relation("UserFiles")
+
+  @@map("users")
+}
+
+model MediaFile {
+  id           String     @id @default(uuid())
+  bucket       String
+  key          String
+  originalName String     @map("original_name")
+  mimeType     String     @map("mime_type")
+  size         Int
+  ownerId      String
+  access       FileAccess @default(PRIVATE)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  owner        User       @relation("UserFiles", fields: [ownerId], references: [id])
+
+  @@index([ownerId])
+  @@index([mimeType])
+  @@map("media_files")
+}
+
+model Block {
+  id        String                @id @default(uuid())
+  type      BlockType
+  meta      Json?
+  createdAt DateTime              @default(now()) @map("created_at")
+  updatedAt DateTime              @updatedAt @map("updated_at")
+  path      Unsupported("ltree")?
+
+  @@index([path], map: "blocks_path_gist_idx", type: Gist)
+  @@map("blocks")
+}
+
+model BlockAccess {
+  id         String          @id @default(uuid())
+  userId     String          @map("user_id")
+  permission BlockPermission @default(VIEW)
+  isActive   Boolean         @default(true)
+  expiresAt  DateTime?       @map("expires_at")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+  user       User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("block_accesses")
+}
+
 enum UserPlan {
   FREE
   PRO
@@ -25,114 +86,6 @@ enum BlockPermission {
 }
 
 enum BlockType {
-  PAGE
   TEXT
-}
-
-model User {
-  id       String @id @default(uuid())
-  email    String @unique
-  password String
-  name     String
-  avatars  Json?  @map("avatars") /// @type {UserAvatar}
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  plan  UserPlan    @default(FREE)
-  files MediaFile[] @relation("UserFiles")
-
-  ownedPages   Page[]       @relation("OwnedPages")
-  pageAccesses PageAccess[]
-
-  @@map("users")
-}
-
-model MediaFile {
-  id           String     @id @default(uuid())
-  bucket       String
-  key          String
-  originalName String     @map("original_name")
-  mimeType     String     @map("mime_type")
-  size         Int
-  ownerId      String
-  owner        User       @relation("UserFiles", fields: [ownerId], references: [id])
-  access       FileAccess @default(PRIVATE)
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-
-  @@index([ownerId])
-  @@index([mimeType])
-  @@map("media_files")
-}
-
-model Page {
-  id        String       @id @default(uuid())
-  order     Int          @default(1)
-  title     String?
-  ownerId   String       @map("owner_id")
-  owner     User         @relation("OwnedPages", fields: [ownerId], references: [id])
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @updatedAt @map("updated_at")
-  accesses  PageAccess[]
-  blocks    Block[]
-
-  @@index([ownerId])
-  @@map("pages")
-}
-
-model Block {
-  id        String    @id @default(uuid())
-  type      BlockType
-  meta      Json?     @db.JsonB
-  pageId    String?   @map("page_id")
-  page      Page?     @relation(fields: [pageId], references: [id])
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-
-  parentRelations BlockRelation[] @relation("ChildBlocks")
-  childRelations  BlockRelation[] @relation("ParentBlocks")
-
-  @@index([pageId])
-  @@map("blocks")
-}
-
-model BlockRelation {
-  id     String  @id @default(uuid())
-  fromId String? @map("from")
-  toId   String  @map("to")
-  order  Int     @default(1)
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  parent Block? @relation("ParentBlocks", fields: [fromId], references: [id])
-  child  Block  @relation("ChildBlocks", fields: [toId], references: [id])
-
-  @@unique([fromId, toId])
-  @@unique([fromId, order])
-  @@unique([toId, order])
-  @@unique([toId])
-  @@index([fromId])
-  @@index([toId])
-  @@map("block_relations")
-}
-
-model PageAccess {
-  id         String          @id @default(uuid())
-  pageId     String          @map("page_id")
-  page       Page            @relation(fields: [pageId], references: [id])
-  userId     String          @map("user_id")
-  user       User            @relation(fields: [userId], references: [id])
-  permission BlockPermission @default(VIEW)
-  isActive   Boolean         @default(true)
-  expiresAt  DateTime?       @map("expires_at")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@unique([pageId, userId])
-  @@index([pageId])
-  @@index([userId])
-  @@index([expiresAt])
-  @@index([isActive])
-  @@map("page_accesses")
+  PAGE
 }
