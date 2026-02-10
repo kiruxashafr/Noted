@@ -142,7 +142,6 @@ export const FailedToFindPageException = createException(ErrorCodes.FAILED_TO_FI
 export const FailedToFindBlockException = createException(ErrorCodes.FAILED_TO_FIND_BLOCK, HttpStatus.NOT_FOUND);
 
 // ========== Общие системные ==========
-// Эти обычно используются фильтром, но можно и вручную
 export const InternalErrorException = createException(ErrorCodes.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
 
 export const HttpErrorException = createException(ErrorCodes.HTTP_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
