@@ -3,8 +3,8 @@ import { BlocksService } from "./blocks.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
 import { Request } from "express";
-import { CreatePageDto } from "./dto/create-page.dto";
 import { GetChildBlocksDto, GetTopBlocksDto } from "./dto/get-blocks.dto";
+import { CreatePageDto } from "./dto/create-page.dto";
 
 @Controller("blocks")
 export class BlocksController {
@@ -22,27 +22,27 @@ export class BlocksController {
     return this.blocksServise.createPage(req.user.sub, dto);
   }
 
-  @Get("child")
-  @UseGuards(JwtAuthGuard)
-  async getChildBlocks(@Req() req: Request, @Body() dto: GetChildBlocksDto) {
-    return this.blocksServise.getChildBlocks(req.user.sub, dto.blockId);
-  }
+  // @Get("child")
+  // @UseGuards(JwtAuthGuard)
+  // async getChildBlocks(@Req() req: Request, @Body() dto: GetChildBlocksDto) {
+  //   return this.blocksServise.getChildBlocks(req.user.sub, dto.blockId);
+  // }
 
-  @Get("testchild")
-  @UseGuards(JwtAuthGuard)
-  async getChildBlocksTest(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
-    return this.blocksServise.findAllChildForPage(req.user.sub, dto.pageId);
-  }
+  // @Get("testchild")
+  // @UseGuards(JwtAuthGuard)
+  // async getChildBlocksTest(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
+  //   return this.blocksServise.findAllChildForPage(req.user.sub, dto.pageId);
+  // }
 
-  @Get("page/block")
-  @UseGuards(JwtAuthGuard)
-  async getTopBlocks(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
-    return this.blocksServise.getTopBlocksForPage(req.user.sub, dto.pageId);
-  }
+  // @Get("page/block")
+  // @UseGuards(JwtAuthGuard)
+  // async getTopBlocks(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
+  //   return this.blocksServise.getTopBlocksForPage(req.user.sub, dto.pageId);
+  // }
 
-  @Get("page/title")
-  @UseGuards(JwtAuthGuard)
-  async findPageTitle(@Req() req: Request) {
-    return this.blocksServise.findPageTitle(req.user.sub);
-  }
+  // @Get("page/title")
+  // @UseGuards(JwtAuthGuard)
+  // async findPageTitle(@Req() req: Request) {
+  //   return this.blocksServise.findPageTitle(req.user.sub);
+  // }
 }

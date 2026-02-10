@@ -37,6 +37,10 @@ export enum PageOrBlock {
   BLOCK,
 }
 
+export interface BlockWithPath extends Block {
+  path: string
+}
+
 export interface BlockWithOrder extends Block {
   order: number;
 }

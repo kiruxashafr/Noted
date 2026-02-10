@@ -15,7 +15,6 @@ model User {
   name          String
   createdAt     DateTime      @default(now()) @map("created_at")
   plan          UserPlan      @default(FREE)
-  /// @type {UserAvatar}
   avatars       Json?         @map("avatars")
   blockAccesses BlockAccess[]
   files         MediaFile[]   @relation("UserFiles")
@@ -42,28 +41,37 @@ model MediaFile {
 }
 
 model Block {
-  id        String                @id @default(uuid())
-  type      BlockType
-  meta      Json?
-  createdAt DateTime              @default(now()) @map("created_at")
-  updatedAt DateTime              @updatedAt @map("updated_at")
-  path      Unsupported("ltree")?
+  id            String               @id
+  type          BlockType
+  meta          Json?
+  path          Unsupported("ltree")
+  order         Int
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+  blockAccesses BlockAccess[]
 
   @@index([path], map: "blocks_path_gist_idx", type: Gist)
   @@map("blocks")
 }
 
 model BlockAccess {
-  id         String          @id @default(uuid())
-  userId     String          @map("user_id")
+  id       String               @id @default(uuid())
+  userId   String               @map("user_id")
+  blockId  String               @map("block_id")
+  rootPath Unsupported("ltree") @map("root_path")
+
   permission BlockPermission @default(VIEW)
   isActive   Boolean         @default(true)
   expiresAt  DateTime?       @map("expires_at")
   createdAt  DateTime        @default(now()) @map("created_at")
   updatedAt  DateTime        @updatedAt @map("updated_at")
-  user       User            @relation(fields: [userId], references: [id])
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  block Block @relation(fields: [blockId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([blockId])
+  @@index([rootPath], type: Gist) // Индекс GiST для мгновенной проверки иерархии
   @@index([expiresAt])
   @@index([isActive])
   @@map("block_accesses")
@@ -81,8 +89,9 @@ enum FileAccess {
 }
 
 enum BlockPermission {
-  VIEW
+  OWNER
   EDIT
+  VIEW
 }
 
 enum BlockType {

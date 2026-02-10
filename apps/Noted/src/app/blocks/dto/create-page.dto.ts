@@ -2,14 +2,15 @@ import { BlockMeta, CreateBlockRequest } from "@noted/types";
 import { IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from "class-validator";
 import { BlockType } from "generated/prisma/enums";
 
-export class CreateBlockDto implements CreateBlockRequest {
+export class CreatePageDto implements CreateBlockRequest {
   @IsNotEmpty()
   @IsEnum(BlockType)
   blockType: BlockType;
   @IsObject()
   meta: BlockMeta;
   @IsString()
-  parentId: string;
+  @IsOptional()
+  title: string
   @IsNumber()
   @IsOptional()
   order: number;
