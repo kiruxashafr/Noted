@@ -40,9 +40,9 @@ export class BlocksController {
   //   return this.blocksServise.getTopBlocksForPage(req.user.sub, dto.pageId);
   // }
 
-  // @Get("page/title")
-  // @UseGuards(JwtAuthGuard)
-  // async findPageTitle(@Req() req: Request) {
-  //   return this.blocksServise.findPageTitle(req.user.sub);
-  // }
+  @Get("page/title")
+  @UseGuards(JwtAuthGuard)
+  async findPageTitle(@Req() req: Request) {
+    return this.blocksServise.findPageTitle(req.user.sub);
+  }
 }

@@ -3,7 +3,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
-import { BlockMeta, PageOrBlock, TextMetaContent, BlockWithOrder, TextMetaKeys, PageMetaContent, PageMetakeys, BlockWithPath } from "@noted/types";
+import { BlockMeta, PageOrBlock, TextMetaContent, BlockWithOrder, TextMetaKeys, PageMetaContent, PageMetaKeys, BlockWithPath } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Block, Prisma } from "generated/prisma/client";
 import { plainToInstance } from "class-transformer";
@@ -40,7 +40,7 @@ async createPage(userId: string, dto: CreatePageDto) {
     const path = newId; 
 
     const meta: PageMetaContent = {
-      [PageMetakeys.Title]: dto.title
+      [PageMetaKeys.Title]: dto.title
     };
 
     const [page] = await this.prisma.$queryRawUnsafe<BlockWithPath[]>(
@@ -161,100 +161,27 @@ async createPage(userId: string, dto: CreatePageDto) {
     `
     return blockPath?.path || null
   }
-//   async getTopBlocksForPage(userId: string, pageId: string) {
-//     try {
-//       const page = await this.prisma.page.findUnique({
-//         where: { id: pageId },
-//       });
 
-//       if (!page) {
-//         throw new BlockNotFoundException("Page not found");
-//       }
 
-//       await this.applyPageAccessCheck(userId, BlockPermission.VIEW, pageId);
-
-//       const topBlocks = await this.prisma.$queryRaw<Array<Block>>`
-//         SELECT 
-//             b.id,
-//             b.type,
-//             b.meta,
-//             b.page_id as "pageId",
-//             b.created_at as "createdAt",
-//             b.updated_at as "updatedAt",
-//             br.order
-//         FROM blocks b
-//         LEFT JOIN block_relations br ON b.id = br.to
-//         WHERE b.page_id = ${pageId}
-// `;
-//       return topBlocks;
-//     } catch (error) {
-//       if (error instanceof BlockNotFoundException) throw error;
-//       this.logger.error(`getTopBlock() | ${(error as Error).message}`, (error as Error).stack);
-//       throw new FailedToFindBlockException();
-//     }
-//   }
-
-  // async getChildBlocks(userId: string, blockId: string) {
-  //   try {
-  //     const block = await this.prisma.block.findUnique({
-  //       where: { id: blockId },
-  //     });
-  //     if (!block) {
-  //       throw new BlockNotFoundException();
-  //     }
-
-  //     await this.applyBlockAccessCheck(userId, BlockPermission.VIEW, blockId);
-
-  //     const childBlocks = await this.prisma.$queryRaw<Array<BlockWithOrder>>`
-  //         SELECT
-  //           b.id,
-  //           b.type,
-  //           b.meta,
-  //           b.page_id as "pageId",
-  //           b.created_at as "createdAt",
-  //           b.updated_at as "updatedAt",
-  //           br.order
-  //         FROM blocks b
-  //         INNER JOIN block_relations br ON b.id = br.to
-  //         WHERE br.from = ${blockId}
-  //         `;
-  //     return toDto(childBlocks, ReadBlockDto);
-  //   } catch (error) {
-  //     if (error instanceof BlockNotFoundException) throw error;
-  //     this.logger.error(`getTopBlock() | ${(error as Error).message}`, (error as Error).stack);
-  //     throw new FailedToFindBlockException();
-  //   }
-  // }
-
-  // async findPageTitle(userId: string) {
-  //   try {
-  //     const pages = await this.prisma.page.findMany({
-  //       where: {
-  //         ownerId: userId,
-  //       },
-  //       select: {
-  //         id: true,
-  //         title: true,
-  //       },
-  //     });
-  //     if (!pages) {
-  //       throw new FailedToFindPageException();
-  //     }
-
-  //     const pageTitles = pages.map(page => {
-  //       return {
-  //         id: page.id,
-  //         title: page.title,
-  //       };
-  //     });
-
-  //     return { pageTitles };
-  //   } catch (error) {
-  //     if (error instanceof FailedToFindPageException) throw error;
-  //     this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
-  //     throw new BadRequestException();
-  //   }
-  // }
+  async findPageTitle(userId: string) {
+    try {
+      const pages = await this.prisma.$queryRaw<{ id: string, title: string }[]>`
+      SELECT b.id, 
+      b.meta->>${PageMetaKeys.Title} as title
+      FROM blocks b
+      INNER JOIN block_accesses ba ON b.id = ba.block_id
+      WHERE ba.user_id = ${userId}
+      AND b.type = 'PAGE'
+      AND "is_active" = true
+      AND ("expires_at" IS NULL OR "expires_at" > NOW())
+`
+      return pages;
+    } catch (error) {
+      if (error instanceof FailedToFindPageException) throw error;
+      this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
+      throw new BadRequestException();
+    }
+  }
 
   private  generateBlockId():string {
     const blockId= customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 12);

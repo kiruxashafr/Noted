@@ -3,7 +3,7 @@ import { Block } from "generated/prisma/client";
 
 export interface CreateBlockRequest {
   blockType: BlockType;
-  meta: unknown;
+  meta: BlockMeta;
   parentId?: string;
   pageId?: string;
   order?: number;
@@ -19,7 +19,7 @@ export interface PageMetaContent {
   title: string;
 }
 
-export enum PageMetakeys {
+export enum PageMetaKeys {
   Title = "title"
 }
 
