@@ -5,7 +5,6 @@ import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
 import {
   BlockMeta,
-  PageOrBlock,
   TextMetaContent,
   TextMetaKeys,
   PageMetaContent,
@@ -191,6 +190,25 @@ export class BlocksService {
     }
   }
 
+  async getUserPages(userId: string) {
+    try {
+      const pages = await this.prisma.$queryRaw<BlockWithPath[]>`
+        SELECT b.*
+        FROM blocks b
+        INNER JOIN block_accesses ba ON b.id = ba.block_id
+        WHERE ba.user_id = ${userId}
+        AND b.type = 'PAGE'
+        AND "is_active" = true
+        AND ("expires_at" IS NULL OR "expires_at" > NOW())
+    `;
+      return pages;
+    } catch (error) {
+      if (error instanceof FailedToFindPageException) throw error;
+      this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
+      throw new BadRequestException();
+    }
+  }
+
   async getChildBlocks(user_id: string, blockId: string) {
     try {
       await this.checkBlockAccess(user_id, blockId, BlockPermission.VIEW);
@@ -237,25 +255,5 @@ export class BlocksService {
       throw new BadRequestException();
     }
     return;
-  }
-
-  private async validateReqBlockNesting(parentId?: string, pageId?: string): Promise<PageOrBlock> {
-    if (!parentId && !pageId) {
-      this.logger.error(`validateReqBlockNesting() | create block error request hasnt parentId or pageId`);
-      throw new BadRequestException("request hasnt parentId or pageId");
-    }
-    if (parentId && pageId) {
-      this.logger.error(
-        `validateReqBlockNesting() | create block error request should has parentId or pageId not together`,
-      );
-      throw new BadRequestException("request should has parentId or pageId not together");
-    }
-    if (pageId) {
-      return PageOrBlock.PAGE;
-    }
-    if (parentId) {
-      return PageOrBlock.BLOCK;
-    }
-    throw new BadRequestException();
   }
 }

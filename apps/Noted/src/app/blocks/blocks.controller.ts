@@ -22,23 +22,17 @@ export class BlocksController {
     return this.blocksServise.createPage(req.user.sub, dto);
   }
 
+  @Get("pages")
+  @UseGuards(JwtAuthGuard)
+  async getUserPages(@Req() req: Request) {
+    return this.blocksServise.getUserPages(req.user.sub);
+  }
+
   @Get("child")
   @UseGuards(JwtAuthGuard)
   async getChildBlocks(@Req() req: Request, @Body() dto: GetChildBlocksDto) {
     return this.blocksServise.getChildBlocks(req.user.sub, dto.blockId);
   }
-
-  // @Get("testchild")
-  // @UseGuards(JwtAuthGuard)
-  // async getChildBlocksTest(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
-  //   return this.blocksServise.findAllChildForPage(req.user.sub, dto.pageId);
-  // }
-
-  // @Get("page/block")
-  // @UseGuards(JwtAuthGuard)
-  // async getTopBlocks(@Req() req: Request, @Body() dto: GetTopBlocksDto) {
-  //   return this.blocksServise.getTopBlocksForPage(req.user.sub, dto.pageId);
-  // }
 
   @Get("page/title")
   @UseGuards(JwtAuthGuard)
