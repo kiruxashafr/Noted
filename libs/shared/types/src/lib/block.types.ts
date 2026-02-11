@@ -20,7 +20,7 @@ export interface PageMetaContent {
 }
 
 export enum PageMetaKeys {
-  Title = "title"
+  Title = "title",
 }
 
 //Text
@@ -38,7 +38,7 @@ export enum PageOrBlock {
 }
 
 export interface BlockWithPath extends Block {
-  path: string
+  path: string;
 }
 
 export interface BlockWithOrder extends Block {

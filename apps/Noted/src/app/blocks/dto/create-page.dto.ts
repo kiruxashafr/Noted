@@ -10,7 +10,7 @@ export class CreatePageDto implements CreateBlockRequest {
   meta: BlockMeta;
   @IsString()
   @IsOptional()
-  title: string
+  title: string;
   @IsNumber()
   @IsOptional()
   order: number;

@@ -22,11 +22,11 @@ export class BlocksController {
     return this.blocksServise.createPage(req.user.sub, dto);
   }
 
-  // @Get("child")
-  // @UseGuards(JwtAuthGuard)
-  // async getChildBlocks(@Req() req: Request, @Body() dto: GetChildBlocksDto) {
-  //   return this.blocksServise.getChildBlocks(req.user.sub, dto.blockId);
-  // }
+  @Get("child")
+  @UseGuards(JwtAuthGuard)
+  async getChildBlocks(@Req() req: Request, @Body() dto: GetChildBlocksDto) {
+    return this.blocksServise.getChildBlocks(req.user.sub, dto.blockId);
+  }
 
   // @Get("testchild")
   // @UseGuards(JwtAuthGuard)
