@@ -3,9 +3,10 @@ import { BlocksService } from "./blocks.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
 import { Request } from "express";
-import { GetChildBlocksDto, GetTopBlocksDto } from "./dto/get-blocks.dto";
+import { GetChildBlocksDto } from "./dto/get-blocks.dto";
 import { CreatePageDto } from "./dto/create-page.dto";
 import { DeleteBlockDto } from "./dto/delete-block.dto";
+import { CreateAccessDto } from "./dto/create-access.dto";
 
 @Controller("blocks")
 export class BlocksController {
@@ -21,6 +22,18 @@ export class BlocksController {
   @UseGuards(JwtAuthGuard)
   async createPage(@Req() req: Request, @Body() dto: CreatePageDto) {
     return this.blocksServise.createPage(req.user.sub, dto);
+  }
+
+  @Post("access")
+  @UseGuards(JwtAuthGuard)
+  async createAccess(@Req() req: Request, @Body() dto: CreateAccessDto) {
+    return this.blocksServise.createAccessForUser(
+      req.user.sub,
+      dto.granteeId,
+      dto.blockId,
+      dto.permission,
+      dto.expiresAt,
+    );
   }
 
   @Get("pages")

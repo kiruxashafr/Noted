@@ -4,4 +4,3 @@ export class DeleteBlockDto {
   @IsNotEmpty()
   blockId: string;
 }
-

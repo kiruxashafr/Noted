@@ -3,14 +3,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
-import {
-  BlockMeta,
-  TextMetaContent,
-  TextMetaKeys,
-  PageMetaContent,
-  PageMetaKeys,
-  BlockWithPath,
-} from "@noted/types";
+import { BlockMeta, TextMetaContent, TextMetaKeys, PageMetaContent, PageMetaKeys, BlockWithPath } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -231,24 +224,67 @@ export class BlocksService {
     try {
       await this.checkBlockAccess(userId, blockId, BlockPermission.EDIT);
 
-    const parentPath = await this.getPath(blockId);
-    if (!parentPath) {
-      throw new BlockNotFoundException();
-    }
-          await this.prisma.$transaction(async (tx) => {
-            await tx.$executeRaw`
+      const parentPath = await this.getPath(blockId);
+      if (!parentPath) {
+        throw new BlockNotFoundException();
+      }
+      await this.prisma.$transaction(async tx => {
+        await tx.$executeRaw`
             DELETE FROM blocks 
             WHERE path <@ ${parentPath}::ltree`;
 
-            await tx.$executeRaw`
+        await tx.$executeRaw`
             DELETE FROM block_accesses
-            WHERE block_id = ${blockId} OR root_path <@ ${parentPath}::ltree`
-          });
-    this.logger.log(`user ${userId} deleted block: ${blockId} and his child`)
-    return;
-        } catch (error) {
-          if (error instanceof BlockNotFoundException) { throw error; }
+            WHERE block_id = ${blockId} OR root_path <@ ${parentPath}::ltree`;
+      });
+      this.logger.log(`user ${userId} deleted block: ${blockId} and his child`);
+      return;
+    } catch (error) {
+      if (error instanceof BlockNotFoundException) {
+        throw error;
+      }
       this.logger.error(`getChildBlocks() | ${(error as Error).message}`, (error as Error).stack);
+      throw new BadRequestException();
+    }
+  }
+
+  async createAccessForUser(
+    ownerId: string,
+    granteeId: string,
+    blockId: string,
+    permission: BlockPermission,
+    expiresAt?: Date,
+  ) {
+    try {
+      await this.checkBlockAccess(ownerId, blockId, BlockPermission.OWNER);
+      const rootPath = await this.getPath(blockId);
+      const id = randomUUID();
+      const [blockAccess] = await this.prisma.$queryRaw<unknown[]>`
+      INSERT INTO "block_accesses" (
+        id, 
+        user_id, 
+        block_id, 
+        root_path, 
+        permission, 
+        expires_at, 
+        updated_at,
+        is_active
+      )
+      VALUES (
+        ${id}, 
+        ${granteeId}, 
+        ${blockId}, 
+        ${rootPath}::ltree, 
+        ${permission}::"BlockPermission", 
+        ${expiresAt}, 
+        NOW(),
+        true
+      )
+      RETURNING *
+    `;
+      return blockAccess;
+    } catch (error) {
+      this.logger.error(`createAccessForUser() | ${(error as Error).message}`, (error as Error).stack);
       throw new BadRequestException();
     }
   }
