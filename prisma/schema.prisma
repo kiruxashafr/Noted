@@ -69,9 +69,10 @@ model BlockAccess {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   block Block @relation(fields: [blockId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, blockId])
   @@index([userId])
   @@index([blockId])
-  @@index([rootPath], type: Gist) // Индекс GiST для мгновенной проверки иерархии
+  @@index([rootPath], type: Gist)
   @@index([expiresAt])
   @@index([isActive])
   @@map("block_accesses")

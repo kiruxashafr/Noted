@@ -260,16 +260,7 @@ export class BlocksService {
       const rootPath = await this.getPath(blockId);
       const id = randomUUID();
       const [blockAccess] = await this.prisma.$queryRaw<unknown[]>`
-      INSERT INTO "block_accesses" (
-        id, 
-        user_id, 
-        block_id, 
-        root_path, 
-        permission, 
-        expires_at, 
-        updated_at,
-        is_active
-      )
+      INSERT INTO "block_accesses" ( id, user_id, block_id, root_path, permission, expires_at, updated_at, is_active)
       VALUES (
         ${id}, 
         ${granteeId}, 
@@ -280,7 +271,13 @@ export class BlocksService {
         NOW(),
         true
       )
-      RETURNING *
+      ON CONFLICT (user_id, block_id) 
+      DO UPDATE SET 
+      permission = EXCLUDED.permission,
+      expires_at = EXCLUDED.expires_at,
+      updated_at = NOW(),
+      is_active = true
+        RETURNING *
     `;
       return blockAccess;
     } catch (error) {
