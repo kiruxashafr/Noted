@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Post, Req, UseGuards } from "@nestjs/common";
 import { BlocksService } from "./blocks.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
 import { Request } from "express";
 import { GetChildBlocksDto, GetTopBlocksDto } from "./dto/get-blocks.dto";
 import { CreatePageDto } from "./dto/create-page.dto";
+import { DeleteBlockDto } from "./dto/delete-block.dto";
 
 @Controller("blocks")
 export class BlocksController {
@@ -38,5 +39,11 @@ export class BlocksController {
   @UseGuards(JwtAuthGuard)
   async findPageTitle(@Req() req: Request) {
     return this.blocksServise.findPageTitle(req.user.sub);
+  }
+
+  @Delete("block")
+  @UseGuards(JwtAuthGuard)
+  async deleteBlock(@Req() req: Request, @Body() dto: DeleteBlockDto) {
+    return this.blocksServise.deleteBlock(req.user.sub, dto.blockId);
   }
 }

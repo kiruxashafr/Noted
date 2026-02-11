@@ -148,7 +148,6 @@ export class BlocksService {
         )
     )
   `;
-      this.logger.log(JSON.stringify(result));
       if (result[0].exists) {
         return;
       } else {
@@ -209,9 +208,9 @@ export class BlocksService {
     }
   }
 
-  async getChildBlocks(user_id: string, blockId: string) {
+  async getChildBlocks(userId: string, blockId: string) {
     try {
-      await this.checkBlockAccess(user_id, blockId, BlockPermission.VIEW);
+      await this.checkBlockAccess(userId, blockId, BlockPermission.VIEW);
 
       const parentPath = await this.getPath(blockId);
       const pages = await this.prisma.$queryRaw<BlockWithPath[]>`
@@ -227,6 +226,33 @@ export class BlocksService {
       throw new BadRequestException();
     }
   }
+
+  async deleteBlock(userId: string, blockId: string) {
+    try {
+      await this.checkBlockAccess(userId, blockId, BlockPermission.EDIT);
+
+    const parentPath = await this.getPath(blockId);
+    if (!parentPath) {
+      throw new BlockNotFoundException();
+    }
+          await this.prisma.$transaction(async (tx) => {
+            await tx.$executeRaw`
+            DELETE FROM blocks 
+            WHERE path <@ ${parentPath}::ltree`;
+
+            await tx.$executeRaw`
+            DELETE FROM block_accesses
+            WHERE block_id = ${blockId} OR root_path <@ ${parentPath}::ltree`
+          });
+    this.logger.log(`user ${userId} deleted block: ${blockId} and his child`)
+    return;
+        } catch (error) {
+          if (error instanceof BlockNotFoundException) { throw error; }
+      this.logger.error(`getChildBlocks() | ${(error as Error).message}`, (error as Error).stack);
+      throw new BadRequestException();
+    }
+  }
+
   private generateBlockId(): string {
     const blockId = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 12);
     return blockId();
