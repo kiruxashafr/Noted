@@ -48,7 +48,7 @@ export class BlocksService {
         dto.order ?? 0,
       );
       await this.prisma.$executeRawUnsafe(
-        `INSERT INTO block_accesses (id, user_id, block_id, root_path, permission, updated_at)
+        `INSERT INTO block_accesses (id, to_id, block_id, root_path, permission, updated_at)
        VALUES ($1, $2, $3, $4::ltree, $5, NOW())`,
         randomUUID(),
         userId,
@@ -120,7 +120,7 @@ export class BlocksService {
       const result = await this.prisma.$queryRaw<{ exists: boolean }[]>`
     SELECT EXISTS (
       SELECT 1 FROM "block_accesses"
-      WHERE "user_id" = ${userId}
+      WHERE "to_id" = ${userId}
         AND "is_active" = true
         AND ("expires_at" IS NULL OR "expires_at" > NOW())
         AND "root_path" @> ${blockPath}::ltree
@@ -250,7 +250,7 @@ export class BlocksService {
 
   async createAccessForUser(
     ownerId: string,
-    granteeId: string,
+    toId: string,
     blockId: string,
     permission: BlockPermission,
     expiresAt?: Date,
@@ -260,10 +260,11 @@ export class BlocksService {
       const rootPath = await this.getPath(blockId);
       const id = randomUUID();
       const [blockAccess] = await this.prisma.$queryRaw<unknown[]>`
-      INSERT INTO "block_accesses" ( id, user_id, block_id, root_path, permission, expires_at, updated_at, is_active)
+      INSERT INTO "block_accesses" ( id, from_id, to_id, block_id, root_path, permission, expires_at, updated_at, is_active)
       VALUES (
         ${id}, 
-        ${granteeId}, 
+        ${ownerId}, 
+        ${toId},
         ${blockId}, 
         ${rootPath}::ltree, 
         ${permission}::"BlockPermission", 
@@ -271,7 +272,7 @@ export class BlocksService {
         NOW(),
         true
       )
-      ON CONFLICT (user_id, block_id) 
+      ON CONFLICT (to_id, block_id) 
       DO UPDATE SET 
       permission = EXCLUDED.permission,
       expires_at = EXCLUDED.expires_at,

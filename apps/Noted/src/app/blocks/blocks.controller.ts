@@ -29,7 +29,7 @@ export class BlocksController {
   async createAccess(@Req() req: Request, @Body() dto: CreateAccessDto) {
     return this.blocksServise.createAccessForUser(
       req.user.sub,
-      dto.granteeId,
+      dto.toId,
       dto.blockId,
       dto.permission,
       dto.expiresAt,

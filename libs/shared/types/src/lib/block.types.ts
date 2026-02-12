@@ -10,6 +10,7 @@ export interface CreateBlockRequest {
 }
 
 export interface CreatePageRequest {
+  meta: unknown;
   title: string;
   order: number;
 }

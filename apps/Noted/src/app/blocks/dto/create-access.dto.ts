@@ -4,7 +4,7 @@ import { BlockPermission } from "generated/prisma/enums";
 export class CreateAccessDto {
   @IsString()
   @IsNotEmpty()
-  granteeId: string;
+  toId: string;
 
   @IsString()
   @IsNotEmpty()

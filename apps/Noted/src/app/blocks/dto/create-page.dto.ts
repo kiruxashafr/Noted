@@ -1,11 +1,8 @@
-import { BlockMeta, CreateBlockRequest } from "@noted/types";
-import { IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from "class-validator";
-import { BlockType } from "generated/prisma/enums";
+import { BlockMeta, CreatePageRequest } from "@noted/types";
+import { IsNumber, IsObject, IsOptional, IsString } from "class-validator";
 
-export class CreatePageDto implements CreateBlockRequest {
-  @IsNotEmpty()
-  @IsEnum(BlockType)
-  blockType: BlockType;
+
+export class CreatePageDto implements CreatePageRequest {
   @IsObject()
   meta: BlockMeta;
   @IsString()
