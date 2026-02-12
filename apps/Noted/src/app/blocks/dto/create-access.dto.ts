@@ -1,7 +1,8 @@
+import { CreateAccessRequest } from "@noted/types";
 import { Type } from "class-transformer";
 import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { BlockPermission } from "generated/prisma/enums";
-export class CreateAccessDto {
+export class CreateAccessDto implements CreateAccessRequest {
   @IsString()
   @IsNotEmpty()
   toId: string;

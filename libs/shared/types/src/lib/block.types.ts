@@ -1,18 +1,28 @@
-import { BlockType } from "generated/prisma/enums";
+import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { Block } from "generated/prisma/client";
 
 export interface CreateBlockRequest {
   blockType: BlockType;
   meta: BlockMeta;
-  parentId?: string;
-  pageId?: string;
-  order?: number;
+  parentId: string;
+  order: number;
 }
 
 export interface CreatePageRequest {
   meta: unknown;
   title: string;
   order: number;
+}
+
+export interface CreateAccessRequest {
+  toId: string;
+  blockId: string;
+  permission: BlockPermission;
+  expiresAt?: Date | null;
+}
+
+export interface DeleteBlockRequest {
+  blockId: string;
 }
 
 //Page
@@ -33,17 +43,9 @@ export enum TextMetaKeys {
   Json = "json",
 }
 
-export enum PageOrBlock {
-  PAGE,
-  BLOCK,
-}
-
 export interface BlockWithPath extends Block {
   path: string;
 }
 
-export interface BlockWithOrder extends Block {
-  order: number;
-}
 
 export type BlockMeta = TextMetaContent | PageMetaContent;
