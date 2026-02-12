@@ -18,6 +18,7 @@ import {
 
 import { CreatePageDto } from "./dto/create-page.dto";
 import { randomUUID } from "crypto";
+import { BlockAccess } from "generated/prisma/client";
 
 @Injectable()
 export class BlocksService {
@@ -283,6 +284,23 @@ export class BlocksService {
       return blockAccess;
     } catch (error) {
       this.logger.error(`createAccessForUser() | ${(error as Error).message}`, (error as Error).stack);
+      throw new BadRequestException();
+    }
+  }
+
+  async getAccessFromUser(userId: string) {
+    try {
+      const accessFrom = await this.prisma.$queryRaw<BlockAccess[]>`
+    SELECT ba.* 
+    FROM block_accesses ba
+    WHERE ba.from_id = ${userId}`;
+
+      return accessFrom;
+    } catch (error) {
+      if (error instanceof BlockNotFoundException) {
+        throw error;
+      }
+      this.logger.error(`getAccessFromUser() | ${(error as Error).message}`, (error as Error).stack);
       throw new BadRequestException();
     }
   }

@@ -27,13 +27,7 @@ export class BlocksController {
   @Post("access")
   @UseGuards(JwtAuthGuard)
   async createAccess(@Req() req: Request, @Body() dto: CreateAccessDto) {
-    return this.blocksServise.createAccessForUser(
-      req.user.sub,
-      dto.toId,
-      dto.blockId,
-      dto.permission,
-      dto.expiresAt,
-    );
+    return this.blocksServise.createAccessForUser(req.user.sub, dto.toId, dto.blockId, dto.permission, dto.expiresAt);
   }
 
   @Get("pages")
@@ -46,6 +40,12 @@ export class BlocksController {
   @UseGuards(JwtAuthGuard)
   async getChildBlocks(@Req() req: Request, @Body() dto: GetChildBlocksDto) {
     return this.blocksServise.getChildBlocks(req.user.sub, dto.blockId);
+  }
+
+  @Get("access/my")
+  @UseGuards(JwtAuthGuard)
+  async getFromAccess(@Req() req: Request) {
+    return this.blocksServise.getAccessFromUser(req.user.sub);
   }
 
   @Get("page/title")

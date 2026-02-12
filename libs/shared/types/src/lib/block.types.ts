@@ -47,5 +47,4 @@ export interface BlockWithPath extends Block {
   path: string;
 }
 
-
 export type BlockMeta = TextMetaContent | PageMetaContent;
