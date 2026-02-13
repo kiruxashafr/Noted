@@ -27,7 +27,7 @@ import {
   FileRetrievalFailedException,
   FileUploadFailedException,
   PayloadTooLargeException,
-} from "@noted/common/errors/domain-exception";
+} from "@noted/common/errors/domain_exception/domain-exception";
 
 @Injectable()
 export class FilesService implements OnModuleInit {

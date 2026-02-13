@@ -14,7 +14,7 @@ import {
   BlockNotFoundException,
   FailedToCreateBlockException,
   FailedToFindPageException,
-} from "@noted/common/errors/domain-exception";
+} from "@noted/common/errors/domain_exception/domain-exception";
 
 import { CreatePageDto } from "./dto/create-page.dto";
 import { randomUUID } from "crypto";

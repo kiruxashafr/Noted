@@ -2,7 +2,8 @@ import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app/app.module";
-import { DomainExceptionFilter } from "@noted/common/errors/domain-exception-filter";
+import { DomainExceptionFilter } from "@noted/common/errors/domain_exception/domain-exception.filter";
+import { ApiExceptionFilter } from "@noted/common/errors/api_exception/api-exception.filter"
 const cookieParser = require("cookie-parser");
 
 async function bootstrap() {
@@ -62,7 +63,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new DomainExceptionFilter());
+  app.useGlobalFilters(new DomainExceptionFilter(), new ApiExceptionFilter());
   app.use(cookieParser());
 
   // Включим CORS для Swagger UI и фронтенда

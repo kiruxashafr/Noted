@@ -21,7 +21,7 @@ import {
   UpdateUserAvatarException,
   UpdateUserException,
   UserNotFoundException,
-} from "@noted/common/errors/domain-exception";
+} from "@noted/common/errors/domain_exception/domain-exception";
 
 @Injectable()
 export class UsersService {

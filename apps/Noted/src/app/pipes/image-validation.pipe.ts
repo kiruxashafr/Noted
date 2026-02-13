@@ -1,5 +1,5 @@
 import { Injectable, PipeTransform } from "@nestjs/common";
-import { InvalidFileTypeException, MissingFileException } from "@noted/common/errors/domain-exception";
+import { InvalidFileTypeException, MissingFileException } from "@noted/common/errors/domain_exception/domain-exception";
 
 @Injectable()
 export class ImageValidationPipe implements PipeTransform {

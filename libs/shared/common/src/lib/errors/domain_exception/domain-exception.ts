@@ -1,5 +1,5 @@
 import { HttpStatus } from "@nestjs/common";
-import { ErrorCodes } from "./error-codes.const";
+import { ErrorCodes } from "../error-codes.const";
 
 export class DomainException extends Error {
   constructor(
