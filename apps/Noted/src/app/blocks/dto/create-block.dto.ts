@@ -8,9 +8,10 @@ export class CreateBlockDto implements CreateBlockRequest {
   blockType: BlockType;
   @IsObject()
   meta: BlockMeta;
-  @IsString()
-  parentId: string;
   @IsNumber()
   @IsOptional()
   order: number;
+  @IsString()
+  @IsOptional()
+  parentId?: string;
 }

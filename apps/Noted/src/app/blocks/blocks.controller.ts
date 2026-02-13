@@ -4,7 +4,6 @@ import { CreateBlockDto } from "./dto/create-block.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
 import { Request } from "express";
 import { GetChildBlocksDto } from "./dto/get-blocks.dto";
-import { CreatePageDto } from "./dto/create-page.dto";
 import { DeleteBlockDto } from "./dto/delete-block.dto";
 import { CreateAccessDto } from "./dto/create-access.dto";
 
@@ -16,12 +15,6 @@ export class BlocksController {
   @UseGuards(JwtAuthGuard)
   async createBlock(@Req() req: Request, @Body() dto: CreateBlockDto) {
     return this.blocksServise.createBlock(req.user.sub, dto);
-  }
-
-  @Post("page")
-  @UseGuards(JwtAuthGuard)
-  async createPage(@Req() req: Request, @Body() dto: CreatePageDto) {
-    return this.blocksServise.createPage(req.user.sub, dto);
   }
 
   @Post("access")

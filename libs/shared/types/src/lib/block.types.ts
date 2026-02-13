@@ -4,8 +4,8 @@ import { Block } from "generated/prisma/client";
 export interface CreateBlockRequest {
   blockType: BlockType;
   meta: BlockMeta;
-  parentId: string;
   order: number;
+  parentId?: string;
 }
 
 export interface CreatePageRequest {
@@ -25,12 +25,12 @@ export interface DeleteBlockRequest {
   blockId: string;
 }
 
-//Page
-export interface PageMetaContent {
+//Container
+export interface ContainerMetaContent {
   title: string;
 }
 
-export enum PageMetaKeys {
+export enum ContainerMetaKeys {
   Title = "title",
 }
 
@@ -47,4 +47,4 @@ export interface BlockWithPath extends Block {
   path: string;
 }
 
-export type BlockMeta = TextMetaContent | PageMetaContent;
+export type BlockMeta = TextMetaContent | ContainerMetaContent;

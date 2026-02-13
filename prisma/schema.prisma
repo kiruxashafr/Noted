@@ -19,6 +19,7 @@ model User {
   files            MediaFile[]   @relation("UserFiles")
   sentAccesses     BlockAccess[] @relation("SentAccess")
   receivedAccesses BlockAccess[] @relation("ReceivedAccess")
+  blocks           Block[]
 
   @@map("users")
 }
@@ -45,11 +46,13 @@ model Block {
   id            String               @id
   type          BlockType
   meta          Json?
+  ownerId       String               @map("owner_id")
   path          Unsupported("ltree")
   order         Int
   createdAt     DateTime             @default(now()) @map("created_at")
   updatedAt     DateTime             @updatedAt @map("updated_at")
   blockAccesses BlockAccess[]
+  owner         User                 @relation(fields: [ownerId], references: [id])
 
   @@index([path], map: "blocks_path_gist_idx", type: Gist)
   @@map("blocks")
@@ -101,5 +104,5 @@ enum BlockPermission {
 
 enum BlockType {
   TEXT
-  PAGE
+  CONTAINER
 }
