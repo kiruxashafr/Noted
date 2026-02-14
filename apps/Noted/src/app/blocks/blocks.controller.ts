@@ -7,6 +7,7 @@ import { GetChildBlocksDto } from "./dto/get-blocks.dto";
 import { DeleteBlockDto } from "./dto/delete-block.dto";
 import { CreateAccessDto } from "./dto/create-access.dto";
 import { UpadateBlockDto } from "./dto/update-block.dto";
+import { UpdateAccessDto } from "./dto/update-access.dto";
 
 @Controller("blocks")
 export class BlocksController {
@@ -28,6 +29,12 @@ export class BlocksController {
   @UseGuards(JwtAuthGuard)
   async createAccess(@Req() req: Request, @Body() dto: CreateAccessDto) {
     return this.blocksServise.createAccessForUser(req.user.sub, dto.toId, dto.blockId, dto.permission, dto.expiresAt);
+  }
+  
+  @Patch("access")
+  @UseGuards(JwtAuthGuard)
+  async updateAccess(@Req() req: Request, @Body() dto: UpdateAccessDto) {
+    return this.blocksServise.updateAccessForUser(req.user.sub, dto);
   }
 
   @Get("pages")

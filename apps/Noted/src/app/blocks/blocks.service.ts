@@ -26,6 +26,7 @@ import {
 import { randomUUID } from "crypto";
 import { BlockAccess } from "generated/prisma/client";
 import { UpadateBlockDto } from "./dto/update-block.dto";
+import { UpdateAccessDto } from "./dto/update-access.dto";
 
 @Injectable()
 export class BlocksService {
@@ -340,6 +341,33 @@ export class BlocksService {
       this.logger.error(`createAccessForUser() | ${(error as Error).message}`, (error as Error).stack);
       throw new BadRequestException();
     }
+  }
+
+  async updateAccessForUser(userId: string, dto: UpdateAccessDto) {
+    try {
+      const access = await this.prisma.blockAccess.findUnique({ where:{ id: dto.accessId}})
+          await this.checkBlockAccess(userId, access.blockId, BlockPermission.OWNER)
+          const updateData: Partial<UpdateAccessDto> = {};
+          if (dto.permission) {
+            updateData.permission = dto.permission;
+          }
+          if (dto.isActive !== undefined) {
+            updateData.isActive = dto.isActive;
+          }
+          if (dto.expiresAt) {
+            updateData.expiresAt = dto.expiresAt;
+          }
+    
+          const updatedAccess = await this.prisma.blockAccess.update({
+            where: { id: dto.accessId },
+            data: updateData,
+          });
+          this.logger.log(`updateAccessForUser | User ${userId} update access`);
+          return updatedAccess;
+        } catch (error) {
+      this.logger.error(`updateAccessForUser() | ${(error as Error).message}`, (error as Error).stack);
+      throw new BadRequestException();
+        }
   }
 
   async getAccessFromUser(userId: string) {
