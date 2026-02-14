@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { BlocksService } from "./blocks.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
@@ -6,6 +6,7 @@ import { Request } from "express";
 import { GetChildBlocksDto } from "./dto/get-blocks.dto";
 import { DeleteBlockDto } from "./dto/delete-block.dto";
 import { CreateAccessDto } from "./dto/create-access.dto";
+import { UpadateBlockDto } from "./dto/update-block.dto";
 
 @Controller("blocks")
 export class BlocksController {
@@ -15,6 +16,12 @@ export class BlocksController {
   @UseGuards(JwtAuthGuard)
   async createBlock(@Req() req: Request, @Body() dto: CreateBlockDto) {
     return this.blocksServise.createBlock(req.user.sub, dto);
+  }
+
+  @Patch("block")
+  @UseGuards(JwtAuthGuard)
+  async updateBlock(@Req() req: Request, @Body() dto: UpadateBlockDto, ) {
+    return this.blocksServise.upadateBlock(req.user.sub, dto);
   }
 
   @Post("access")

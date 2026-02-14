@@ -25,6 +25,7 @@ import {
 
 import { randomUUID } from "crypto";
 import { BlockAccess } from "generated/prisma/client";
+import { UpadateBlockDto } from "./dto/update-block.dto";
 
 @Injectable()
 export class BlocksService {
@@ -49,6 +50,47 @@ export class BlocksService {
       default:
         throw new BadRequestException(`Unsupported block type: ${dto.blockType}`);
     }
+  }
+
+  async upadateBlock(userId: string, dto: UpadateBlockDto) {
+    try {
+      await this.checkBlockAccess(userId, dto.blockId, BlockPermission.EDIT)
+
+    const currentBlock = await this.prisma.block.findUnique({
+      where: {id: dto.blockId}
+    })
+    if (!currentBlock) {
+      throw new BlockNotFoundException();
+    }
+
+    const oldMeta = (currentBlock.meta as Record<string, unknown> || {})
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newMeta = (dto.meta as Record<string, any> || {})
+    const updatedMeta = {
+      ...oldMeta,
+      ...newMeta
+    }
+
+    await this.validateBlockMeta(dto.blockType, updatedMeta)
+
+    const updatedBlock = await this.prisma.block.update({
+      where: { id: dto.blockId },
+      data: {
+        meta: updatedMeta,
+        order: dto.order ?? currentBlock.order,
+        updatedAt: new Date(),
+      },
+    });
+
+    this.logger.log(`updateBlock() | user ${userId} updated block ${dto.blockId}`);
+      return updatedBlock;
+    } catch (error) {
+    if (error instanceof BadRequestException) {
+      throw error;
+    }
+    this.logger.error(`updateBlock() | ${error.message}`, error.stack);
+    throw new BadRequestException("Failed to update block");
+  }
   }
 
   async createContainerBlock(userId: string, dto: CreateBlockDto) {
@@ -322,7 +364,7 @@ export class BlocksService {
     return blockId();
   }
 
-  private async validateBlockMeta(type: BlockType, content: BlockMeta): Promise<void> {
+  private async validateBlockMeta(type: BlockType, content: BlockMeta | object): Promise<void> {
     let dtoInstance: object;
     if (!content) {
       this.logger.debug("Empty meta, skipping validation");
@@ -339,13 +381,16 @@ export class BlocksService {
         return;
     }
 
-    const errors = await validate(dtoInstance);
+    const errors = await validate(dtoInstance, {
+      whitelist: true,
+      forbidNonWhitelisted: true
+    });
 
     if (errors.length > 0) {
       const messages = errors.map(err => Object.values(err.constraints || {}).join(", ")).join("; ");
 
       this.logger.warn(`Validation failed for block type ${type}: ${messages}`);
-      throw new BadRequestException();
+      throw new BadRequestException(`Validation failed for block type ${type}: ${messages}`);
     }
     return;
   }
