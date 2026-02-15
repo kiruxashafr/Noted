@@ -21,7 +21,7 @@ export class BlocksController {
 
   @Patch("block")
   @UseGuards(JwtAuthGuard)
-  async updateBlock(@Req() req: Request, @Body() dto: UpadateBlockDto, ) {
+  async updateBlock(@Req() req: Request, @Body() dto: UpadateBlockDto) {
     return this.blocksServise.upadateBlock(req.user.sub, dto);
   }
 
@@ -30,7 +30,7 @@ export class BlocksController {
   async createAccess(@Req() req: Request, @Body() dto: CreateAccessDto) {
     return this.blocksServise.createAccessForUser(req.user.sub, dto.toId, dto.blockId, dto.permission, dto.expiresAt);
   }
-  
+
   @Patch("access")
   @UseGuards(JwtAuthGuard)
   async updateAccess(@Req() req: Request, @Body() dto: UpdateAccessDto) {

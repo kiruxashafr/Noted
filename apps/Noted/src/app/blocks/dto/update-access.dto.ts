@@ -12,8 +12,8 @@ export class UpdateAccessDto {
 
   @IsBoolean()
   @IsOptional()
-  isActive?: boolean
-    
+  isActive?: boolean;
+
   @IsDate()
   @Type(() => Date)
   @IsOptional()

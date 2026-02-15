@@ -136,7 +136,14 @@ export class AuthService {
 
       return toDto({ accessToken }, ReadRefreshDto);
     } catch (error) {
-      if (error instanceof InvalidCredentialsException || UserNotFoundException) throw error;
+      if (
+        error instanceof InvalidCredentialsException ||
+        error instanceof UserNotFoundException ||
+        error instanceof InvalidRefreshTokenException
+      ) {
+        throw error;
+      }
+
       this.logger.error(`login() | error: ${(error as Error).message}`);
       throw new RefreshFailedException("refresh failed due to technical issues");
     }

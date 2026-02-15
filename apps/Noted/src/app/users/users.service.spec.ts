@@ -13,13 +13,13 @@ import { UpdateUserDto } from "./dto/user-update.dto";
 import { toDto } from "@noted/common/utils/to-dto";
 import { ReadUserDto } from "./dto/read-user.dto";
 import * as argon2 from "argon2";
-import { ApiException } from "@noted/common/errors/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import { ReadFileDto } from "../files/dto/read-file.dto";
 import { PHOTO_PROFILES } from "../shared/photo-profiles";
 import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
 import { PhotoConvertedEvent } from "../shared/events/photo-event.types";
 import { UserAvatarKeys } from "@noted/types";
+import { UserNotFoundException } from "@noted/common/errors/domain_exception/domain-exception";
 describe("UserService", () => {
   let userService: UsersService;
   let mockPrisma: {
@@ -181,11 +181,7 @@ describe("UserService", () => {
     it("should throw error if user not found", async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(userService.deleteUser(userId)).rejects.toThrow(ApiException);
-
-      await expect(userService.deleteUser(userId)).rejects.toMatchObject({
-        errorCode: ErrorCodes.USER_NOT_FOUND,
-      });
+      await expect(userService.deleteUser(userId)).rejects.toThrow(UserNotFoundException);
     });
 
     it("should call delete all user files", async () => {

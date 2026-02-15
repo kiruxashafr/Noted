@@ -55,43 +55,43 @@ export class BlocksService {
 
   async upadateBlock(userId: string, dto: UpadateBlockDto) {
     try {
-      await this.checkBlockAccess(userId, dto.blockId, BlockPermission.EDIT)
+      await this.checkBlockAccess(userId, dto.blockId, BlockPermission.EDIT);
 
-    const currentBlock = await this.prisma.block.findUnique({
-      where: {id: dto.blockId}
-    })
-    if (!currentBlock) {
-      throw new BlockNotFoundException();
-    }
+      const currentBlock = await this.prisma.block.findUnique({
+        where: { id: dto.blockId },
+      });
+      if (!currentBlock) {
+        throw new BlockNotFoundException();
+      }
 
-    const oldMeta = (currentBlock.meta as Record<string, unknown> || {})
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const newMeta = (dto.meta as Record<string, any> || {})
-    const updatedMeta = {
-      ...oldMeta,
-      ...newMeta
-    }
+      const oldMeta = (currentBlock.meta as Record<string, unknown>) || {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const newMeta = (dto.meta as Record<string, any>) || {};
+      const updatedMeta = {
+        ...oldMeta,
+        ...newMeta,
+      };
 
-    await this.validateBlockMeta(dto.blockType, updatedMeta)
+      await this.validateBlockMeta(dto.blockType, updatedMeta);
 
-    const updatedBlock = await this.prisma.block.update({
-      where: { id: dto.blockId },
-      data: {
-        meta: updatedMeta,
-        order: dto.order ?? currentBlock.order,
-        updatedAt: new Date(),
-      },
-    });
+      const updatedBlock = await this.prisma.block.update({
+        where: { id: dto.blockId },
+        data: {
+          meta: updatedMeta,
+          order: dto.order ?? currentBlock.order,
+          updatedAt: new Date(),
+        },
+      });
 
-    this.logger.log(`updateBlock() | user ${userId} updated block ${dto.blockId}`);
+      this.logger.log(`updateBlock() | user ${userId} updated block ${dto.blockId}`);
       return updatedBlock;
     } catch (error) {
-    if (error instanceof BadRequestException) {
-      throw error;
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error(`updateBlock() | ${error.message}`, error.stack);
+      throw new BadRequestException("Failed to update block");
     }
-    this.logger.error(`updateBlock() | ${error.message}`, error.stack);
-    throw new BadRequestException("Failed to update block");
-  }
   }
 
   async createContainerBlock(userId: string, dto: CreateBlockDto) {
@@ -131,25 +131,25 @@ export class BlocksService {
 
   async saveBlock(userId: string, dto: CreateBlockDto) {
     try {
-    const newId = this.generateBlockId();
-    const parentPath = dto.parentId ? await this.getPath(dto.parentId) : null;
-    const fullPath = parentPath ? `${parentPath}.${newId}` : newId;
+      const newId = this.generateBlockId();
+      const parentPath = dto.parentId ? await this.getPath(dto.parentId) : null;
+      const fullPath = parentPath ? `${parentPath}.${newId}` : newId;
 
-    const [block] = await this.prisma.$queryRawUnsafe<BlockWithPath[]>(
-      `INSERT INTO "blocks" (id, type, meta, owner_id, path, "order", updated_at)
+      const [block] = await this.prisma.$queryRawUnsafe<BlockWithPath[]>(
+        `INSERT INTO "blocks" (id, type, meta, owner_id, path, "order", updated_at)
           VALUES ($1, $2, $3,$4, $5::ltree, $6, NOW())
           RETURNING *`,
-      newId,
-      dto.blockType,
-      JSON.stringify(dto.meta),
-      userId,
-      fullPath,
-      dto.order,
-    );
-    this.logger.log(`saveBlock() | user ${userId}, create block ${block.id}`);
+        newId,
+        dto.blockType,
+        JSON.stringify(dto.meta),
+        userId,
+        fullPath,
+        dto.order,
+      );
+      this.logger.log(`saveBlock() | user ${userId}, create block ${block.id}`);
 
       return block;
-      } catch (error) {
+    } catch (error) {
       this.logger.error(`saveBlock() | ${error.message}`, error.stack);
       throw new FailedToCreateBlockException();
     }
@@ -158,11 +158,13 @@ export class BlocksService {
     try {
       const block = await this.prisma.block.findUnique({
         where: { id: blockId },
-        select: { ownerId: true }
-      })
+        select: { ownerId: true },
+      });
 
-      if (block.ownerId == userId) { return }
-      
+      if (block.ownerId == userId) {
+        return;
+      }
+
       const blockPath = await this.getPath(blockId);
       if (!blockPath) {
         throw new BlockNotFoundException();
@@ -345,29 +347,29 @@ export class BlocksService {
 
   async updateAccessForUser(userId: string, dto: UpdateAccessDto) {
     try {
-      const access = await this.prisma.blockAccess.findUnique({ where:{ id: dto.accessId}})
-          await this.checkBlockAccess(userId, access.blockId, BlockPermission.OWNER)
-          const updateData: Partial<UpdateAccessDto> = {};
-          if (dto.permission) {
-            updateData.permission = dto.permission;
-          }
-          if (dto.isActive !== undefined) {
-            updateData.isActive = dto.isActive;
-          }
-          if (dto.expiresAt) {
-            updateData.expiresAt = dto.expiresAt;
-          }
-    
-          const updatedAccess = await this.prisma.blockAccess.update({
-            where: { id: dto.accessId },
-            data: updateData,
-          });
-          this.logger.log(`updateAccessForUser | User ${userId} update access`);
-          return updatedAccess;
-        } catch (error) {
+      const access = await this.prisma.blockAccess.findUnique({ where: { id: dto.accessId } });
+      await this.checkBlockAccess(userId, access.blockId, BlockPermission.OWNER);
+      const updateData: Partial<UpdateAccessDto> = {};
+      if (dto.permission) {
+        updateData.permission = dto.permission;
+      }
+      if (dto.isActive !== undefined) {
+        updateData.isActive = dto.isActive;
+      }
+      if (dto.expiresAt) {
+        updateData.expiresAt = dto.expiresAt;
+      }
+
+      const updatedAccess = await this.prisma.blockAccess.update({
+        where: { id: dto.accessId },
+        data: updateData,
+      });
+      this.logger.log(`updateAccessForUser | User ${userId} update access`);
+      return updatedAccess;
+    } catch (error) {
       this.logger.error(`updateAccessForUser() | ${(error as Error).message}`, (error as Error).stack);
       throw new BadRequestException();
-        }
+    }
   }
 
   async getAccessFromUser(userId: string) {
@@ -404,14 +406,14 @@ export class BlocksService {
         break;
       case BlockType.CONTAINER:
         dtoInstance = plainToInstance(ContainerBlockMetaDto, content);
-        break
+        break;
       default:
         return;
     }
 
     const errors = await validate(dtoInstance, {
       whitelist: true,
-      forbidNonWhitelisted: true
+      forbidNonWhitelisted: true,
     });
 
     if (errors.length > 0) {

@@ -3,10 +3,16 @@ import { FilesService } from "./files.service";
 import { Test, TestingModule } from "@nestjs/testing";
 import { PrismaService } from "../prisma/prisma.service";
 import { ConfigService } from "@nestjs/config";
-import { ApiException } from "@noted/common/errors/api-exception";
 import { HttpStatus } from "@nestjs/common";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import { Readable } from "stream";
+import {
+  FileNotFoundException,
+  FileAccessDeniedException,
+  FileRetrievalFailedException,
+  PayloadTooLargeException,
+  BadRequestException,
+} from "@noted/common/errors/domain_exception/domain-exception";
 
 // Создаем моки для команд
 const mockHeadBucketCommand = jest.fn();
@@ -58,6 +64,7 @@ jest.mock("@aws-sdk/lib-storage", () => {
     })),
   };
 });
+
 describe("FilesService", () => {
   let fileService: FilesService;
 
@@ -165,11 +172,7 @@ describe("FilesService", () => {
         _sum: { size: 100 * 1024 * 1024 },
       });
 
-      await expect(fileService.uploadFile(mockUserId, mockAccess, mockFile)).rejects.toThrow(ApiException);
-      await expect(fileService.uploadFile(mockUserId, mockAccess, mockFile)).rejects.toMatchObject({
-        errorCode: ErrorCodes.PAILOAD_TOO_LARGE,
-        status: HttpStatus.PAYLOAD_TOO_LARGE,
-      });
+      await expect(fileService.uploadFile(mockUserId, mockAccess, mockFile)).rejects.toThrow(PayloadTooLargeException);
     });
 
     it("should clean up S3 file when database save fails", async () => {
@@ -183,7 +186,7 @@ describe("FilesService", () => {
       mockUploadDone.mockResolvedValue({});
       mockPrismaService.mediaFile.create.mockRejectedValue(new Error("DB error"));
 
-      await expect(fileService.uploadFile(mockUserId, mockAccess, mockFile)).rejects.toThrow(ApiException);
+      await expect(fileService.uploadFile(mockUserId, mockAccess, mockFile)).rejects.toThrow(BadRequestException);
       expect(mockS3Send).toHaveBeenCalledWith(
         expect.objectContaining({
           input: expect.objectContaining({
@@ -219,21 +222,13 @@ describe("FilesService", () => {
     it("should throw error if file not found", async () => {
       mockPrismaService.mediaFile.findUnique.mockResolvedValue(null);
 
-      await expect(fileService.findOne(mockFileId, mockUserId)).rejects.toThrow(ApiException);
-      await expect(fileService.findOne(mockFileId, mockUserId)).rejects.toMatchObject({
-        errorCode: ErrorCodes.FILE_NOT_FOUND,
-        status: HttpStatus.NOT_FOUND,
-      });
+      await expect(fileService.findOne(mockFileId, mockUserId)).rejects.toThrow(FileNotFoundException);
     });
 
     it("should throw error if user has no access to private file", async () => {
       mockPrismaService.mediaFile.findUnique.mockResolvedValue(mockDbFile);
 
-      await expect(fileService.findOne(mockFileId, "different-user")).rejects.toThrow(ApiException);
-      await expect(fileService.findOne(mockFileId, "different-user")).rejects.toMatchObject({
-        errorCode: ErrorCodes.FILE_ACCESS_DENIED,
-        status: HttpStatus.FORBIDDEN,
-      });
+      await expect(fileService.findOne(mockFileId, "different-user")).rejects.toThrow(FileAccessDeniedException);
     });
   });
 
@@ -268,11 +263,7 @@ describe("FilesService", () => {
       mockPrismaService.mediaFile.findUnique.mockResolvedValue(mockDbFile);
       mockS3Send.mockRejectedValue(new Error("S3 error"));
 
-      await expect(fileService.getFileStream(mockFileId, mockUserId)).rejects.toThrow(ApiException);
-      await expect(fileService.getFileStream(mockFileId, mockUserId)).rejects.toMatchObject({
-        errorCode: ErrorCodes.FILE_RETRIEVAL_FAILED,
-        status: HttpStatus.BAD_REQUEST,
-      });
+      await expect(fileService.getFileStream(mockFileId, mockUserId)).rejects.toThrow(FileRetrievalFailedException);
     });
   });
 
@@ -299,11 +290,7 @@ describe("FilesService", () => {
       const largeFile = { ...mockDbFile, size: 21 * 1024 * 1024 };
       mockPrismaService.mediaFile.findUnique.mockResolvedValue(largeFile);
 
-      await expect(fileService.getFileBuffer(mockFileId, mockUserId)).rejects.toThrow(ApiException);
-      await expect(fileService.getFileBuffer(mockFileId, mockUserId)).rejects.toMatchObject({
-        errorCode: ErrorCodes.FILE_TOO_LARGE,
-        status: HttpStatus.PAYLOAD_TOO_LARGE,
-      });
+      await expect(fileService.getFileBuffer(mockFileId, mockUserId)).rejects.toThrow(PayloadTooLargeException);
     });
   });
 
@@ -328,40 +315,22 @@ describe("FilesService", () => {
 
     it("should throw error if file not found", async () => {
       mockPrismaService.mediaFile.findUnique.mockResolvedValue(null);
-      mockS3Send.mockResolvedValue({});
-      mockPrismaService.mediaFile.delete.mockResolvedValue(mockDbFile);
 
-      await expect(fileService.deleteFile(mockFileId, mockUserId)).rejects.toThrow(ApiException);
-
-      await expect(fileService.deleteFile(mockFileId, mockUserId)).rejects.toMatchObject({
-        errorCode: ErrorCodes.FILE_NOT_FOUND,
-        status: HttpStatus.NOT_FOUND,
-      });
+      await expect(fileService.deleteFile(mockFileId, mockUserId)).rejects.toThrow(FileNotFoundException);
     });
 
     it("should throw error if user is not correct", async () => {
       const notCorrectUserId = "notCorrect";
       mockPrismaService.mediaFile.findUnique.mockResolvedValue(mockDbFile);
-      mockS3Send.mockResolvedValue({});
-      mockPrismaService.mediaFile.delete.mockResolvedValue(mockDbFile);
 
-      await expect(fileService.deleteFile(mockFileId, notCorrectUserId)).rejects.toThrow(ApiException);
-
-      await expect(fileService.deleteFile(mockFileId, notCorrectUserId)).rejects.toMatchObject({
-        errorCode: ErrorCodes.FILE_ACCESS_DENIED,
-        status: HttpStatus.FORBIDDEN,
-      });
+      await expect(fileService.deleteFile(mockFileId, notCorrectUserId)).rejects.toThrow(FileAccessDeniedException);
     });
 
     it("should throw error if S3 deletion fails", async () => {
       mockPrismaService.mediaFile.findUnique.mockResolvedValue(mockDbFile);
       mockS3Send.mockRejectedValue(new Error("S3 error"));
 
-      await expect(fileService.deleteFile(mockFileId, mockUserId)).rejects.toThrow(ApiException);
-      await expect(fileService.deleteFile(mockFileId, mockUserId)).rejects.toMatchObject({
-        errorCode: ErrorCodes.FILE_DELETE_FAILED,
-        status: HttpStatus.BAD_REQUEST,
-      });
+      await expect(fileService.deleteFile(mockFileId, mockUserId)).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -473,11 +442,7 @@ describe("FilesService", () => {
 
       expect(() => {
         (fileService as any).checkAccess(mockDbFile, mockNotCorrectUserId);
-      }).toThrow(ApiException);
-
-      expect(() => {
-        (fileService as any).checkAccess(mockDbFile, mockNotCorrectUserId);
-      }).toThrow(new ApiException(ErrorCodes.FILE_ACCESS_DENIED, HttpStatus.FORBIDDEN));
+      }).toThrow(FileAccessDeniedException);
     });
   });
 
