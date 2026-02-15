@@ -63,7 +63,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new DomainExceptionFilter(), new ApiExceptionFilter());
+  app.useGlobalFilters(new ApiExceptionFilter(), new DomainExceptionFilter());
   app.use(cookieParser());
 
   // Включим CORS для Swagger UI и фронтенда

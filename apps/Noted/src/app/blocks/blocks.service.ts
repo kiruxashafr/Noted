@@ -20,6 +20,7 @@ import {
   AccessDeniedException,
   BlockAccessDeniedException,
   BlockNotFoundException,
+  DomainException,
   FailedToCreateBlockException,
   FailedToFindBlockException,
 } from "@noted/common/errors/domain_exception/domain-exception";
@@ -40,18 +41,30 @@ export class BlocksService {
   ) {}
 
   async createBlock(userId: string, dto: CreateBlockDto) {
-    await this.validateBlockMeta(dto.blockType, dto.meta);
-    if (dto.parentId) {
-      await this.checkBlockAccess(userId, dto.parentId, BlockPermission.EDIT);
+    try{
+      await this.validateBlockMeta(dto.blockType, dto.meta);
+      if (dto.parentId) {
+        await this.checkBlockAccess(userId, dto.parentId, BlockPermission.EDIT);
+      }
+      this.logger.debug(`check complete`)
+      switch (dto.blockType) {
+        case BlockType.TEXT:
+          return await this.createTextBlock(userId, dto);
+        case BlockType.CONTAINER:
+          return await this.createContainerBlock(userId, dto);
+        default:
+          throw new BadRequestException(`Unsupported block type: ${dto.blockType}`);
+      }
+    } catch (error) {
+      if (
+        error instanceof DomainException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new FailedToCreateBlockException
     }
-    switch (dto.blockType) {
-      case BlockType.TEXT:
-        return await this.createTextBlock(userId, dto);
-      case BlockType.CONTAINER:
-        return await this.createContainerBlock(userId, dto);
-      default:
-        throw new BadRequestException(`Unsupported block type: ${dto.blockType}`);
-    }
+
   }
 
   async upadateBlock(userId: string, dto: UpadateBlockDto) {
@@ -87,7 +100,7 @@ export class BlocksService {
       this.logger.log(`updateBlock() | user ${userId} updated block ${dto.blockId}`);
       return updatedBlock;
     } catch (error) {
-      if (error instanceof BadRequestException) {
+      if (error instanceof DomainException) {
         throw error;
       }
       this.logger.error(`updateBlock() | ${error.message}`, error.stack);
@@ -161,6 +174,7 @@ export class BlocksService {
         where: { id: blockId },
         select: { ownerId: true },
       });
+      if(!block) {throw new BlockNotFoundException('block not found for check access')}
 
       if (block.ownerId == userId) {
         return;
@@ -180,14 +194,12 @@ export class BlocksService {
         AND "root_path" @> ${blockPath}::ltree
         AND (
           CASE "permission"
-            WHEN 'OWNER' THEN 3
             WHEN 'EDIT'  THEN 2
             WHEN 'VIEW'  THEN 1
             ELSE 0
           END
         ) >= (
           CASE ${permission}::text
-            WHEN 'OWNER' THEN 3
             WHEN 'EDIT'  THEN 2
             WHEN 'VIEW'  THEN 1
             ELSE 0
@@ -201,7 +213,9 @@ export class BlocksService {
         throw new BlockAccessDeniedException();
       }
     } catch (error) {
-      if (error instanceof BlockAccessDeniedException) {
+      if (
+        error instanceof DomainException
+      ) {
         throw error;
       }
       this.logger.error(`checkBlockAccess() | ${error.message}`, error.stack);
@@ -299,7 +313,7 @@ export class BlocksService {
       this.logger.log(`user ${userId} deleted block: ${blockId} and his child`);
       return;
     } catch (error) {
-      if (error instanceof BlockNotFoundException) {
+      if (error instanceof DomainException) {
         throw error;
       }
       this.logger.error(`getChildBlocks() | ${(error as Error).message}`, (error as Error).stack);
