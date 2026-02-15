@@ -4,10 +4,11 @@ import { CreateBlockDto } from "./dto/create-block.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
 import { Request } from "express";
 import { GetChildBlocksDto } from "./dto/get-blocks.dto";
-import { DeleteBlockDto } from "./dto/delete-block.dto";
+import {  DeleteBlockDto } from "./dto/delete-block.dto";
 import { CreateAccessDto } from "./dto/create-access.dto";
 import { UpadateBlockDto } from "./dto/update-block.dto";
 import { UpdateAccessDto } from "./dto/update-access.dto";
+import { DeleteAccessDto } from "./dto/delete-access.dto";
 
 @Controller("blocks")
 export class BlocksController {
@@ -65,5 +66,11 @@ export class BlocksController {
   @UseGuards(JwtAuthGuard)
   async deleteBlock(@Req() req: Request, @Body() dto: DeleteBlockDto) {
     return this.blocksServise.deleteBlock(req.user.sub, dto.blockId);
+  }
+
+  @Delete("access")
+  @UseGuards(JwtAuthGuard)
+  async deleteAccess(@Req() req: Request, @Body() dto: DeleteAccessDto) {
+    return this.blocksServise.deleteAccess(req.user.sub, dto.accessId);
   }
 }

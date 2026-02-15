@@ -25,6 +25,10 @@ export interface DeleteBlockRequest {
   blockId: string;
 }
 
+export interface DeleteAccessRequest {
+  accessId: string
+}
+
 //Container
 export interface ContainerMetaContent {
   title: string;

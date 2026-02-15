@@ -17,6 +17,7 @@ import { validate } from "class-validator";
 import { ContainerBlockMetaDto, TextBlockMetaDto } from "./dto/content-payload.dto";
 import { customAlphabet } from "nanoid";
 import {
+  AccessDeniedException,
   BlockAccessDeniedException,
   BlockNotFoundException,
   FailedToCreateBlockException,
@@ -338,6 +339,7 @@ export class BlocksService {
       is_active = true
         RETURNING *
     `;
+      this.logger.log(`createAccessForUser() | user: ${ownerId} create access fot user: ${toId} to block: ${blockId}`)
       return blockAccess;
     } catch (error) {
       this.logger.error(`createAccessForUser() | ${(error as Error).message}`, (error as Error).stack);
@@ -367,6 +369,30 @@ export class BlocksService {
       this.logger.log(`updateAccessForUser | User ${userId} update access`);
       return updatedAccess;
     } catch (error) {
+      this.logger.error(`updateAccessForUser() | ${(error as Error).message}`, (error as Error).stack);
+      throw new BadRequestException();
+    }
+  }
+
+  async deleteAccess(userId: string, accessId: string) {
+    try {
+      const access = await this.prisma.blockAccess.findUnique({
+        where: { id: accessId }
+      })
+
+      if (access.fromId == userId) {
+        await this.prisma.blockAccess.delete({
+          where:{id: accessId}
+        })
+        this.logger.log(`deleteAccess() | user: ${userId} delete access fot user: ${access.toId} to block: ${access.blockId}`)
+        return
+      }
+      else {throw new AccessDeniedException}
+    
+    } catch (error) {
+      if (error instanceof AccessDeniedException) {
+        throw error;
+      }
       this.logger.error(`updateAccessForUser() | ${(error as Error).message}`, (error as Error).stack);
       throw new BadRequestException();
     }
