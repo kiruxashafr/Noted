@@ -5,6 +5,7 @@ export const ErrorCodes = {
   HTTP_ERROR: "HTTP_ERROR",
   BAD_REQUEST: "BAD_REQUEST",
   ACCESS_DENIED: "ACCESS_DENIED",
+  NOT_FOUND: "NOT_FOUND",
 
   // Auth ошибки
   LOGIN_FAILED: "LOGIN_FAILED",

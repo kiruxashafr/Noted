@@ -1,26 +1,64 @@
-// libs/common/src/errors/prisma-error.utils.ts
-import { PostgresQueryError } from "@noted/types";
+import { Prisma } from "generated/prisma/client";
+import { PostgresErrorCode, PrismaErrorCode } from "./database-error-codes";
 
-export interface PrismaConstraintError {
-  code: string;
-  meta?: {
-    modelName?: string;
-    target?: string[];
-    driverAdapterError?: {
-      cause: PostgresQueryError;
-    };
-  };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface PrismaErrorMeta extends Record<string, any> {
+  modelName?: string;
+  target?: string[];
+  code?: string; 
+  message?: string;
 }
 
-export function isPrismaConstraintError(error: unknown): error is PrismaConstraintError {
-  if (typeof error !== "object" || error === null) return false;
-
-  // Явное приведение типа
-  const err = error as Record<string, unknown>;
-  return err["code"] === "P2002" && "meta" in err;
+export function isPrismaError(error: unknown): error is Prisma.PrismaClientKnownRequestError {
+  return error instanceof Prisma.PrismaClientKnownRequestError;
 }
 
-// Извлекает PostgreSQL ошибку из Prisma ошибки
-export function extractPostgresErrorFromPrisma(error: PrismaConstraintError): PostgresQueryError | null {
-  return error.meta?.driverAdapterError?.cause || null;
+export function isConstraintError(error: unknown): boolean {
+  if (!isPrismaError(error)) return false;
+
+  const code = error.code;
+  const meta = error.meta as PrismaErrorMeta | undefined;
+
+  const isDirectConstraint = [
+    PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED,
+    PrismaErrorCode.FOREIGN_KEY_CONSTRAINT_FAILED,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ].includes(code as any);
+
+  if (isDirectConstraint) return true;
+
+  if (code === PrismaErrorCode.RAW_QUERY_FAILED && meta?.['code']) {
+    return [
+      PostgresErrorCode.UNIQUE_VIOLATION,
+      PostgresErrorCode.FOREIGN_KEY_VIOLATION,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ].includes(meta['code'] as any);
+  }
+
+  return false;
+}
+
+export function getInternalErrorCode(error: unknown): string | undefined {
+  if (!isPrismaError(error)) return undefined;
+  
+  const meta = error.meta as PrismaErrorMeta | undefined;
+
+  if (error.code === PrismaErrorCode.RAW_QUERY_FAILED && meta) {
+    let pgCode = meta['code'] || meta['database_error_code'];
+
+    if (!pgCode && meta['driverAdapterError']?.['cause']) {
+      pgCode = meta['driverAdapterError']['cause']['originalCode'];
+    }
+
+    if (pgCode) return String(pgCode);
+  }
+
+  return error.code;
+}
+
+
+export function getPrismaModelName(error: unknown): string | undefined {
+  if (!isPrismaError(error)) return undefined;
+  const meta = error.meta as PrismaErrorMeta | undefined;
+  return meta?.['modelName'];
 }

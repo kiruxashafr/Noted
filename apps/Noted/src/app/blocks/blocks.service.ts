@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
@@ -18,17 +18,23 @@ import { ContainerBlockMetaDto, TextBlockMetaDto } from "./dto/content-payload.d
 import { customAlphabet } from "nanoid";
 import {
   AccessDeniedException,
+  BadRequestException,
   BlockAccessDeniedException,
   BlockNotFoundException,
   DomainException,
+  DuplicateValueException,
   FailedToCreateBlockException,
   FailedToFindBlockException,
+  InternalErrorException,
+  NotFoundException,
 } from "@noted/common/errors/domain_exception/domain-exception";
 
 import { randomUUID } from "crypto";
 import { BlockAccess } from "generated/prisma/client";
 import { UpadateBlockDto } from "./dto/update-block.dto";
 import { UpdateAccessDto } from "./dto/update-access.dto";
+import { getInternalErrorCode, isPrismaError } from "@noted/common/db/prisma-error.utils";
+import { PostgresErrorCode, PrismaErrorCode } from "@noted/common/db/database-error-codes";
 
 @Injectable()
 export class BlocksService {
@@ -46,7 +52,6 @@ export class BlocksService {
       if (dto.parentId) {
         await this.checkBlockAccess(userId, dto.parentId, BlockPermission.EDIT);
       }
-      this.logger.debug(`check complete`)
       switch (dto.blockType) {
         case BlockType.TEXT:
           return await this.createTextBlock(userId, dto);
@@ -57,12 +62,12 @@ export class BlocksService {
       }
     } catch (error) {
       if (
-        error instanceof DomainException ||
-        error instanceof BadRequestException
+        error instanceof DomainException
       ) {
         throw error;
       }
-      throw new FailedToCreateBlockException
+      this.logger.error(`createBlock() | create error ${error}`)
+      throw new FailedToCreateBlockException(`create error`)
     }
 
   }
@@ -219,7 +224,7 @@ export class BlocksService {
         throw error;
       }
       this.logger.error(`checkBlockAccess() | ${error.message}`, error.stack);
-      throw new FailedToCreateBlockException();
+      this.handleBlockError(error);
     }
   }
   private async getPath(blockId: string): Promise<string | null> {
@@ -317,7 +322,7 @@ export class BlocksService {
         throw error;
       }
       this.logger.error(`getChildBlocks() | ${(error as Error).message}`, (error as Error).stack);
-      throw new BadRequestException();
+      this.handleBlockError(error);
     }
   }
 
@@ -356,8 +361,9 @@ export class BlocksService {
       this.logger.log(`createAccessForUser() | user: ${ownerId} create access fot user: ${toId} to block: ${blockId}`)
       return blockAccess;
     } catch (error) {
+      if (error instanceof DomainException) throw error
       this.logger.error(`createAccessForUser() | ${(error as Error).message}`, (error as Error).stack);
-      throw new BadRequestException();
+      this.handleBlockError(error)
     }
   }
 
@@ -437,7 +443,6 @@ export class BlocksService {
   private async validateBlockMeta(type: BlockType, content: BlockMeta | object): Promise<void> {
     let dtoInstance: object;
     if (!content) {
-      this.logger.debug("Empty meta, skipping validation");
       return;
     }
     switch (type) {
@@ -464,4 +469,29 @@ export class BlocksService {
     }
     return;
   }
+
+private handleBlockError(error: unknown): never {
+  if (error instanceof DomainException) throw error;
+  
+  if (!isPrismaError(error)) {
+    throw new InternalErrorException();
+  }
+
+  const internalCode = getInternalErrorCode(error);
+
+  if (internalCode === PostgresErrorCode.FOREIGN_KEY_VIOLATION) {
+    throw new NotFoundException('Related entity (User or Block) not found');
+  }
+
+  if (internalCode === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED || internalCode === PostgresErrorCode.UNIQUE_VIOLATION) {
+    throw new DuplicateValueException('This block or path already exists');
+  }
+
+  if (error.code === PrismaErrorCode.RAW_QUERY_FAILED) {
+    this.logger.error(`Database raw query failed: ${error.message}`);
+    throw new InternalErrorException('Database operation failed');
+  }
+
+  throw new InternalErrorException();
+}
 }

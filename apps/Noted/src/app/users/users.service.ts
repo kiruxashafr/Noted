@@ -6,8 +6,7 @@ import * as argon2 from "argon2";
 import { ReadUserDto } from "./dto/read-user.dto";
 import { UpdateUserDto } from "./dto/user-update.dto";
 import { FileAccess } from "generated/prisma/enums";
-import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
-import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
+import { PostgresErrorCode, PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { OnEvent } from "@nestjs/event-emitter";
 import { PhotoConversionFailedEvent, PhotoConvertedEvent, PhotoEvent } from "../shared/events/photo-event.types";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
@@ -22,6 +21,7 @@ import {
   UpdateUserException,
   UserNotFoundException,
 } from "@noted/common/errors/domain_exception/domain-exception";
+import { getInternalErrorCode, getPrismaModelName, isPrismaError } from "@noted/common/db/prisma-error.utils";
 
 @Injectable()
 export class UsersService {
@@ -141,15 +141,29 @@ export class UsersService {
     });
   }
 
-  private handleAccountConstraintError(error: unknown): never {
-    if (!isPrismaConstraintError(error)) {
-      throw new UpdateUserException();
-    }
+private handleAccountConstraintError(error: unknown): never {
+  if (!isPrismaError(error)) {
+    throw new UpdateUserException();
+  }
 
-    if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "User") {
+  const internalCode = getInternalErrorCode(error);
+  const modelName = getPrismaModelName(error);
+
+  if (
+    internalCode === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED || 
+    internalCode === PostgresErrorCode.UNIQUE_VIOLATION
+  ) {
+    if (modelName === "User") {
       throw new EmailAlreadyExistsException();
     }
-
     throw new DuplicateValueException();
   }
+
+
+  if (internalCode === PrismaErrorCode.RECORD_NOT_FOUND) {
+    throw new UserNotFoundException();
+  }
+
+  throw new UpdateUserException();
+}
 }

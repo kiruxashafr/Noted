@@ -6,7 +6,6 @@ import { LoginDto } from "./dto/login.dto";
 import { RegisterRequest } from "./dto/register.dto";
 import { AccessTokenPayload, RefreshTokenPayload } from "./interfaces/jwt.interface";
 import * as argon2 from "argon2";
-import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
 import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { ReadAuthDto } from "./dto/read-auth.dto";
 import { ReadRefreshDto } from "./dto/read-refresh.dto";
@@ -25,6 +24,7 @@ import {
   RegistrationFailedException,
   UserNotFoundException,
 } from "@noted/common/errors/domain_exception/domain-exception";
+import { getInternalErrorCode, getPrismaModelName, isPrismaError } from "@noted/common/db/prisma-error.utils";
 
 @Injectable()
 export class AuthService {
@@ -216,15 +216,23 @@ export class AuthService {
     });
   }
 
-  private handleAccountConstraintError(error: unknown): never {
-    if (!isPrismaConstraintError(error)) {
-      throw new RegistrationFailedException();
-    }
+private handleAccountConstraintError(error: unknown): never {
+  if (!isPrismaError(error)) {
+    throw new RegistrationFailedException();
+  }
 
-    if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "User") {
+  const internalCode = getInternalErrorCode(error);
+  const modelName = getPrismaModelName(error);
+
+  if (
+    internalCode === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED
+  ) {
+    if (modelName === "User") {
       throw new EmailAlreadyExistsException();
     }
-
     throw new DuplicateValueException();
   }
+
+  throw new RegistrationFailedException();
+}
 }

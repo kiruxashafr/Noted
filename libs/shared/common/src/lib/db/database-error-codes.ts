@@ -28,7 +28,7 @@ export const PrismaErrorCode = {
 
   // Record errors
   RECORD_NOT_FOUND: "P2025",
-
+  RAW_QUERY_FAILED: "P2010",
   // Validation errors
   VALUE_TOO_LONG: "P2000",
   INVALID_VALUE: "P2006",

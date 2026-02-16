@@ -48,6 +48,8 @@ export const RefreshTokenMissingException = createException(ErrorCodes.REFRESH_T
 
 export const MissingTokenException = createException(ErrorCodes.MISSING_TOKEN, HttpStatus.BAD_REQUEST);
 
+export const NotFoundException = createException(ErrorCodes.NOT_FOUND, HttpStatus.NOT_FOUND);
+
 // ========== Регистрация ==========
 export const RegistrationFailedException = createException(
   ErrorCodes.REGISTRATION_FAILED,
