@@ -77,6 +77,7 @@ export class AuthService {
     } catch (error) {
       this.logger.error(`register() | User ${email} register failed with error ${error.message}}`);
       this.handleAccountConstraintError(error);
+      throw error;
     }
   }
 

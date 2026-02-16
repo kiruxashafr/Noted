@@ -29,6 +29,7 @@ import {
   RefreshFailedException,
   UserNotFoundException,
 } from "@noted/common/errors/domain_exception/domain-exception";
+import { Prisma } from "generated/prisma/client";
 
 const mockPrismaService = {
   user: {
@@ -145,10 +146,15 @@ describe("AuthService", () => {
         password: "password123",
       };
 
-      const prismaError = {
-        code: "P2002",
-        meta: { target: ["email"], modelName: "User" },
-      };
+      // Создаем настоящий экземпляр PrismaClientKnownRequestError
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint failed on the fields: (`email`)",
+        {
+          code: "P2002",
+          clientVersion: "5.0.0",
+          meta: { target: ["email"], modelName: "User" },
+        },
+      );
 
       mockPrismaService.user.create.mockRejectedValue(prismaError);
 
