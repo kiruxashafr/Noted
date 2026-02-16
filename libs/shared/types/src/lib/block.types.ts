@@ -26,7 +26,7 @@ export interface DeleteBlockRequest {
 }
 
 export interface DeleteAccessRequest {
-  accessId: string
+  accessId: string;
 }
 
 //Container

@@ -141,29 +141,28 @@ export class UsersService {
     });
   }
 
-private handleAccountConstraintError(error: unknown): never {
-  if (!isPrismaError(error)) {
+  private handleAccountConstraintError(error: unknown): never {
+    if (!isPrismaError(error)) {
+      throw new UpdateUserException();
+    }
+
+    const internalCode = getInternalErrorCode(error);
+    const modelName = getPrismaModelName(error);
+
+    if (
+      internalCode === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED ||
+      internalCode === PostgresErrorCode.UNIQUE_VIOLATION
+    ) {
+      if (modelName === "User") {
+        throw new EmailAlreadyExistsException();
+      }
+      throw new DuplicateValueException();
+    }
+
+    if (internalCode === PrismaErrorCode.RECORD_NOT_FOUND) {
+      throw new UserNotFoundException();
+    }
+
     throw new UpdateUserException();
   }
-
-  const internalCode = getInternalErrorCode(error);
-  const modelName = getPrismaModelName(error);
-
-  if (
-    internalCode === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED || 
-    internalCode === PostgresErrorCode.UNIQUE_VIOLATION
-  ) {
-    if (modelName === "User") {
-      throw new EmailAlreadyExistsException();
-    }
-    throw new DuplicateValueException();
-  }
-
-
-  if (internalCode === PrismaErrorCode.RECORD_NOT_FOUND) {
-    throw new UserNotFoundException();
-  }
-
-  throw new UpdateUserException();
-}
 }

@@ -26,7 +26,7 @@ export const ValidationException = createException(ErrorCodes.VALIDATION_ERROR, 
 
 export const BadRequestException = createException(ErrorCodes.BAD_REQUEST, HttpStatus.BAD_REQUEST);
 
-export const AccessDeniedException = createException(ErrorCodes.ACCESS_DENIED, HttpStatus.FORBIDDEN)
+export const AccessDeniedException = createException(ErrorCodes.ACCESS_DENIED, HttpStatus.FORBIDDEN);
 // ========== Auth ошибки ==========
 export const InvalidCredentialsException = createException(ErrorCodes.INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED);
 

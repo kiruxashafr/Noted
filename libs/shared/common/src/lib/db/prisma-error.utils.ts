@@ -5,7 +5,7 @@ import { PostgresErrorCode, PrismaErrorCode } from "./database-error-codes";
 export interface PrismaErrorMeta extends Record<string, any> {
   modelName?: string;
   target?: string[];
-  code?: string; 
+  code?: string;
   message?: string;
 }
 
@@ -22,17 +22,17 @@ export function isConstraintError(error: unknown): boolean {
   const isDirectConstraint = [
     PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED,
     PrismaErrorCode.FOREIGN_KEY_CONSTRAINT_FAILED,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ].includes(code as any);
 
   if (isDirectConstraint) return true;
 
-  if (code === PrismaErrorCode.RAW_QUERY_FAILED && meta?.['code']) {
+  if (code === PrismaErrorCode.RAW_QUERY_FAILED && meta?.["code"]) {
     return [
       PostgresErrorCode.UNIQUE_VIOLATION,
       PostgresErrorCode.FOREIGN_KEY_VIOLATION,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ].includes(meta['code'] as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ].includes(meta["code"] as any);
   }
 
   return false;
@@ -40,14 +40,14 @@ export function isConstraintError(error: unknown): boolean {
 
 export function getInternalErrorCode(error: unknown): string | undefined {
   if (!isPrismaError(error)) return undefined;
-  
+
   const meta = error.meta as PrismaErrorMeta | undefined;
 
   if (error.code === PrismaErrorCode.RAW_QUERY_FAILED && meta) {
-    let pgCode = meta['code'] || meta['database_error_code'];
+    let pgCode = meta["code"] || meta["database_error_code"];
 
-    if (!pgCode && meta['driverAdapterError']?.['cause']) {
-      pgCode = meta['driverAdapterError']['cause']['originalCode'];
+    if (!pgCode && meta["driverAdapterError"]?.["cause"]) {
+      pgCode = meta["driverAdapterError"]["cause"]["originalCode"];
     }
 
     if (pgCode) return String(pgCode);
@@ -56,9 +56,8 @@ export function getInternalErrorCode(error: unknown): string | undefined {
   return error.code;
 }
 
-
 export function getPrismaModelName(error: unknown): string | undefined {
   if (!isPrismaError(error)) return undefined;
   const meta = error.meta as PrismaErrorMeta | undefined;
-  return meta?.['modelName'];
+  return meta?.["modelName"];
 }

@@ -216,23 +216,21 @@ export class AuthService {
     });
   }
 
-private handleAccountConstraintError(error: unknown): never {
-  if (!isPrismaError(error)) {
+  private handleAccountConstraintError(error: unknown): never {
+    if (!isPrismaError(error)) {
+      throw new RegistrationFailedException();
+    }
+
+    const internalCode = getInternalErrorCode(error);
+    const modelName = getPrismaModelName(error);
+
+    if (internalCode === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED) {
+      if (modelName === "User") {
+        throw new EmailAlreadyExistsException();
+      }
+      throw new DuplicateValueException();
+    }
+
     throw new RegistrationFailedException();
   }
-
-  const internalCode = getInternalErrorCode(error);
-  const modelName = getPrismaModelName(error);
-
-  if (
-    internalCode === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED
-  ) {
-    if (modelName === "User") {
-      throw new EmailAlreadyExistsException();
-    }
-    throw new DuplicateValueException();
-  }
-
-  throw new RegistrationFailedException();
-}
 }

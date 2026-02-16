@@ -31,7 +31,7 @@ import {
 
 import { randomUUID } from "crypto";
 import { BlockAccess } from "generated/prisma/client";
-import { UpadateBlockDto } from "./dto/update-block.dto";
+import { UpdateBlockDto } from "./dto/update-block.dto";
 import { UpdateAccessDto } from "./dto/update-access.dto";
 import { getInternalErrorCode, isPrismaError } from "@noted/common/db/prisma-error.utils";
 import { PostgresErrorCode, PrismaErrorCode } from "@noted/common/db/database-error-codes";
@@ -47,7 +47,7 @@ export class BlocksService {
   ) {}
 
   async createBlock(userId: string, dto: CreateBlockDto) {
-    try{
+    try {
       await this.validateBlockMeta(dto.blockType, dto.meta);
       if (dto.parentId) {
         await this.checkBlockAccess(userId, dto.parentId, BlockPermission.EDIT);
@@ -61,18 +61,15 @@ export class BlocksService {
           throw new BadRequestException(`Unsupported block type: ${dto.blockType}`);
       }
     } catch (error) {
-      if (
-        error instanceof DomainException
-      ) {
+      if (error instanceof DomainException) {
         throw error;
       }
-      this.logger.error(`createBlock() | create error ${error}`)
-      throw new FailedToCreateBlockException(`create error`)
+      this.logger.error(`createBlock() | create error ${error}`);
+      throw new FailedToCreateBlockException(`create error`);
     }
-
   }
 
-  async upadateBlock(userId: string, dto: UpadateBlockDto) {
+  async upadateBlock(userId: string, dto: UpdateBlockDto) {
     try {
       await this.checkBlockAccess(userId, dto.blockId, BlockPermission.EDIT);
 
@@ -179,7 +176,9 @@ export class BlocksService {
         where: { id: blockId },
         select: { ownerId: true },
       });
-      if(!block) {throw new BlockNotFoundException('block not found for check access')}
+      if (!block) {
+        throw new BlockNotFoundException("block not found for check access");
+      }
 
       if (block.ownerId == userId) {
         return;
@@ -218,9 +217,7 @@ export class BlocksService {
         throw new BlockAccessDeniedException();
       }
     } catch (error) {
-      if (
-        error instanceof DomainException
-      ) {
+      if (error instanceof DomainException) {
         throw error;
       }
       this.logger.error(`checkBlockAccess() | ${error.message}`, error.stack);
@@ -358,12 +355,12 @@ export class BlocksService {
       is_active = true
         RETURNING *
     `;
-      this.logger.log(`createAccessForUser() | user: ${ownerId} create access fot user: ${toId} to block: ${blockId}`)
+      this.logger.log(`createAccessForUser() | user: ${ownerId} create access fot user: ${toId} to block: ${blockId}`);
       return blockAccess;
     } catch (error) {
-      if (error instanceof DomainException) throw error
+      if (error instanceof DomainException) throw error;
       this.logger.error(`createAccessForUser() | ${(error as Error).message}`, (error as Error).stack);
-      this.handleBlockError(error)
+      this.handleBlockError(error);
     }
   }
 
@@ -397,18 +394,20 @@ export class BlocksService {
   async deleteAccess(userId: string, accessId: string) {
     try {
       const access = await this.prisma.blockAccess.findUnique({
-        where: { id: accessId }
-      })
+        where: { id: accessId },
+      });
 
       if (access.fromId == userId) {
         await this.prisma.blockAccess.delete({
-          where:{id: accessId}
-        })
-        this.logger.log(`deleteAccess() | user: ${userId} delete access fot user: ${access.toId} to block: ${access.blockId}`)
-        return
+          where: { id: accessId },
+        });
+        this.logger.log(
+          `deleteAccess() | user: ${userId} delete access fot user: ${access.toId} to block: ${access.blockId}`,
+        );
+        return;
+      } else {
+        throw new AccessDeniedException();
       }
-      else {throw new AccessDeniedException}
-    
     } catch (error) {
       if (error instanceof AccessDeniedException) {
         throw error;
@@ -470,28 +469,31 @@ export class BlocksService {
     return;
   }
 
-private handleBlockError(error: unknown): never {
-  if (error instanceof DomainException) throw error;
-  
-  if (!isPrismaError(error)) {
+  private handleBlockError(error: unknown): never {
+    if (error instanceof DomainException) throw error;
+
+    if (!isPrismaError(error)) {
+      throw new InternalErrorException();
+    }
+
+    const internalCode = getInternalErrorCode(error);
+
+    if (internalCode === PostgresErrorCode.FOREIGN_KEY_VIOLATION) {
+      throw new NotFoundException("Related entity (User or Block) not found");
+    }
+
+    if (
+      internalCode === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED ||
+      internalCode === PostgresErrorCode.UNIQUE_VIOLATION
+    ) {
+      throw new DuplicateValueException("This block or path already exists");
+    }
+
+    if (error.code === PrismaErrorCode.RAW_QUERY_FAILED) {
+      this.logger.error(`Database raw query failed: ${error.message}`);
+      throw new InternalErrorException("Database operation failed");
+    }
+
     throw new InternalErrorException();
   }
-
-  const internalCode = getInternalErrorCode(error);
-
-  if (internalCode === PostgresErrorCode.FOREIGN_KEY_VIOLATION) {
-    throw new NotFoundException('Related entity (User or Block) not found');
-  }
-
-  if (internalCode === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED || internalCode === PostgresErrorCode.UNIQUE_VIOLATION) {
-    throw new DuplicateValueException('This block or path already exists');
-  }
-
-  if (error.code === PrismaErrorCode.RAW_QUERY_FAILED) {
-    this.logger.error(`Database raw query failed: ${error.message}`);
-    throw new InternalErrorException('Database operation failed');
-  }
-
-  throw new InternalErrorException();
-}
 }
