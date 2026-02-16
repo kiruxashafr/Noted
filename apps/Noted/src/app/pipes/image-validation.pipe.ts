@@ -1,6 +1,5 @@
-import { HttpStatus, Injectable, PipeTransform } from "@nestjs/common";
-import { ApiException } from "@noted/common/errors/api-exception";
-import { ErrorCodes } from "@noted/common/errors/error-codes.const";
+import { Injectable, PipeTransform } from "@nestjs/common";
+import { InvalidFileTypeException, MissingFileException } from "@noted/common/errors/domain_exception/domain-exception";
 
 @Injectable()
 export class ImageValidationPipe implements PipeTransform {
@@ -22,11 +21,11 @@ export class ImageValidationPipe implements PipeTransform {
 
   transform(file: Express.Multer.File) {
     if (!file) {
-      throw new ApiException(ErrorCodes.MISSING_FILE, HttpStatus.BAD_REQUEST);
+      throw new MissingFileException();
     }
 
     if (!this.allowedMimeTypes.includes(file.mimetype)) {
-      throw new ApiException(ErrorCodes.INVALID_FILE_TYPE, HttpStatus.BAD_REQUEST);
+      throw new InvalidFileTypeException();
     }
     return file;
   }

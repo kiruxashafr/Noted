@@ -9,7 +9,6 @@ import { UploadAvatarDto, UploadAvatarPhotoDto } from "./dto/upload-avatar.dto";
 import { Request } from "express";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
-import { ApiException } from "@noted/common/errors/api-exception";
 import { HttpStatus } from "@nestjs/common";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import { ImageValidationPipe } from "../pipes/image-validation.pipe";

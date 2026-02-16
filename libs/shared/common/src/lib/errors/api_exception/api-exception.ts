@@ -1,9 +1,8 @@
-// libs/api-common/src/exceptions/api-exception.ts
 import { HttpException, HttpStatus } from "@nestjs/common";
 
 export interface ApiErrorResponse {
   errorCode: string;
-  details?: Record<string, unknown> | string[] | null; // добавили null, убрали unknown
+  details?: Record<string, unknown> | string[] | null;
 }
 
 export class ApiException extends HttpException {

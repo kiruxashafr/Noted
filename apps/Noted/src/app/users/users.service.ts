@@ -1,15 +1,12 @@
-import { HttpStatus, Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { FilesService } from "../files/files.service";
-import { ApiException } from "@noted/common/errors/api-exception";
-import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import { toDto } from "@noted/common/utils/to-dto";
 import * as argon2 from "argon2";
 import { ReadUserDto } from "./dto/read-user.dto";
 import { UpdateUserDto } from "./dto/user-update.dto";
 import { FileAccess } from "generated/prisma/enums";
-import { isPrismaConstraintError } from "@noted/common/db/prisma-error.utils";
-import { PrismaErrorCode } from "@noted/common/db/database-error-codes";
+import { PostgresErrorCode, PrismaErrorCode } from "@noted/common/db/database-error-codes";
 import { OnEvent } from "@nestjs/event-emitter";
 import { PhotoConversionFailedEvent, PhotoConvertedEvent, PhotoEvent } from "../shared/events/photo-event.types";
 import { PhotoQueueService } from "../photo-queue/photo-queue.service";
@@ -17,6 +14,14 @@ import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
 import { PHOTO_PROFILES } from "../shared/photo-profiles";
 import { UserAvatar, UserAvatarKeys } from "@noted/types";
+import {
+  DuplicateValueException,
+  EmailAlreadyExistsException,
+  UpdateUserAvatarException,
+  UpdateUserException,
+  UserNotFoundException,
+} from "@noted/common/errors/domain_exception/domain-exception";
+import { getInternalErrorCode, getPrismaModelName, isPrismaError } from "@noted/common/db/prisma-error.utils";
 
 @Injectable()
 export class UsersService {
@@ -49,7 +54,7 @@ export class UsersService {
       this.queueService.sendToPhotoEditor(data);
     } catch (error) {
       this.logger.error(`updateAvatar() | Failed to update avatar: ${error.message}`, error.stack);
-      throw error;
+      throw UpdateUserAvatarException;
     }
   }
 
@@ -122,7 +127,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new ApiException(ErrorCodes.USER_NOT_FOUND, HttpStatus.NOT_FOUND);
+      throw new UserNotFoundException(`user ${userId} not found`);
     }
 
     const result = await this.filesService.deleteAllUserFiles(userId);
@@ -137,14 +142,27 @@ export class UsersService {
   }
 
   private handleAccountConstraintError(error: unknown): never {
-    if (!isPrismaConstraintError(error)) {
-      throw new ApiException(ErrorCodes.REGISTRATION_FAILED, HttpStatus.INTERNAL_SERVER_ERROR);
+    if (!isPrismaError(error)) {
+      throw new UpdateUserException();
     }
 
-    if (error.code === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED && error.meta?.modelName === "User") {
-      throw new ApiException(ErrorCodes.EMAIL_ALREADY_EXISTS, HttpStatus.CONFLICT);
+    const internalCode = getInternalErrorCode(error);
+    const modelName = getPrismaModelName(error);
+
+    if (
+      internalCode === PrismaErrorCode.UNIQUE_CONSTRAINT_FAILED ||
+      internalCode === PostgresErrorCode.UNIQUE_VIOLATION
+    ) {
+      if (modelName === "User") {
+        throw new EmailAlreadyExistsException();
+      }
+      throw new DuplicateValueException();
     }
 
-    throw new ApiException(ErrorCodes.DUPLICATE_VALUE, HttpStatus.CONFLICT);
+    if (internalCode === PrismaErrorCode.RECORD_NOT_FOUND) {
+      throw new UserNotFoundException();
+    }
+
+    throw new UpdateUserException();
   }
 }
