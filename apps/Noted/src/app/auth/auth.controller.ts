@@ -6,12 +6,12 @@ import { RegisterRequest } from "./dto/register.dto";
 
 import type { Request, Response } from "express";
 import { ConfigService } from "@nestjs/config";
-import { ApiException } from "@noted/common/errors/api-exception";
 import { ApiBearerAuth, ApiBody, ApiCookieAuth, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ReadAuthDto } from "./dto/read-auth.dto";
 import { ReadRefreshDto } from "./dto/read-refresh.dto";
 import { JwtAuthGuard } from "./guards/jwt.guards";
 import { ReadUserProfileDto } from "./dto/read-user-profile.dto";
+import { ApiException } from "@noted/common/errors/api_exception/api-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 
 @ApiTags("Authentication")

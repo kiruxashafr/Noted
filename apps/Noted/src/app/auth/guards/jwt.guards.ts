@@ -2,7 +2,8 @@ import { AccessTokenPayload } from "../interfaces/jwt.interface";
 import { CanActivate, ExecutionContext, HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { ApiException } from "@noted/common/errors/api-exception";
+import { ApiException } from "@noted/common/errors/api_exception/api-exception";
+import {} from "@noted/common/errors/domain_exception/domain-exception";
 import { ErrorCodes } from "@noted/common/errors/error-codes.const";
 import type { Request } from "express";
 

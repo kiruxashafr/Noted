@@ -22,6 +22,14 @@ jest.mock("./dto/read-refresh.dto", () => ({
 
 import { ReadAuthDto } from "./dto/read-auth.dto";
 import { ReadRefreshDto } from "./dto/read-refresh.dto";
+import {
+  EmailAlreadyExistsException,
+  InvalidCredentialsException,
+  InvalidRefreshTokenException,
+  RefreshFailedException,
+  UserNotFoundException,
+} from "@noted/common/errors/domain_exception/domain-exception";
+import { Prisma } from "generated/prisma/client";
 
 const mockPrismaService = {
   user: {
@@ -138,17 +146,19 @@ describe("AuthService", () => {
         password: "password123",
       };
 
-      const prismaError = {
-        code: "P2002",
-        meta: { target: ["email"], modelName: "User" },
-      };
+      // Создаем настоящий экземпляр PrismaClientKnownRequestError
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
+        "Unique constraint failed on the fields: (`email`)",
+        {
+          code: "P2002",
+          clientVersion: "5.0.0",
+          meta: { target: ["email"], modelName: "User" },
+        },
+      );
 
       mockPrismaService.user.create.mockRejectedValue(prismaError);
 
-      await expect(authService.register(registerDto)).rejects.toMatchObject({
-        errorCode: "EMAIL_ALREADY_EXISTS",
-        status: HttpStatus.CONFLICT,
-      });
+      await expect(authService.register(registerDto)).rejects.toThrow(EmailAlreadyExistsException);
     });
   });
 
@@ -176,10 +186,7 @@ describe("AuthService", () => {
 
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(authService.login(loginDto)).rejects.toMatchObject({
-        errorCode: "INVALID_CREDENTIALS",
-        status: HttpStatus.UNAUTHORIZED,
-      });
+      await expect(authService.login(loginDto)).rejects.toThrow(InvalidCredentialsException);
     });
 
     it("should throw error when password is incorrect", async () => {
@@ -189,10 +196,7 @@ describe("AuthService", () => {
       mockPrismaService.user.findUnique.mockResolvedValue(user);
       (argon2.verify as jest.Mock).mockResolvedValue(false);
 
-      await expect(authService.login(loginDto)).rejects.toMatchObject({
-        errorCode: "INVALID_CREDENTIALS",
-        status: HttpStatus.UNAUTHORIZED,
-      });
+      await expect(authService.login(loginDto)).rejects.toThrow(InvalidCredentialsException);
     });
   });
 
@@ -216,20 +220,14 @@ describe("AuthService", () => {
       mockJwtService.verifyAsync.mockResolvedValue({ sub: "unknown-id" });
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(authService.refresh(refreshToken)).rejects.toMatchObject({
-        errorCode: "USER_NOT_FOUND",
-        status: HttpStatus.UNAUTHORIZED,
-      });
+      await expect(authService.refresh(refreshToken)).rejects.toThrow(UserNotFoundException);
     });
 
     it("should throw error for invalid refresh token", async () => {
       const refreshToken = "invalid-token";
       mockJwtService.verifyAsync.mockRejectedValue(new Error("Invalid signature"));
 
-      await expect(authService.refresh(refreshToken)).rejects.toMatchObject({
-        errorCode: "INVALID_REFRESH_TOKEN",
-        status: HttpStatus.UNAUTHORIZED,
-      });
+      await expect(authService.refresh(refreshToken)).rejects.toThrow(RefreshFailedException);
     });
   });
 

@@ -9,6 +9,7 @@ out-tsc
 node_modules
 pnpm-lock.yaml
 pnpm-workspace.yaml
+yarn.lock
 
 # IDEs and editors
 /.idea
