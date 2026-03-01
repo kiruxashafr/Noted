@@ -4,14 +4,13 @@
     "rootDir": ".",
     "sourceMap": true,
     "declaration": false,
-
+    "moduleResolution": "bundler",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "lib": ["ESNext", "dom"],
+    "target": "esnext",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
@@ -19,7 +18,8 @@
       "@noted/types": ["libs/shared/types/src/index.ts"],
       "@noted/types/*": ["libs/shared/types/src/lib/*"],
       "@noted/common": ["libs/shared/common/src/index.ts"],
-      "@noted/common/*": ["libs/shared/common/src/lib/*"]
+      "@noted/common/*": ["libs/shared/common/src/lib/*"],
+      "@/*": ["src/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]

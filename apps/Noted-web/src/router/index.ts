@@ -1,12 +1,29 @@
-import { createRouter, createWebHistory } from "vue-router";
-import { setupGuards } from "../app/middleware/auth.global";
+import { createRouter, createWebHistory } from 'vue-router'
+import { authMiddleware } from './guard/auth.guard'
+
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes: [
+    {
+      path: '/',
+      redirect: '/dashboard' 
+    },
+    {
+      path: '/auth/login',
+      name: 'login',
+      component: () => import('../pages/auth/Login.vue'),
+      meta: { isGuest: true }
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('../pages/Dashboard.vue'),
+      meta: { requiresAuth: true }
+    }
+  ]
+})
 
-  ],
-});
-setupGuards(router)
+router.beforeEach(authMiddleware)
 
-export default router;
+export default router
