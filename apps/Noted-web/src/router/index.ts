@@ -10,7 +10,7 @@ const router = createRouter({
       redirect: '/dashboard' 
     },
     {
-      path: '/auth/login',
+      path: '/login',
       name: 'login',
       component: () => import('../pages/auth/Login.vue'),
       meta: { isGuest: true }

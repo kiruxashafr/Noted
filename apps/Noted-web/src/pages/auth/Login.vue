@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import Button from 'primevue/button'
-import InputText from 'primevue/inputtext'
-import Card from 'primevue/card'
 import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '../../stores/auth.store'
-import Password from 'primevue/password'
-import Divider from 'primevue/divider'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -47,13 +42,22 @@ async function onSubmit() {
     
     router.push('/dashboard')
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.message || 'Ошибка входа'
+    if (error.response.status == 401 || error.response.status == 400) {
+      toast.add({
+        severity: 'error',
+        summary: 'Incorrect login or password',
+        detail: `${errorMessage.value}`,
+        life: 3000
+      })
+    }
+    else {
     toast.add({
       severity: 'error',
-      summary: 'Ошибка',
+      summary: 'Sign up error',
       detail: `${errorMessage.value}`,
       life: 3000
     })
+    }
   } finally {
     isLoading.value = false
   }
@@ -64,8 +68,13 @@ async function onSubmit() {
   <div class="auth-container">
     <Card style="width: 35rem">
       <template #title>
-        <div class="title">
-          Авторизация
+        <div class="title-container">
+          <img  
+            src="../../public//images/logo/noted-min-light.png" 
+            alt="Logo" 
+            class="auth-logo" 
+          >
+          <span class="title-text">Sign in to your account</span>
         </div> 
       </template>
       
@@ -95,7 +104,7 @@ async function onSubmit() {
 
               <Button 
                 type="submit" 
-                label="Войти" 
+                label="Sign in" 
                 :loading="isLoading" 
                 class="w-full" 
               />
@@ -103,13 +112,13 @@ async function onSubmit() {
           </div>
 
           <Divider layout="vertical">
-            <b>ИЛИ</b>
+            <b>OR</b>
           </Divider>
 
           <div class="auth-right">
-            <p>Нет аккаунта?</p>
+            <p>New user?</p>
             <Button 
-              label="Зарегистрироваться" 
+              label="Sign up" 
               icon="pi pi-user-plus" 
               severity="secondary" 
               @click="router.push('/register')" 
@@ -130,6 +139,16 @@ async function onSubmit() {
     align-items: center;
   }
 
+  .title-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    justify-content: center;
+  }
+  .auth-logo {
+    width: 100px;         
+    object-fit: contain;
+  }
   .auth-wrapper {
     display: flex;
     align-items: center;
