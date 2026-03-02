@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import $api from '../api/instance';
-import { AccountResponse, LoginRequest, TokenResponse } from '@noted/types/auth.types'
+import { AccountResponse, LoginRequest, RegisterRequest, TokenResponse } from '@noted/types/auth.types'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('access_token'));
@@ -19,6 +19,16 @@ export const useAuthStore = defineStore('auth', () => {
     return true;
   }
 
+  async function register(credentials:RegisterRequest) {
+    const { data } = await $api.post<TokenResponse>('/api/auth/register', credentials)
+
+    token.value = data.accessToken;
+    localStorage.setItem('access_token', data.accessToken)
+
+    await getMe()
+    return true
+  }
+
   async function getMe() {
     try {
       const {data} = await $api.get<AccountResponse>('/api/auth/me');
@@ -34,7 +44,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('access_token');
   }
 
-  return { token, user, isLogged, login, logout, getMe };
+  return { token, user, isLogged, login, logout, getMe, register };
 }, {
   persist: {
     storage: localStorage,

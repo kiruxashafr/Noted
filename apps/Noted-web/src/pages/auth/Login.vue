@@ -65,8 +65,8 @@ async function onSubmit() {
 </script>
 
 <template>
-  <div class="auth-container">
-    <Card style="width: 35rem">
+  <section class="auth-container">
+    <Card style="width: 50%">
       <template #title>
         <div class="title-container">
           <img  
@@ -127,7 +127,7 @@ async function onSubmit() {
         </div>
       </template>
     </Card>
-  </div>
+  </section>
 </template>
 
 <style scoped>
@@ -145,15 +145,18 @@ async function onSubmit() {
     align-items: center; 
     justify-content: center;
   }
+
   .auth-logo {
     width: 100px;         
     object-fit: contain;
   }
-  .auth-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+
+.auth-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+}
 
   .auth-left, .auth-right {
     flex: 1;
@@ -179,8 +182,34 @@ async function onSubmit() {
     width: 100%;
   }
 
+  :deep(.p-card-body) {
+    gap: 24px;
+  }
+
   .title {
     text-align: center;
     margin-bottom: 1rem;
   }
+
+  @media (max-width: 768px) {
+  .auth-wrapper {
+    flex-direction: column; 
+  }
+
+  .p-divider-vertical {
+    display: none;
+  }
+
+  :deep(.p-card) {
+    width: 90vw !important;
+  }
+  
+  .auth-right {
+    border-top: 1px solid var(--surface-border); 
+    padding-top: 1.5rem;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+  }
+}
 </style>
