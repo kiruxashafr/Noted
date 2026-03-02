@@ -9,7 +9,7 @@ const router = useRouter();
 
 const onLogout = () => {
   authStore.logout(); 
-  router.push('/auth/login'); 
+  router.push('/login'); 
 };
 </script>
 

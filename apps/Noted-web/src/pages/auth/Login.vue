@@ -107,6 +107,7 @@ async function onSubmit() {
                 label="Sign in" 
                 :loading="isLoading" 
                 class="w-full" 
+                icon="pi pi-user"
               />
             </form>
           </div>
@@ -119,7 +120,7 @@ async function onSubmit() {
             <p>New user?</p>
             <Button 
               label="Sign up" 
-              icon="pi pi-user-plus" 
+              icon="pi pi-user"
               severity="secondary" 
               @click="router.push('/register')" 
             />
@@ -184,7 +185,9 @@ async function onSubmit() {
 
   :deep(.p-card-body) {
     gap: 24px;
+    padding-bottom: 27px;
   }
+
 
   .title {
     text-align: center;

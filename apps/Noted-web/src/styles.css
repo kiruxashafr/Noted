@@ -1,3 +1,5 @@
+@import 'primeicons/primeicons.css';
+
 html,
 body,
 #root {
@@ -35,4 +37,46 @@ img,
 svg {
   display: block;
   max-width: 100%;
+}
+
+.p-button {
+  background-color: var(--primary-color) !important;
+  border-color: var(--button-border) !important;
+  color: white !important;
+}
+
+.p-button:hover {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--button-border) !important;
+}
+
+.p-button-secondary {
+  background-color: var(--neutral-color) !important;
+  border-color: var(--button-border) !important;
+  color: white !important;
+}
+
+.p-button-secondary:hover {
+  background-color: var(--neutral-hover) !important;
+  border-color: var(--button-border) !important;
+  color: white !important;
+}
+.p-inputtext:enabled:focus {
+  border-color: var(--secondary-color) !important;
+}
+
+:root {
+  --primary-color: #455dd3;
+  --primary-hover: #0f1c5b;
+  --primary-active: #2e45b8;
+
+  --secondary-color: #213183;
+  --secondary-hover: #131f5c;
+  --secondary-active: #364ec4;
+
+  --neutral-color: #3c3e4a;
+  --neutral-hover: #2e3039;
+  --neutral-active: #272932;
+
+  --button-border: rgba(255, 255, 255, 0);
 }

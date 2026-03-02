@@ -43,11 +43,10 @@ async function onSubmit() {
         })
     router.push('/dashboard')
     } catch (error: any) {
-    if (error.response.status == 401 || error.response.status == 400) {
+    if (error.response.status == 409) {
       toast.add({
         severity: 'error',
-        summary: 'Incorrect login or password',
-        detail: `${errorMessage.value}`,
+        summary: 'Emails alraedy exist',
         life: 3000
       })
     }
@@ -98,18 +97,39 @@ async function onSubmit() {
           </div>
 
           <div class="auth-comp">
-            <Password 
-              v-model="password" 
-              :feedback="false" 
-              placeholder="Password" 
-              toggle-mask 
-            />
+<Password 
+  v-model="password" 
+  placeholder="Password" 
+  toggle-mask
+  :feedback="true"
+>
+  <template #header>
+    <h6>Придумайте пароль</h6>
+  </template>
+  <template #footer>
+    <Divider />
+    <ul class="pl-2 ml-2 mt-0 line-height-3">
+      <li>Хотя бы одна заглавная буква</li>
+      <li>Хотя бы одна строчная буква</li>
+      <li>Хотя бы 1 число</li>
+      <li>Минимум 8 символов</li>
+    </ul>
+  </template>
+</Password>
           </div>
           <Button 
             type="submit" 
             label="Register" 
             :loading="isLoading" 
             class="w-full" 
+            icon="pi pi-user"
+          />
+          <Button 
+            type="button" 
+            label="Already have an account? Sign In" 
+            icon="pi pi-angle-left"
+            severity="secondary"
+            @click="router.push('/login')"
           />
         </form>
       </template>
@@ -143,8 +163,28 @@ async function onSubmit() {
     gap: 15px;
     width: 100%;
   }
-
     .reg-comp {
     width: 100%;
+  }
+
+  :deep(.p-component) {
+    width: 100%;
+  }
+
+  :deep(.p-card-body) {
+    gap: 24px;
+    padding-bottom: 24px;
+  }
+
+  :deep(.p-button) {
+    background-color: #455dd3;
+    border: 1px solid #fff0;
+    color: white;
+  }
+
+    :deep(.p-button:hover) {
+    background-color: #3752dd;
+    border: 1px solid #fff0;
+    color: white;
   }
   </style>
