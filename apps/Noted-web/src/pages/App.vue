@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from "vue-router";
-import Toast from 'primevue/toast'
+import Toast from "primevue/toast";
 </script>
 
 <template>
@@ -8,6 +8,4 @@ import Toast from 'primevue/toast'
   <Toast position="top-right" />
 </template>
 
-<style scoped lang="css">
-
-</style>
+<style scoped lang="css"></style>

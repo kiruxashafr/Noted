@@ -1,4 +1,4 @@
-@import 'primeicons/primeicons.css';
+@import "primeicons/primeicons.css";
 
 html,
 body,
@@ -16,7 +16,10 @@ body,
 
 html {
   -webkit-text-size-adjust: 100%;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   line-height: 1.5;
   scroll-behavior: smooth;
 }

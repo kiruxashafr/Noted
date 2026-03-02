@@ -10,7 +10,7 @@ export interface RegisterRequest {
 }
 
 export interface TokenResponse {
-  accessToken : string
+  accessToken: string;
 }
 
 export interface AccountResponse {

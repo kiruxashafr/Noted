@@ -196,14 +196,15 @@ export class AuthService {
   }
 
   setRefreshTokenCookie(res: Response, refreshToken: string): void {
-    const refreshMaxAge = this.jwtRefreshTokenTTL;
-
+    const isDevelopment = isDev(this.configService);
+    const refreshMaxAge = this.jwtRefreshTokenTTL * 1000;
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      domain: this.cookieDomain,
+      path: "/",
       maxAge: refreshMaxAge,
-      secure: !isDev(this.configService),
-      sameSite: isDev(this.configService) ? "none" : "lax",
+      secure: !isDevelopment,
+      sameSite: isDevelopment ? "lax" : "none",
+      domain: isDevelopment ? undefined : this.cookieDomain,
     });
   }
 
