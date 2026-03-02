@@ -4,11 +4,14 @@ import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Card from 'primevue/card'
-import Message from 'primevue/message'
+import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '../../stores/auth.store'
+import Password from 'primevue/password'
+import Divider from 'primevue/divider'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const toast = useToast()
 
 const email = ref('')
 const password = ref('')
@@ -16,7 +19,15 @@ const errorMessage = ref('')
 const isLoading = ref(false)
 
 async function onSubmit() {
-  if (!email.value || !password.value) return
+  if (!email.value || !password.value) {
+    toast.add({ 
+      severity: 'warn', 
+      summary: 'Внимание', 
+      detail: 'Заполните все поля', 
+      life: 3000 
+    })
+    return
+  }
 
   isLoading.value = true
   errorMessage.value = ''
@@ -26,12 +37,23 @@ async function onSubmit() {
       email: email.value, 
       password: password.value 
     })
+
+    toast.add({
+      severity: 'success',
+      summary: 'Успешно',
+      detail: 'Вы вошли в систему',
+      life: 3000
+    })
     
-    // Если логин успешен, редиректим на дашборд
-    // Наш Guard в router/index.ts подхватит это
     router.push('/dashboard')
   } catch (error: any) {
     errorMessage.value = error.response?.data?.message || 'Ошибка входа'
+    toast.add({
+      severity: 'error',
+      summary: 'Ошибка',
+      detail: `${errorMessage.value}`,
+      life: 3000
+    })
   } finally {
     isLoading.value = false
   }
@@ -39,34 +61,107 @@ async function onSubmit() {
 </script>
 
 <template>
-  <div class="flex justify-content-center align-items-center min-h-screen">
-    <Card style="width: 25rem">
-      <template #title> Авторизация </template>
+  <div class="auth-container">
+    <Card style="width: 35rem">
+      <template #title>
+        <div class="title">
+          Авторизация
+        </div> 
+      </template>
+      
       <template #content>
-        <form @submit.prevent="onSubmit" class="flex flex-column gap-3">
-          
-          <div class="flex flex-column gap-2">
-            <label for="email">Email</label>
-            <InputText id="email" v-model="email" type="email" required />
+        <div class="auth-wrapper">
+          <div class="auth-left">
+            <form 
+              class="auth-form" 
+              @submit.prevent="onSubmit"
+            >
+              <div class="auth-comp">
+                <InputText 
+                  v-model="email" 
+                  type="email" 
+                  placeholder="Email" 
+                />
+              </div>
+
+              <div class="auth-comp">
+                <Password 
+                  v-model="password" 
+                  :feedback="false" 
+                  placeholder="Password" 
+                  toggle-mask 
+                />
+              </div>
+
+              <Button 
+                type="submit" 
+                label="Войти" 
+                :loading="isLoading" 
+                class="w-full" 
+              />
+            </form>
           </div>
 
-          <div class="flex flex-column gap-2">
-            <label for="password">Пароль</label>
-            <InputText id="password" v-model="password" type="password" required />
+          <Divider layout="vertical">
+            <b>ИЛИ</b>
+          </Divider>
+
+          <div class="auth-right">
+            <p>Нет аккаунта?</p>
+            <Button 
+              label="Зарегистрироваться" 
+              icon="pi pi-user-plus" 
+              severity="secondary" 
+              @click="router.push('/register')" 
+            />
           </div>
-
-          <Message v-if="errorMessage" severity="error" variant="simple">
-            {{ errorMessage }}
-          </Message>
-
-          <Button 
-            type="submit" 
-            label="Войти" 
-            :loading="isLoading" 
-            class="mt-2" 
-          />
-        </form>
+        </div>
       </template>
     </Card>
   </div>
 </template>
+
+<style scoped>
+  .auth-container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .auth-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .auth-left, .auth-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+  }
+
+  .auth-comp {
+    width: 100%;
+  }
+
+  :deep(.p-inputtext), :deep(.p-password), :deep(.p-password-input) {
+    width: 100%;
+  }
+
+  .title {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+</style>
