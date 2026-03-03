@@ -40,7 +40,7 @@ async function onSubmit() {
       life: 3000,
     });
 
-    router.push("/dashboard");
+    router.push("/");
   } catch (error: any) {
     if (error.response.status == 401 || error.response.status == 400) {
       toast.add({

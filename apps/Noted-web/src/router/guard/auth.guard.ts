@@ -1,3 +1,4 @@
+// auth.guard.ts
 import { NavigationGuardNext, RouteLocationNormalized } from "vue-router";
 import { useAuthStore } from "../../stores/auth.store";
 
@@ -7,26 +8,28 @@ export async function authMiddleware(
   next: NavigationGuardNext,
 ) {
   const authStore = useAuthStore();
+  const token = localStorage.getItem("access_token");
 
-  if (authStore.token && !authStore.user) {
+  const publicPages = ['/login', '/register'];
+  const isPublic = publicPages.includes(to.path);
+
+  if (token && !authStore.user) {
     try {
       await authStore.getMe();
     } catch (error) {
-      authStore.logout();
-      return next({ name: "login" });
+      authStore.logout(); 
+      return next("/login");
     }
   }
 
-  const isLogged = authStore.isLogged;
-  const isGuestRoute = to.meta.isGuest;
-  const isProtectedRoute = to.meta.requiresAuth;
+  const isLogged = !!authStore.user; 
 
-  if (isLogged && isGuestRoute) {
-    return next({ name: "dashboard" });
+  if (!isLogged && !isPublic) {
+    return next("/login");
   }
 
-  if (!isLogged && isProtectedRoute) {
-    return next({ name: "login" });
+  if (isLogged && isPublic) {
+    return next("/");
   }
 
   next();

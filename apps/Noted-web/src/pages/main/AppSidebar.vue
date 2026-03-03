@@ -5,11 +5,21 @@
       v-model:visible="visible"
       header="Menu"
     >
-    <div class="card flex justify-content-center">
-        <div class="user-profile" @click="openProfile" >{{ userName }}<i class="pi pi-angle-down"></i></div>
-        <Menu ref="menu" id="overlay_menu" :model="items" :popup="true" />
-    </div>
-</Drawer>
+      <div class="card flex justify-content-center">
+        <div
+          class="user-profile"
+          @click="openProfile"
+        >
+          {{ userName }}<i class="pi pi-angle-down" />
+        </div>
+        <Menu
+          id="overlay_menu"
+          ref="menu"
+          :model="items"
+          :popup="true"
+        />
+      </div>
+    </Drawer>
   </div>
 </template>
 
@@ -18,25 +28,33 @@ import Drawer from "primevue/drawer";
 import Menu from "primevue/menu";
 import { ref } from "vue";
 import { useAuthStore } from "../../stores/auth.store";
+import { useRouter } from "vue-router";
 
 const menu = ref();
-
 const authStore = useAuthStore()
+const router = useRouter()
 const items = ref([
     {
         label: 'Options',
         items: [
             {
                 label: 'Изменить профиль',
-                icon: 'pi pi-pencil'
+                icon: 'pi pi-pencil',
+                command: () => {router.push('/account')}
             },
             {
                 label: 'Выход',
-                icon: 'pi pi-sign-out'
+                icon: 'pi pi-sign-out',
+                command: () => {onLogout()}
             }
         ]
     }
 ]);
+
+const onLogout = () => {
+  authStore.logout();
+  router.push("/login");
+};
 
 const userName = ref(authStore.user?.name)
 

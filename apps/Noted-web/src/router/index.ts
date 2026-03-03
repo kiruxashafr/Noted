@@ -5,17 +5,17 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: "/",
-      redirect: "/dashboard",
-    },
-    {
-      path: '/main',
+      path: '/',
       component: () => import('../pages/main/MainLayout.vue'),
      children: [
        {
           path: '',
           component: () => import('../pages/dashboard/Dashboard.vue')
-       }
+       },
+       {
+          path: 'account',
+          component: () => import('../pages/main/AccountSettings.vue')
+       },
       ]
     },
     {
@@ -28,13 +28,7 @@ const router = createRouter({
       name: "login",
       component: () => import("../pages/auth/Login.vue"),
       meta: { isGuest: true },
-    },
-    {
-      path: "/dashboard",
-      name: "dashboard",
-      component: () => import("../pages/dashboard/Dashboard.vue"),
-      meta: { requiresAuth: true },
-    },
+    }
   ],
 });
 
