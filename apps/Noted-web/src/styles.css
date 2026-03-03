@@ -68,6 +68,14 @@ svg {
   border-color: var(--secondary-color) !important;
 }
 
+.p-drawer {
+  border: none !important;
+}
+  
+.p-drawer-close-button {
+  background-color: transparent !important;
+}
+
 :root {
   --primary-color: #455dd3;
   --primary-hover: #0f1c5b;
@@ -82,4 +90,7 @@ svg {
   --neutral-active: #272932;
 
   --button-border: rgba(255, 255, 255, 0);
+  --border-light: #c2baba;
+
+
 }
