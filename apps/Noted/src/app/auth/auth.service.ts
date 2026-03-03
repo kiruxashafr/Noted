@@ -209,12 +209,14 @@ export class AuthService {
   }
 
   clearRefreshTokenCookie(res: Response): void {
+    const isDevelopment = isDev(this.configService);
     res.cookie("refreshToken", "", {
-      httpOnly: true,
-      domain: this.cookieDomain,
       expires: new Date(0),
-      secure: !isDev(this.configService),
-      sameSite: isDev(this.configService) ? "none" : "lax",
+      httpOnly: true,
+      path: "/",
+      secure: !isDevelopment,
+      sameSite: isDevelopment ? "lax" : "none",
+      domain: isDevelopment ? undefined : this.cookieDomain,
     });
   }
 

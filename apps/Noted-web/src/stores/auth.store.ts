@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import $api from "../api/instance";
 import { AccountResponse, LoginRequest, RegisterRequest, TokenResponse } from "@noted/types/auth.types";
+import axios from "axios";
 
 export const useAuthStore = defineStore(
   "auth",
@@ -22,13 +23,16 @@ export const useAuthStore = defineStore(
     }
 
     async function refresh() {
-      const { data } = await $api.post<TokenResponse>("/api/auth/refresh");
-
-      token.value = data.accessToken;
-      localStorage.setItem("access_token", data.accessToken);
-
-      await getMe();
-      return true;
+      try {
+        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/refresh`, {}, {
+          withCredentials: true 
+        });
+        token.value = response.data.accessToken;
+        localStorage.setItem("access_token", response.data.accessToken);
+      } catch (err) {
+        logout();
+        throw err;
+      }
     }
 
     async function register(credentials: RegisterRequest) {
@@ -50,9 +54,10 @@ export const useAuthStore = defineStore(
       }
     }
 
-    function logout() {
+    async function logout() {
       token.value = null;
       user.value = null;
+      await $api.post("api/auth/logout")
       localStorage.removeItem("access_token");
     }
 

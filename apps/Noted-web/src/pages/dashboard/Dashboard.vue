@@ -27,6 +27,7 @@ const onLogout = () => {
       </template>
       <template #footer>
         <Button label="Выйти" icon="pi pi-sign-out" severity="danger" class="w-full" @click="onLogout" />
+        <Button label="get me" @click="authStore.getMe" style="margin-left: 20px;"></Button>
       </template>
     </Card>
   </div>
