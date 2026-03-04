@@ -9,7 +9,8 @@ const router = createRouter({
       component: () => import('../pages/main/MainLayout.vue'),
      children: [
        {
-          path: '',
+         path: '',
+         name: 'home',
           component: () => import('../pages/dashboard/Dashboard.vue')
        },
        {

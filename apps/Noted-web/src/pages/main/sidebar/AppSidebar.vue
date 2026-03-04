@@ -42,7 +42,15 @@ const visible = defineModel<boolean>('visible');
   <div class="card flex justify-center">
     <Drawer
       v-model:visible="visible"
+      :modal="false"
+      :dismissable="false"
     >
+      <template #closeicon>
+        <i
+          class="pi my-sidebar-icon"
+          style="font-size: 20px; color: #949aa1;"
+        />
+      </template>
       <template #header>
         <div
           class="user-card"
@@ -75,6 +83,7 @@ const visible = defineModel<boolean>('visible');
 </template>
 
 <style scoped>
+
 .user-card {
   display: flex; 
   gap: 10px; 
