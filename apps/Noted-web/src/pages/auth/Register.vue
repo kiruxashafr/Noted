@@ -41,7 +41,7 @@ async function onSubmit() {
       detail: "Вы Зарегистрированы!",
       life: 3000,
     });
-    router.push("/dashboard");
+    router.push("/");
   } catch (error: any) {
     if (error.response.status == 409) {
       toast.add({

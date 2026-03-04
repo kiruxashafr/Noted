@@ -18,18 +18,10 @@ const visible = defineModel<boolean>('visible');
       :dismissable="false"
     >
       <template #closeicon>
-        <svg
-          class="custom-icon"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-        >
-          <g id="chevron-down">
-            <path
-              d="M6 21a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3zm12 -16h-8v14h8a1 1 0 0 0 1 -1v-12a1 1 0 0 0 -1 -1"
-              fill="currentColor"
-            />
-          </g>
-        </svg>
+        <i
+          class="pi my-sidebar-icon"
+          style="font-size: 20px; color: #949aa1;"
+        />
       </template>
       <template #header>
         <div
