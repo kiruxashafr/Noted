@@ -1,0 +1,126 @@
+<script setup lang="ts">
+import Drawer from "primevue/drawer";
+import Menu from "primevue/menu";
+import { ref } from "vue";
+import { useAuthStore } from "../../../stores/auth.store";
+import { useRouter } from "vue-router";
+
+const menu = ref();
+const authStore = useAuthStore()
+const router = useRouter()
+const userName = ref(authStore.user?.name)
+const items = ref([
+    {
+        label: 'Options',
+        items: [
+            {
+                label: 'Изменить профиль',
+                icon: 'pi pi-pencil',
+                command: () => {router.push('/account')}
+            },
+            {
+                label: 'Выход',
+                icon: 'pi pi-sign-out',
+                command: () => {onLogout()}
+            }
+        ]
+    }
+]);
+
+const onLogout = () => {
+  authStore.logout();
+  router.push("/login");
+};
+
+const openProfile = (event: any) => {
+    menu.value.toggle(event);
+};
+
+const visible = defineModel<boolean>('visible');
+</script>
+<template>
+  <div class="card flex justify-center">
+    <Drawer
+      v-model:visible="visible"
+    >
+      <template #header>
+        <div
+          class="user-card"
+          @click="openProfile"
+        >
+          <div class="user-avatar">
+            {{ useAuthStore().user?.name?.charAt(0).toUpperCase() }}
+          </div>
+          <div
+            class="user-profile"
+          >
+            {{ userName }}<i class="pi pi-angle-down" />
+          </div>
+          <Menu
+            id="overlay_menu"
+            ref="menu"
+            :model="items"
+            :popup="true"
+          />
+        </div>
+      </template>
+      <Button
+        label="Домашняя страница"
+        icon="pi pi-home"
+        class="nav-button"
+        @click="router.push('/')"
+      />
+    </Drawer>
+  </div>
+</template>
+
+<style scoped>
+.user-card {
+  display: flex; 
+  gap: 10px; 
+  flex-direction: row; 
+  width: 100%;
+  padding: 3px;
+  border-radius: 6px
+}
+
+
+.user-profile{
+    background-color: transparent;
+    padding: 5px;
+    gap: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-card:hover{
+    cursor: pointer;
+    background-color: var(--neutral-active);
+}
+.user-profile i {
+    font-size: 1rem;
+}
+
+.user-avatar {
+  height: 36px;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  background-color: rgb(36 50 205);
+}
+
+.nav-button {
+  background-color: transparent !important;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.nav-button:hover {
+  background-color: var(--neutral-active) !important;
+}
+
+</style>

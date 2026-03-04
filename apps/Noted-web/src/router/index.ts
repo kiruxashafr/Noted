@@ -13,7 +13,8 @@ const router = createRouter({
           component: () => import('../pages/dashboard/Dashboard.vue')
        },
        {
-          path: 'account',
+         path: 'account',
+         name: 'account',
           component: () => import('../pages/main/AccountSettings.vue')
        },
       ]

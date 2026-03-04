@@ -14,16 +14,26 @@
     <main class="layout-content">
       <router-view />
     </main>
-    <AppSidebar v-model:visible="visible" />
+    <SettingSidebar 
+      v-if="router.currentRoute.value.name === 'account'"
+      v-model:visible="visible" />
+    <AppSidebar
+      v-else
+      v-model:visible="visible"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import Button from 'primevue/button';
-import AppSidebar from './AppSidebar.vue';
+import AppSidebar from './sidebar/AppSidebar.vue';
+import { useRouter } from 'vue-router';
+import SettingSidebar from './sidebar/SettingSidebar.vue';
 
 const visible = ref(false);
+
+const router = useRouter()
 </script>
 
 <style scoped>
