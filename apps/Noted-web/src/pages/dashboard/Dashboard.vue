@@ -9,20 +9,16 @@ const router = useRouter();
 
 const onLogout = () => {
   authStore.logout();
-  router.push({name: 'login'});
+  router.push({ name: "login" });
 };
 </script>
 
 <template>
   <div class="flex justify-content-center align-items-center min-h-screen">
     <Card style="width: 25rem">
-      <template #title>
-        Привет, {{ authStore.user?.name || "Пользователь" }}!
-      </template>
+      <template #title> Привет, {{ authStore.user?.name || "Пользователь" }}! </template>
       <template #content>
-        <p class="mb-4">
-          Вы успешно авторизованы по Access Token.
-        </p>
+        <p class="mb-4">Вы успешно авторизованы по Access Token.</p>
 
         <div class="flex flex-column gap-2">
           <p><strong>Ваш Email:</strong> {{ authStore.user?.email }}</p>
@@ -30,18 +26,8 @@ const onLogout = () => {
         </div>
       </template>
       <template #footer>
-        <Button
-          label="Выйти"
-          icon="pi pi-sign-out"
-          severity="danger"
-          class="w-full"
-          @click="onLogout"
-        />
-        <Button
-          label="get me"
-          style="margin-left: 20px;"
-          @click="authStore.getMe"
-        />
+        <Button label="Выйти" icon="pi pi-sign-out" severity="danger" class="w-full" @click="onLogout" />
+        <Button label="get me" style="margin-left: 20px" @click="authStore.getMe" />
       </template>
     </Card>
   </div>

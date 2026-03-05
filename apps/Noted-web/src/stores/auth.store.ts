@@ -24,9 +24,13 @@ export const useAuthStore = defineStore(
 
     async function refresh() {
       try {
-        const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/refresh`, {}, {
-          withCredentials: true 
-        });
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
+          {},
+          {
+            withCredentials: true,
+          },
+        );
         token.value = response.data.accessToken;
         localStorage.setItem("access_token", response.data.accessToken);
       } catch (err) {
@@ -57,7 +61,7 @@ export const useAuthStore = defineStore(
     async function logout() {
       token.value = null;
       user.value = null;
-      await $api.post("api/auth/logout")
+      await $api.post("api/auth/logout");
       localStorage.removeItem("access_token");
     }
 

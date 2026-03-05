@@ -40,7 +40,7 @@ async function onSubmit() {
       life: 3000,
     });
 
-    router.push({name: 'home'});
+    router.push({ name: "home" });
   } catch (error: any) {
     if (error.response.status == 401 || error.response.status == 400) {
       toast.add({
@@ -68,11 +68,7 @@ async function onSubmit() {
     <Card style="width: 50%">
       <template #title>
         <div class="title-container">
-          <img
-            src="../../public//images/logo/noted-min-light.png"
-            alt="Logo"
-            class="auth-logo"
-          >
+          <img src="../../public//images/logo/noted-min-light.png" alt="Logo" class="auth-logo" />
           <span class="title-text">Sign in to your account</span>
         </div>
       </template>
@@ -80,34 +76,16 @@ async function onSubmit() {
       <template #content>
         <div class="auth-wrapper">
           <div class="auth-left">
-            <form
-              class="auth-form"
-              @submit.prevent="onSubmit"
-            >
+            <form class="auth-form" @submit.prevent="onSubmit">
               <div class="auth-comp">
-                <InputText
-                  v-model="email"
-                  type="email"
-                  placeholder="Email"
-                />
+                <InputText v-model="email" type="email" placeholder="Email" />
               </div>
 
               <div class="auth-comp">
-                <Password
-                  v-model="password"
-                  :feedback="false"
-                  placeholder="Password"
-                  toggle-mask
-                />
+                <Password v-model="password" :feedback="false" placeholder="Password" toggle-mask />
               </div>
 
-              <Button
-                type="submit"
-                label="Sign in"
-                :loading="isLoading"
-                class="w-full"
-                icon="pi pi-user"
-              />
+              <Button type="submit" label="Sign in" :loading="isLoading" class="w-full" icon="pi pi-user" />
             </form>
           </div>
 
@@ -117,12 +95,7 @@ async function onSubmit() {
 
           <div class="auth-right">
             <p>New user?</p>
-            <Button
-              label="Sign up"
-              icon="pi pi-user"
-              severity="secondary"
-              @click="router.push({name: 'register'})"
-            />
+            <Button label="Sign up" icon="pi pi-user" severity="secondary" @click="router.push({ name: 'register' })" />
           </div>
         </div>
       </template>

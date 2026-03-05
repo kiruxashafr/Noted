@@ -5,28 +5,28 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: () => import('../layouts/MainLayout.vue'),
-     children: [
-       {
-         path: '',
-         name: 'home-dashboard',
-          component: () => import('../pages/dashboard/Dashboard.vue')
-       }
-      ]
+      path: "/",
+      name: "home",
+      component: () => import("../layouts/MainLayout.vue"),
+      children: [
+        {
+          path: "",
+          name: "home-dashboard",
+          component: () => import("../pages/dashboard/Dashboard.vue"),
+        },
+      ],
     },
     {
       path: "/setting",
       name: "account",
-      component: () => import('../layouts/SettingsLayout.vue'),
+      component: () => import("../layouts/SettingsLayout.vue"),
       children: [
         {
-          path: 'account',
-          name: 'setting-account',
-          component:() => import('../pages/setting/AccountSettings.vue')
-        }
-      ]
+          path: "account",
+          name: "setting-account",
+          component: () => import("../pages/setting/AccountSettings.vue"),
+        },
+      ],
     },
     {
       path: "/register",
@@ -39,7 +39,6 @@ const router = createRouter({
       component: () => import("../pages/auth/Login.vue"),
       meta: { isGuest: true },
     },
-
   ],
 });
 

@@ -10,20 +10,20 @@ export async function authMiddleware(
   const authStore = useAuthStore();
   const token = localStorage.getItem("access_token");
 
-  const publicPages = ['/login', '/register'];
+  const publicPages = ["/login", "/register"];
   const isPublic = publicPages.includes(to.path);
 
   if (token && !authStore.user) {
     try {
       await authStore.getMe();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      authStore.logout(); 
+      authStore.logout();
       return next("/login");
     }
   }
 
-  const isLogged = !!authStore.user; 
+  const isLogged = !!authStore.user;
 
   if (!isLogged && !isPublic) {
     return next("/login");

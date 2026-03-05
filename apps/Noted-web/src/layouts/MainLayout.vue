@@ -1,28 +1,23 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import Button from 'primevue/button';
-import AppSidebar from '../components/sidebar/AppSidebar.vue';
-import HomeHeader from '../components/header/HomeHeader.vue';
+import { onMounted, ref } from "vue";
+import Button from "primevue/button";
+import AppSidebar from "../components/sidebar/AppSidebar.vue";
+import HomeHeader from "../components/header/HomeHeader.vue";
 
 const sidebarVisible = ref(false);
 
-
 onMounted(() => {
-if (window.innerWidth > 1024) {
-  sidebarVisible.value = true;
-}
+  if (window.innerWidth > 1024) {
+    sidebarVisible.value = true;
+  }
 });
 </script>
 
 <template>
   <div class="layout-wrapper">
     <header class="layout-header flex items-center px-4 py-2 border-b border-gray-200 dark:border-surface-700">
-      <Button 
-        icon="pi pi-bars" 
-        style="background-color: transparent !important;" 
-        @click="sidebarVisible = true"
-      />
-      <div style="align-items: center; display: flex;">
+      <Button icon="pi pi-bars" style="background-color: transparent !important" @click="sidebarVisible = true" />
+      <div style="align-items: center; display: flex">
         <HomeHeader />
       </div>
     </header>
@@ -30,9 +25,7 @@ if (window.innerWidth > 1024) {
     <main class="layout-content">
       <router-view />
     </main>
-    <AppSidebar
-      v-model:visible="sidebarVisible"
-    />
+    <AppSidebar v-model:visible="sidebarVisible" />
   </div>
 </template>
 
@@ -44,14 +37,14 @@ if (window.innerWidth > 1024) {
 }
 
 .layout-header {
-    display: flex;
-    height: 60px;
+  display: flex;
+  height: 60px;
 }
 
 .layout-content {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    padding: 3%;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 3%;
 }
 </style>
