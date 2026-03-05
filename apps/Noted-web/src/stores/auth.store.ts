@@ -58,12 +58,14 @@ export const useAuthStore = defineStore(
       }
     }
 
-    async function logout() {
-      token.value = null;
-      user.value = null;
-      await $api.post("api/auth/logout");
-      localStorage.removeItem("access_token");
-    }
+async function logout() {
+  token.value = null;
+  user.value = null;
+  localStorage.removeItem("access_token");
+  
+  await $api.post("api/auth/logout");
+
+}
 
     return { token, user, isLogged, login, logout, getMe, register, refresh };
   },

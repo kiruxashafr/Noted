@@ -39,6 +39,11 @@ const router = createRouter({
       component: () => import("../pages/auth/Login.vue"),
       meta: { isGuest: true },
     },
+    {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('../pages/not-found/NotFound.vue')
+    }
   ],
 });
 

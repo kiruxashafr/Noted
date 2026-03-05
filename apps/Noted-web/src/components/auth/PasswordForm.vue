@@ -2,14 +2,7 @@
 import { ref, watch } from 'vue';
 import { z } from 'zod';
 
-// Определяем пропсы и emits для v-model
-const props = defineProps<{
-  password: string
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:password', value: string): void
-}>();
+const passwordModel = defineModel<string>('password')
 
 const confirmPassword = ref('');
 const errors = ref<{ password?: string; confirm?: string }>({});
@@ -29,7 +22,7 @@ const passwordSchema = z.object({
 
 const validate = () => {
   const result = passwordSchema.safeParse({
-    password: props.password,
+    password: passwordModel.value,
     confirm: confirmPassword.value
   });
   
@@ -44,7 +37,7 @@ const validate = () => {
   }
 };
 
-watch(() => props.password, () => {
+watch(passwordModel, () => {
   validate();
 });
 
@@ -52,19 +45,16 @@ watch(confirmPassword, () => {
   validate();
 });
 
-const updatePassword = (value: string) => {
-  emit('update:password', value);
-};
+
 </script>
 
 <template>
   <div class="password-form">
     <Password
-      :model-value="password"
+      v-model="passwordModel"
       type="password"
       placeholder="Password"
       :feedback="false"
-      @update:model-value="updatePassword"
       @input="validate"
     />
     <span
