@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { useAccount } from '../../../composables/useAccount';
+import { useAccount } from '../../composables/useAccount';
 
 const { deleteAccount } = useAccount()
 
 </script>
 <template>
-    <section class="settings-section">
-  account setting
-  <Button @click="deleteAccount" label="Delete my account" />
-    </section>
+  <section class="settings-section">
+    account setting
+    <Button
+      label="Delete my account"
+      @click="deleteAccount"
+    />
+  </section>
 </template>
 <style scoped>
 .settings-section {

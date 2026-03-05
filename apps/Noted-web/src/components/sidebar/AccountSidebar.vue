@@ -26,7 +26,7 @@ const visible = defineModel<boolean>('visible');
       <template #header>
         <div
           class="user-card"
-          @click="router.push('/')"
+          @click="router.push({name: 'home'})"
         >
           <i class="pi pi-chevron-left" />
           <div
@@ -36,6 +36,12 @@ const visible = defineModel<boolean>('visible');
           </div>
         </div>
       </template>
+      <Button
+        label="Профиль"
+        icon="pi pi-user"
+        class="nav-button"
+        @click="router.push({name: 'setting-account'})"
+      />
     </Drawer>
   </div>
 </template>
@@ -59,6 +65,12 @@ const visible = defineModel<boolean>('visible');
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.nav-button {
+  background-color: transparent !important;
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .user-card:hover{

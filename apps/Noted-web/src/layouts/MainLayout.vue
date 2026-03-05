@@ -1,14 +1,11 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import Button from 'primevue/button';
-import AppSidebar from './sidebar/AppSidebar.vue';
-import { useRouter } from 'vue-router';
-import AccountSidebar from './sidebar/AccountSidebar.vue';
-import HomeHeader from './header/HomeHeader.vue';
+import AppSidebar from '../components/sidebar/AppSidebar.vue';
+import HomeHeader from '../components/header/HomeHeader.vue';
 
 const sidebarVisible = ref(false);
 
-const router = useRouter()
 
 onMounted(() => {
 if (window.innerWidth > 1024) {
@@ -26,23 +23,14 @@ if (window.innerWidth > 1024) {
         @click="sidebarVisible = true"
       />
       <div style="align-items: center; display: flex;">
-        <HomeHeader
-          v-if="
-            router.currentRoute.value.name === 'home' ||
-              router.currentRoute.value.name === 'account'" 
-        />
+        <HomeHeader />
       </div>
     </header>
 
     <main class="layout-content">
       <router-view />
     </main>
-    <AccountSidebar 
-      v-if="router.currentRoute.value.name === 'account'"
-      v-model:visible="sidebarVisible" 
-    />
     <AppSidebar
-      v-if="router.currentRoute.value.name === 'home'"
       v-model:visible="sidebarVisible"
     />
   </div>

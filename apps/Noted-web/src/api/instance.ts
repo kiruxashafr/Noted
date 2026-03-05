@@ -34,7 +34,7 @@ $api.interceptors.response.use(
         return $api(originalRequest);
       } catch (refreshError) {
         authStore.logout();
-        router.push("/login"); 
+        router.push({name: 'login'}); 
         return Promise.reject(refreshError);
       }
     }

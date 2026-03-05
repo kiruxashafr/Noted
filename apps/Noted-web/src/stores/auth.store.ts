@@ -3,7 +3,6 @@ import { ref, computed } from "vue";
 import $api from "../api/instance";
 import { AccountResponse, LoginRequest, RegisterRequest, TokenResponse } from "@noted/types/auth.types";
 import axios from "axios";
-import router from "../router";
 
 export const useAuthStore = defineStore(
   "auth",
@@ -60,7 +59,6 @@ export const useAuthStore = defineStore(
       user.value = null;
       await $api.post("api/auth/logout")
       localStorage.removeItem("access_token");
-      router.push("/login");
     }
 
     return { token, user, isLogged, login, logout, getMe, register, refresh };

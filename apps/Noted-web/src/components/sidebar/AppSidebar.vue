@@ -2,7 +2,7 @@
 import Drawer from "primevue/drawer";
 import Menu from "primevue/menu";
 import { ref } from "vue";
-import { useAuthStore } from "../../../stores/auth.store";
+import { useAuthStore } from "../../stores/auth.store";
 import { useRouter } from "vue-router";
 
 const menu = ref();
@@ -16,7 +16,7 @@ const items = ref([
             {
                 label: 'Изменить профиль',
                 icon: 'pi pi-pencil',
-                command: () => {router.push('/account')}
+                command: () => {router.push({name: 'account-setting'})}
             },
             {
                 label: 'Выход',
@@ -29,7 +29,7 @@ const items = ref([
 
 const onLogout = () => {
   authStore.logout();
-  router.push("/login");
+  router.push({name: 'login'});
 };
 
 const openProfile = (event: any) => {
@@ -76,7 +76,7 @@ const visible = defineModel<boolean>('visible');
         label="Домашняя страница"
         icon="pi pi-home"
         class="nav-button"
-        @click="router.push('/')"
+        @click="router.push({name: 'home'})"
       />
     </Drawer>
   </div>

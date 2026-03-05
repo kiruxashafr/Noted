@@ -16,6 +16,7 @@ export async function authMiddleware(
   if (token && !authStore.user) {
     try {
       await authStore.getMe();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       authStore.logout(); 
       return next("/login");

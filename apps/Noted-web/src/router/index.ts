@@ -6,18 +6,26 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      component: () => import('../pages/main/MainLayout.vue'),
+      name: 'home',
+      component: () => import('../layouts/MainLayout.vue'),
      children: [
        {
          path: '',
-         name: 'home',
+         name: 'home-dashboard',
           component: () => import('../pages/dashboard/Dashboard.vue')
-       },
-       {
-         path: 'account',
-         name: 'account',
-          component: () => import('../pages/main/content/AccountSettings.vue')
-       },
+       }
+      ]
+    },
+    {
+      path: "/setting",
+      name: "account",
+      component: () => import('../layouts/SettingsLayout.vue'),
+      children: [
+        {
+          path: 'account',
+          name: 'account-setting',
+          component:() => import('../pages/setting/AccountSettings.vue')
+        }
       ]
     },
     {
@@ -30,7 +38,8 @@ const router = createRouter({
       name: "login",
       component: () => import("../pages/auth/Login.vue"),
       meta: { isGuest: true },
-    }
+    },
+
   ],
 });
 

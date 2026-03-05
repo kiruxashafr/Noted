@@ -18,7 +18,7 @@ export const useAccount = () => {
                 detail: 'Ваш аккаунт удален',
                 life: 3000
             })
-            await router.push("/login")
+            await router.push({name:"login"})
         } catch (error) {
             toast.add({
                 severity: 'error',
