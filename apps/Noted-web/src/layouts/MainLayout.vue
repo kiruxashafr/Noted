@@ -6,11 +6,11 @@ import HomeHeader from "../components/header/HomeHeader.vue";
 
 const sidebarVisible = ref(false);
 
-onMounted(() => {
-  if (window.innerWidth > 1024) {
-    sidebarVisible.value = true;
-  }
-});
+// onMounted(() => {
+//   if (window.innerWidth > 1024) {
+//     sidebarVisible.value = true;
+//   }
+// });
 </script>
 
 <template>

@@ -33,8 +33,10 @@
     "@nestjs/swagger": "^11.2.5",
     "@nestjs/websockets": "^11.1.12",
     "@primeuix/themes": "^2.0.3",
+    "@primevue/forms": "^4.5.4",
     "@prisma/adapter-pg": "^7.2.0",
     "@types/bcrypt": "^6.0.0",
+    "@vee-validate/zod": "^4.15.1",
     "argon2": "^0.44.0",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
@@ -60,8 +62,10 @@
     "socket.io": "^4.8.3",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^13.0.0",
+    "vee-validate": "^4.15.1",
     "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
+    "vue-router": "^4.5.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { useAuthStore } from "../../stores/auth.store";
 import { useRouter } from "vue-router";
 import { useToast } from "primevue/usetoast";
+import PasswordForm from "../../components/auth/PasswordForm.vue";
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -15,7 +16,7 @@ const errorMessage = ref("");
 const isLoading = ref(false);
 
 async function onSubmit() {
-  if (!email.value || !password.value || !name.value) {
+  if (!email.value || !name.value) {
     toast.add({
       severity: "warn",
       summary: "Внимание",
@@ -41,7 +42,7 @@ async function onSubmit() {
       detail: "Вы Зарегистрированы!",
       life: 3000,
     });
-    router.push({ name: "home" });
+    router.push({ name: "home-dashboard" });
   } catch (error: any) {
     if (error.response.status == 409) {
       toast.add({
@@ -67,42 +68,51 @@ async function onSubmit() {
     <Card style="width: 50%">
       <template #title>
         <div class="title-container">
-          <img src="../../public//images/logo/noted-min-light.png" alt="Logo" class="reg-logo" />
+          <img
+            src="../../public//images/logo/noted-min-light.png"
+            alt="Logo"
+            class="reg-logo"
+          >
           <span class="title-text">Sign in to your account</span>
         </div>
       </template>
       <template #content>
-        <form class="reg-form" @submit.prevent="onSubmit">
+        <form
+          class="reg-form"
+          @submit.prevent="onSubmit"
+        >
           <div class="auth-comp">
-            <InputText v-model="name" type="name" placeholder="Name" />
+            <InputText
+              v-model="name"
+              type="name"
+              placeholder="Name"
+            />
           </div>
           <div class="auth-comp">
-            <InputText v-model="email" type="email" placeholder="Email" />
+            <InputText
+              v-model="email"
+              type="email"
+              placeholder="Email"
+            />
           </div>
 
           <div class="auth-comp">
-            <Password v-model="password" placeholder="Password" toggle-mask :feedback="true">
-              <template #header>
-                <h6>Придумайте пароль</h6>
-              </template>
-              <template #footer>
-                <Divider />
-                <ul class="pl-2 ml-2 mt-0 line-height-3">
-                  <li>Хотя бы одна заглавная буква</li>
-                  <li>Хотя бы одна строчная буква</li>
-                  <li>Хотя бы 1 число</li>
-                  <li>Минимум 8 символов</li>
-                </ul>
-              </template>
-            </Password>
+            <PasswordForm v-model:password="password" />
           </div>
-          <Button type="submit" label="Register" :loading="isLoading" class="w-full" icon="pi pi-user" />
+          <Button
+            type="submit"
+            label="Register"
+            :loading="isLoading"
+            class="w-full"
+            icon="pi pi-user"
+          />
           <Button
             type="button"
             label="Already have an account? Sign In"
             icon="pi pi-angle-left"
             severity="secondary"
-            @click="router.push({ name: 'login' })" />
+            @click="router.push({ name: 'login' })"
+          />
         </form>
       </template>
     </Card>

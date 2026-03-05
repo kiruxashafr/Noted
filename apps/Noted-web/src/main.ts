@@ -8,6 +8,7 @@ import Aura from "@primeuix/themes/aura";
 import ToastService from "primevue/toastservice";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import Button from "primevue/button";
+import ConfirmationService from 'primevue/confirmationservice';
 import InputText from "primevue/inputtext";
 import Card from "primevue/card";
 import Password from "primevue/password";
@@ -19,6 +20,7 @@ const pinia = createPinia();
 
 pinia.use(piniaPluginPersistedstate);
 app.use(pinia);
+app.use(ConfirmationService);
 app.use(router);
 app.use(ToastService);
 app.use(PrimeVue, {

@@ -4,17 +4,21 @@ import AccountSidebar from "../components/sidebar/AccountSidebar.vue";
 import HomeHeader from "../components/header/HomeHeader.vue";
 
 const sidebarVisible = ref(false);
-onMounted(() => {
-  if (window.innerWidth > 1024) {
-    sidebarVisible.value = true;
-  }
-});
+// onMounted(() => {
+//   if (window.innerWidth > 1024) {
+//     sidebarVisible.value = true;
+//   }
+// });
 </script>
 
 <template>
   <div class="layout-wrapper">
     <header class="layout-header flex items-center px-4 py-2 border-b border-gray-200 dark:border-surface-700">
-      <Button icon="pi pi-bars" style="background-color: transparent !important" @click="sidebarVisible = true" />
+      <Button
+        icon="pi pi-bars"
+        style="background-color: transparent !important"
+        @click="sidebarVisible = true"
+      />
       <div style="align-items: center; display: flex">
         <HomeHeader />
       </div>
