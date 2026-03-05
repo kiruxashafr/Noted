@@ -23,7 +23,7 @@ const router = createRouter({
       children: [
         {
           path: 'account',
-          name: 'account-setting',
+          name: 'setting-account',
           component:() => import('../pages/setting/AccountSettings.vue')
         }
       ]

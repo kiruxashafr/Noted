@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import Drawer from "primevue/drawer";
 import Menu from "primevue/menu";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useAuthStore } from "../../stores/auth.store";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 const menu = ref();
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const userName = ref(authStore.user?.name)
 const items = ref([
     {
@@ -16,7 +17,7 @@ const items = ref([
             {
                 label: 'Изменить профиль',
                 icon: 'pi pi-pencil',
-                command: () => {router.push({name: 'account-setting'})}
+                command: () => {router.push({name: 'setting-account'})}
             },
             {
                 label: 'Выход',
@@ -37,6 +38,10 @@ const openProfile = (event: any) => {
 };
 
 const visible = defineModel<boolean>('visible');
+
+const isHomeActive = computed(() => {
+  return route.name === 'home-dashboard'
+})
 </script>
 <template>
   <div class="card flex justify-center">
@@ -76,7 +81,8 @@ const visible = defineModel<boolean>('visible');
         label="Домашняя страница"
         icon="pi pi-home"
         class="nav-button"
-        @click="router.push({name: 'home'})"
+        :class="{ 'active-route': isHomeActive }"
+        @click="router.push({name: 'home-dashboard'})"
       />
     </Drawer>
   </div>
@@ -93,6 +99,11 @@ const visible = defineModel<boolean>('visible');
   border-radius: 6px
 }
 
+.active-route {
+  background: #2196F3;
+  color: white;
+  border-radius: 8px;
+}
 
 .user-profile{
     background-color: transparent;

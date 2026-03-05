@@ -86,6 +86,14 @@ svg {
   background-color: transparent !important  ;
 }
 
+.nav-button {
+  color: rgba(255, 255, 255, 0.527) !important;
+}
+
+.active-route {
+  color: white !important;
+}
+
 .my-sidebar-icon {
   background-color: currentColor;
   mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 21a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3zm12 -16h-8v14h8a1 1 0 0 0 1 -1v-12a1 1 0 0 0 -1 -1'/></svg>") no-repeat center;
