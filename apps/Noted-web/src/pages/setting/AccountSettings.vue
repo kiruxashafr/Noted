@@ -114,18 +114,25 @@ const showTemplate = () => {
         </div>
       </div>
     </form>
-    <Button
-      label="Delete my account"
-      class="delete-button"
-      @click="showTemplate()"
-    />
-    <ConfirmDialog group="templating">
-      <template #message="slotProps">
-        <div class="flex flex-col items-center w-full gap-4 border-b border-surface-200 dark:border-surface-700">
-          <p>{{ slotProps.message.message }}</p>
-        </div>
-      </template>
-    </ConfirmDialog>
+    <div style="display: flex; gap: 15px;">
+      <Button
+        label="Сменить пароль"
+        class="delete-button"
+        @click="showTemplate()"
+      />
+      <Button
+        label="Удалить мой аккаунт"
+        class="delete-button"
+        @click="showTemplate()"
+      />
+      <ConfirmDialog group="templating">
+        <template #message="slotProps">
+          <div class="flex flex-col items-center w-full gap-4 border-b border-surface-200 dark:border-surface-700">
+            <p>{{ slotProps.message.message }}</p>
+          </div>
+        </template>
+      </ConfirmDialog>
+    </div>
   </section>
 </template>
 
@@ -134,7 +141,7 @@ const showTemplate = () => {
   max-width: 800px;
   margin: 0 auto;
   padding: 1rem;
-  gap: 20px !important;
+  gap: 40px !important;
 }
 
 .form-row {
