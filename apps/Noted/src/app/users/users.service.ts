@@ -139,6 +139,8 @@ export class UsersService {
         id: userId,
       },
     });
+    this.logger.log(`deleteUser() | User ${userId} deleted succesfully`);
+    return;
   }
 
   private handleAccountConstraintError(error: unknown): never {

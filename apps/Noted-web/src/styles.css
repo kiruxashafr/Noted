@@ -1,0 +1,124 @@
+@import "primeicons/primeicons.css";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  line-height: 1.5;
+  scroll-behavior: smooth;
+}
+
+h1,
+h2,
+p,
+pre {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+.p-button {
+  background-color: var(--primary-color) !important;
+  border-color: var(--button-border) !important;
+  color: white !important;
+}
+
+.p-button:hover {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--button-border) !important;
+}
+
+.p-button-secondary {
+  background-color: var(--neutral-color) !important;
+  border-color: var(--button-border) !important;
+  color: white !important;
+}
+
+.p-button-secondary:hover {
+  background-color: var(--neutral-hover) !important;
+  border-color: var(--button-border) !important;
+  color: white !important;
+}
+.p-inputtext:enabled:focus {
+  border-color: var(--secondary-color) !important;
+}
+
+.p-drawer {
+  border: none !important;
+}
+
+.p-drawer-close-button {
+  background-color: transparent !important;
+}
+
+.p-drawer-close-button,
+.p-drawer-close-button:focus,
+.p-drawer-close-button:hover,
+.p-drawer-close-button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background-color: transparent !important  ;
+}
+
+.nav-button {
+  color: rgba(255, 255, 255, 0.527) !important;
+}
+
+.active-route {
+  color: white !important;
+}
+
+.my-sidebar-icon {
+  background-color: currentColor;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 21a3 3 0 0 1 -3 -3v-12a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3zm12 -16h-8v14h8a1 1 0 0 0 1 -1v-12a1 1 0 0 0 -1 -1'/></svg>")
+    no-repeat center;
+  mask-size: contain;
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+:root {
+  --primary-color: #455dd3;
+  --primary-hover: #0f1c5b;
+  --primary-active: #2e45b8;
+
+  --secondary-color: #213183;
+  --secondary-hover: #131f5c;
+  --secondary-active: #364ec4;
+
+  --neutral-color: #3c3e4a;
+  --neutral-hover: #2e3039;
+  --neutral-active: #272932;
+
+  --button-border: rgba(255, 255, 255, 0);
+  --border-light: #c2baba;
+  --border-input: #52525b;
+}

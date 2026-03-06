@@ -48,7 +48,7 @@ export default [
 
   // Правило границ модулей Nx
   {
-    files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+    files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.vue"],
     rules: {
       "@nx/enforce-module-boundaries": [
         "error",
@@ -68,6 +68,16 @@ export default [
 
   // Игнорируемые файлы
   {
-    ignores: ["**/*.spec.ts", "**/*.test.ts", "dist/**", "node_modules/**", "coverage/**", ".nx/**", "jest.preset.js"],
+    ignores: [
+      "**/*.spec.ts",
+      "**/*.test.ts",
+      "dist/**",
+      "node_modules/**",
+      "coverage/**",
+      ".nx/**",
+      "jest.preset.js",
+      "**/vite.config.*.timestamp*",
+      "**/vitest.config.*.timestamp*",
+    ],
   },
 ];

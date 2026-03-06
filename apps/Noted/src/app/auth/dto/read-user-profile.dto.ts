@@ -1,7 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { AccountResponse } from "@noted/types";
 import { Expose } from "class-transformer";
 
-export class ReadUserProfileDto {
+export class ReadUserProfileDto implements AccountResponse {
   @ApiProperty({
     description: "User id",
     example: "user_123",
