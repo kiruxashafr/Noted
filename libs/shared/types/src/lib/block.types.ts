@@ -29,6 +29,12 @@ export interface DeleteAccessRequest {
   accessId: string;
 }
 
+export interface PageTitle {
+  id: string
+  title: string
+  updatedAt: Date
+}
+
 //Container
 export interface ContainerMetaContent {
   title: string;

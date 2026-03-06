@@ -10,6 +10,7 @@ import {
   ContainerMetaContent,
   ContainerMetaKeys,
   BlockWithPath,
+  PageTitle,
 } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { plainToInstance } from "class-transformer";
@@ -239,17 +240,16 @@ export class BlocksService {
 
   async findPageTitle(userId: string) {
     try {
-      const pages = await this.prisma.$queryRaw<{ id: string; title: string }[]>`
+      const pages: PageTitle[] = await this.prisma.$queryRaw<{ id: string; title: string; updatedAt: Date }[]>`
       SELECT b.id, 
-      b.meta->>${ContainerMetaKeys.Title} as title
+      b.meta->>${ContainerMetaKeys.Title} as title,
+      b.updated_at as "updatedAt"
       FROM blocks b
-      INNER JOIN block_accesses ba ON b.id = ba.block_id
-      WHERE ba.user_id = ${userId}
-      AND b.type = 'PAGE'
-      AND "is_active" = true
-      AND ("expires_at" IS NULL OR "expires_at" > NOW())
+      WHERE b.owner_id = ${userId}
+      AND b.type = 'CONTAINER'
+      ORDER BY b.updated_at DESC
 `;
-      return pages;
+      return pages
     } catch (error) {
       if (error instanceof FailedToFindBlockException) throw error;
       this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
