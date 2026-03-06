@@ -4,6 +4,8 @@ import { useAccount } from "../../composables/useAccount";
 import { useAuthStore } from "../../stores/auth.store";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
+import Dialog from "primevue/dialog";
+import PasswordForm from "../../components/auth/PasswordForm.vue";
 
 
 
@@ -14,6 +16,12 @@ const oldEmail = ref(authStore.user?.email)
 const newEmail = ref('')
 const oldName = ref(authStore.user?.name)
 const newName = ref('')
+const editPasswordVisible = ref(false)
+const newPassword = ref('')
+const updatePassword = computed(() => ({ password: newPassword.value}));
+const handleUpdatePassword = async () => {
+  await updateAccount(updatePassword.value)
+}
 const updateName = computed(() => ({ name: newName.value}));
 const handleUpdateName = async () => {
   await updateAccount(updateName.value)
@@ -114,11 +122,11 @@ const showTemplate = () => {
         </div>
       </div>
     </form>
-    <div style="display: flex; gap: 15px;">
+    <div style="display: flex; gap: 15px; width: 100%; justify-content: flex-start;">
       <Button
         label="Сменить пароль"
         class="delete-button"
-        @click="showTemplate()"
+        @click="editPasswordVisible = !editPasswordVisible"
       />
       <Button
         label="Удалить мой аккаунт"
@@ -132,6 +140,17 @@ const showTemplate = () => {
           </div>
         </template>
       </ConfirmDialog>
+      <Dialog
+        v-model:visible="editPasswordVisible"
+        modal
+        header="Изменить пароль"
+      >
+        <PasswordForm v-model:password="newPassword" />
+        <Button
+          label="Изменить пароль"
+          @click="handleUpdatePassword()"
+        />
+      </Dialog>
     </div>
   </section>
 </template>

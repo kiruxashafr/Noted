@@ -33,7 +33,7 @@ export const useAccount = () => {
 
   const updateAccount = async (body: UpdateUserRequest) => {
     try {
-      const data = await $api.patch("/api/users/me", body);
+      await $api.patch("/api/users/me", body);
 
       toast.add({
         severity: "success",
