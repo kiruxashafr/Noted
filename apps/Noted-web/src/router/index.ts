@@ -12,7 +12,7 @@ const router = createRouter({
         {
           path: "",
           name: "home-dashboard",
-          component: () => import("../pages/block/MainPage.vue"),
+          component: () => import("../pages/blocks/ContainerPage.vue"),
         },
       ],
     },

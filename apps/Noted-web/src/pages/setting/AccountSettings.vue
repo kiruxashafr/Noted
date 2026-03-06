@@ -149,6 +149,7 @@ const showTemplate = () => {
         <Button
           label="Изменить пароль"
           @click="handleUpdatePassword()"
+          style="margin-top: 15px;"
         />
       </Dialog>
     </div>
@@ -204,6 +205,7 @@ const showTemplate = () => {
 .delete-button {
   margin-top: 2rem;
 }
+
 
 /* Мобильная версия */
 @media (max-width: 768px) {

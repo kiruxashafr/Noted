@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useBlock } from '../../composables/useBlock';
 import { PageTitle } from '@noted/types/block.types'
-import PageTitleComp from '../../components/pages/PageTitleComp.vue';
+import ContainerTitle from '../../components/blocks/ContainerTitle.vue';
 
 const { getPageTitle } = useBlock()
 const pages = ref<PageTitle[]>([]);
@@ -24,7 +24,7 @@ onMounted(async () => {
   <div class="pages">
     <h1>Домашняя страница</h1>
 
-    <PageTitleComp
+    <ContainerTitle
       v-for="page in pages"
       :id="page.id"
       :key="page.id"
