@@ -25,5 +25,11 @@ export const useBlockStore = defineStore(
             containers, 
             getContainerTitle 
         };
-    }
+    },
+    {
+        persist: {
+            storage: localStorage,
+            pick: ["containers"],
+        },
+    },
 );

@@ -23,6 +23,7 @@ defineProps({
 <template>
   <Card style="background-color: transparent; box-shadow: none; gap: 1px;">
     <template #title>
+      <i class="pi pi-file" />
       {{ title }}
     </template>
     <template #subtitle>
@@ -42,6 +43,7 @@ defineProps({
 :deep(.p-card-body){
   border-radius: 6px;
   padding: 5px;
+  gap: 0px;
 }
 
 </style>

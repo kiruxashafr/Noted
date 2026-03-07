@@ -262,11 +262,8 @@ export class BlocksService {
       const pages = await this.prisma.$queryRaw<BlockWithPath[]>`
         SELECT b.*
         FROM blocks b
-        INNER JOIN block_accesses ba ON b.id = ba.block_id
-        WHERE ba.user_id = ${userId}
-        AND b.type = 'PAGE'
-        AND "is_active" = true
-        AND ("expires_at" IS NULL OR "expires_at" > NOW())
+        WHERE b.owner_id = ${userId}
+        AND b.type = 'CONTAINER'
     `;
       return pages;
     } catch (error) {

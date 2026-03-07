@@ -4,9 +4,12 @@ import Menu from "primevue/menu";
 import { computed, ref } from "vue";
 import { useAuthStore } from "../../stores/auth.store";
 import { useRoute, useRouter } from "vue-router";
+import ContainerTitle from "../blocks/ContainerTitle.vue";
+import { useBlockStore } from "../../stores/container.store";
 
 const menu = ref();
 const authStore = useAuthStore();
+const blockStore = useBlockStore();
 const router = useRouter();
 const route = useRoute();
 const userName = ref(authStore.user?.name);
@@ -88,8 +91,15 @@ const isHomeActive = computed(() => {
           @click="router.push({ name: 'home-dashboard' })"
         />
       </div>
-      <div class="cont-title">
-            
+      <div class="containers-list">
+        Страницы:
+        <ContainerTitle
+          v-for="page in blockStore.containers"
+          :id="page.id"
+          :key="page.id"
+          :title="page.title"
+          :updated-at="page.updatedAt"
+        />
       </div>
     </Drawer>
   </div>
@@ -142,20 +152,37 @@ const isHomeActive = computed(() => {
 .nav-buttons {
   display: flex;
   flex-direction: column;
+  margin-bottom: 20px;
+  margin-top: 5px;
 }
 
 .nav-button {
   background-color: transparent !important;
   width: 100%;
   justify-content: flex-start;
+  padding-left: 0px;
 }
 
 .nav-button:hover {
   background-color: var(--neutral-active) !important;
 }
 
-.cont-title {
+.containers-list {
   display: flex;
   flex-direction: column;
+  font-weight: 700;
+}
+
+:deep(.p-card-subtitle) {
+  display: none;
+}
+
+:deep(.p-card-title) {
+  font-size: 1rem;
+  font-weight: 200;
+}
+
+:deep(.p-card-body) {
+  padding-left: 0px;
 }
 </style>
