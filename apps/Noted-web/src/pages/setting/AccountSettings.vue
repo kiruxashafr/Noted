@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useAccount } from "../../composables/useAccount";
 import { useAuthStore } from "../../stores/auth.store";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import Dialog from "primevue/dialog";
 import PasswordForm from "../../components/auth/PasswordForm.vue";
+import AvatarUploader from "../../components/user/AvatarUploader.vue";
+import { useSocketStore } from "../../stores/socket.store";
 
 
 
@@ -40,6 +42,10 @@ const handleUpdateEmail = async () => {
     newEmail.value = '';
   }
 }
+const socketStore = useSocketStore()
+onMounted(() => {
+  socketStore.connect()
+})
 
 const showTemplate = () => {
     confirm.require({
@@ -68,6 +74,7 @@ const showTemplate = () => {
 </script>
 <template>
   <section class="settings-section">
+    <AvatarUploader />
     <form
       style="width: 100%;"
       @submit.prevent="handleUpdateName"
@@ -148,8 +155,8 @@ const showTemplate = () => {
         <PasswordForm v-model:password="newPassword" />
         <Button
           label="Изменить пароль"
-          @click="handleUpdatePassword()"
           style="margin-top: 15px;"
+          @click="handleUpdatePassword()"
         />
       </Dialog>
     </div>
