@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { useAccount } from "../../composables/useAccount";
 import { useAuthStore } from "../../stores/auth.store";
 import ConfirmDialog from "primevue/confirmdialog";
@@ -7,7 +7,6 @@ import { useConfirm } from "primevue/useconfirm";
 import Dialog from "primevue/dialog";
 import PasswordForm from "../../components/auth/PasswordForm.vue";
 import AvatarUploader from "../../components/user/AvatarUploader.vue";
-import { useSocketStore } from "../../stores/socket.store";
 
 
 
@@ -42,10 +41,7 @@ const handleUpdateEmail = async () => {
     newEmail.value = '';
   }
 }
-const socketStore = useSocketStore()
-onMounted(() => {
-  socketStore.connect()
-})
+
 
 const showTemplate = () => {
     confirm.require({
@@ -74,12 +70,23 @@ const showTemplate = () => {
 </script>
 <template>
   <section class="settings-section">
-    <AvatarUploader />
+    <div class="form-row row">
+      <div class="label-wrapper">
+        <label>Фото профиля</label>
+        <span class="label-hint">
+          Ваше изображение будет отображаться в комментариях и заметках. 
+          Наведите на фото, чтобы изменить его.
+        </span>
+      </div>
+      <div class="input-wrapper avatar-input-container">
+        <AvatarUploader />
+      </div>
+    </div>
     <form
       style="width: 100%;"
       @submit.prevent="handleUpdateName"
     >
-      <div class="form-row">
+      <div class="form-row row">
         <div class="label-wrapper">
           <label for="username">Имя пользователя</label>
           <span class="label-hint">
@@ -188,6 +195,25 @@ const showTemplate = () => {
   font-weight: 600;
   color: #ffffff;
 }
+.row {
+  margin-bottom: 2rem; 
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #3f3f46; 
+}
+
+.avatar-input-container {
+  display: flex;
+  justify-content: flex-start; 
+  align-items: flex-start;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
 
 .label-hint {
   font-size: 0.875rem;
@@ -227,6 +253,10 @@ const showTemplate = () => {
   
   .username-input {
     width: 100%;
+  }
+
+  .avatar-input-container {
+    justify-content: center;
   }
 }
 

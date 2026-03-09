@@ -17,5 +17,6 @@ export interface AccountResponse {
   id: string;
   email: string;
   name: string;
+  avatars?: string;
   createdAt: Date;
 }

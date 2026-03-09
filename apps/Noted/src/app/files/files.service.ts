@@ -304,34 +304,39 @@ export class FilesService implements OnModuleInit {
     }
   }
 
-  private async ensureBucketExists() {
-    try {
-      await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      if (error.$metadata?.httpStatusCode === 404) {
-        this.logger.log(`ensureBucketExists() | Bucket "${this.bucket}" not found. Creating...`);
-        await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }));
+private async ensureBucketExists() {
+  try {
+    await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.$metadata?.httpStatusCode === 404) {
+      this.logger.log(`Bucket "${this.bucket}" not found. Initializing setup...`);
+      
+      await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }));
+      
+      const policy = {
+        Version: "2012-10-17",
+        Statement: [
+          {
+            Sid: "PublicRead",
+            Effect: "Allow",
+            Principal: "*",
+            Action: ["s3:GetObject"],
+            Resource: [`arn:aws:s3:::${this.bucket}/*`],
+          },
+        ],
+      };
 
-        const policy = {
-          Version: "2012-10-17",
-          Statement: [
-            {
-              Sid: "PublicRead",
-              Effect: "Allow",
-              Principal: "*",
-              Action: ["s3:GetObject"],
-              Resource: [`arn:aws:s3:::${this.bucket}/*`],
-            },
-          ],
-        };
-        await this.s3.send(
-          new PutBucketPolicyCommand({
-            Bucket: this.bucket,
-            Policy: JSON.stringify(policy),
-          }),
-        );
-      }
+      await this.s3.send(new PutBucketPolicyCommand({
+        Bucket: this.bucket,
+        Policy: JSON.stringify(policy),
+      }));
+      
+      this.logger.log(`Bucket "${this.bucket}" created and policy set to PUBLIC`);
+    } else {
+      this.logger.error(`Error checking S3 bucket: ${error.message}`);
+      throw error;
     }
   }
+}
 }
