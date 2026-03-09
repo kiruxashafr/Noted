@@ -1,10 +1,4 @@
-import {
-  Controller,
-  UseGuards,
-  Req,
-  Get,
-  Param,
-} from "@nestjs/common";
+import { Controller, UseGuards, Req, Get, Param } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
 import { Request } from "express";
 import { FilesService } from "./files.service";
@@ -15,10 +9,7 @@ export class FilesController {
 
   @Get(":id")
   @UseGuards(JwtAuthGuard)
-  async uploadAvatar(
-    @Req() req: Request,
-    @Param("id") id: string
-  ) {
+  async uploadAvatar(@Req() req: Request, @Param("id") id: string) {
     return this.filesService.findOne(id, req.user.sub);
   }
 }

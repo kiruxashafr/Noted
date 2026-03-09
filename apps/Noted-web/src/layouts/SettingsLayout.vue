@@ -14,11 +14,7 @@ const sidebarVisible = ref(false);
 <template>
   <div class="layout-wrapper">
     <header class="layout-header flex items-center px-4 py-2 border-b border-gray-200 dark:border-surface-700">
-      <Button
-        icon="pi pi-bars"
-        style="background-color: transparent !important"
-        @click="sidebarVisible = true"
-      />
+      <Button icon="pi pi-bars" style="background-color: transparent !important" @click="sidebarVisible = true" />
       <div style="align-items: center; display: flex">
         <HomeHeader />
       </div>

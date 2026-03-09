@@ -20,6 +20,4 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
   handleDisconnect(client: Socket) {
     this.logger.debug(`Client disconnected: ${client.id}`);
   }
-
-
 }

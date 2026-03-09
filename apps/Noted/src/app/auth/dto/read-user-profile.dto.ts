@@ -27,7 +27,7 @@ export class ReadUserProfileDto implements AccountResponse {
 
   @Expose()
   @IsOptional()
-  avatars: string
+  avatars: string;
 
   @ApiProperty({
     description: "Account creation date",

@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { RouterView } from "vue-router";
 import Toast from "primevue/toast";
-import { useBlockStore } from "../stores/container.store";
 import { onMounted } from "vue";
 import { useSocketStore } from "../stores/socket.store";
+import { useContainerStore } from "../stores/container.store";
 
-const blockStore = useBlockStore();
-const socketStore = useSocketStore()
-
+const containerStore = useContainerStore();
+const socketStore = useSocketStore();
 
 onMounted(() => {
-  blockStore.getContainerTitle();
-  socketStore.connect()
+  containerStore.getContainerTitle();
+  socketStore.connect();
 });
-
 </script>
 
 <template>

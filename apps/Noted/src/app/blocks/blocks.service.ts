@@ -135,7 +135,7 @@ export class BlocksService {
     const textBlockMeta = dto.meta as TextMetaContent;
 
     const meta: TextMetaContent = {
-      [TextMetaKeys.Json]: textBlockMeta.json,
+      [TextMetaKeys.Payload]: textBlockMeta.payload,
     };
     const createBlock: CreateBlockDto = {
       blockType: dto.blockType,
@@ -249,7 +249,7 @@ export class BlocksService {
       AND b.type = 'CONTAINER'
       ORDER BY b.updated_at DESC
 `;
-      return pages
+      return pages;
     } catch (error) {
       if (error instanceof FailedToFindBlockException) throw error;
       this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);

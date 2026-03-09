@@ -5,11 +5,11 @@ import { computed, ref } from "vue";
 import { useAuthStore } from "../../stores/auth.store";
 import { useRoute, useRouter } from "vue-router";
 import ContainerTitle from "../blocks/ContainerTitle.vue";
-import { useBlockStore } from "../../stores/container.store";
+import { useContainerStore } from "../../stores/container.store";
 
 const menu = ref();
 const authStore = useAuthStore();
-const blockStore = useBlockStore();
+const containerStore = useContainerStore();
 const router = useRouter();
 const route = useRoute();
 const userName = ref(authStore.user?.name);
@@ -52,34 +52,17 @@ const isHomeActive = computed(() => {
 </script>
 <template>
   <div class="card flex justify-center">
-    <Drawer
-      v-model:visible="visible"
-      :modal="false"
-      :dismissable="false"
-    >
+    <Drawer v-model:visible="visible" :modal="false" :dismissable="false">
       <template #closeicon>
-        <i
-          class="pi my-sidebar-icon"
-          style="font-size: 20px; color: #949aa1"
-        />
+        <i class="pi my-sidebar-icon" style="font-size: 20px; color: #949aa1" />
       </template>
       <template #header>
-        <div
-          class="user-card"
-          @click="openProfile"
-        >
+        <div class="user-card" @click="openProfile">
           <div class="user-avatar">
             {{ useAuthStore().user?.name?.charAt(0).toUpperCase() }}
           </div>
-          <div class="user-profile">
-            {{ userName }}<i class="pi pi-angle-down" />
-          </div>
-          <Menu
-            id="overlay_menu"
-            ref="menu"
-            :model="items"
-            :popup="true"
-          />
+          <div class="user-profile">{{ userName }}<i class="pi pi-angle-down" /></div>
+          <Menu id="overlay_menu" ref="menu" :model="items" :popup="true" />
         </div>
       </template>
       <div class="nav-buttons">
@@ -88,18 +71,16 @@ const isHomeActive = computed(() => {
           icon="pi pi-home"
           class="nav-button"
           :class="{ 'active-route': isHomeActive }"
-          @click="router.push({ name: 'home-dashboard' })"
-        />
+          @click="router.push({ name: 'home-dashboard' })" />
       </div>
       <div class="containers-list">
         Страницы:
         <ContainerTitle
-          v-for="page in blockStore.containers"
+          v-for="page in containerStore.containersTitle"
           :id="page.id"
           :key="page.id"
           :title="page.title"
-          :updated-at="page.updatedAt"
-        />
+          :updated-at="page.updatedAt" />
       </div>
     </Drawer>
   </div>

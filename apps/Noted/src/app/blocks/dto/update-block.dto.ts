@@ -1,8 +1,8 @@
-import { BlockMeta } from "@noted/types";
+import { BlockMeta, UpdateBlockRequest } from "@noted/types";
 import { IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from "class-validator";
 import { BlockType } from "generated/prisma/enums";
 
-export class UpdateBlockDto {
+export class UpdateBlockDto implements UpdateBlockRequest{
   @IsString()
   @IsNotEmpty()
   blockId: string;

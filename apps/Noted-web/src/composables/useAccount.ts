@@ -41,7 +41,7 @@ export const useAccount = () => {
         detail: "Ваш аккаунт успешно обновлен",
         life: 3000,
       });
-        return
+      return;
     } catch (error) {
       toast.add({
         severity: "error",
@@ -53,6 +53,7 @@ export const useAccount = () => {
   };
 
   return {
-    deleteAccount, updateAccount
+    deleteAccount,
+    updateAccount,
   };
 };

@@ -1,16 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import Button from "primevue/button";
 import AppSidebar from "../components/sidebar/AppSidebar.vue";
 import HomeHeader from "../components/header/HomeHeader.vue";
 
 const sidebarVisible = ref(false);
-
-// onMounted(() => {
-//   if (window.innerWidth > 1024) {
-//     sidebarVisible.value = true;
-//   }
-// });
 </script>
 
 <template>

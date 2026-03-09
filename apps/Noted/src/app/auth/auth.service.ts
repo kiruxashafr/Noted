@@ -41,7 +41,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly filesService: FilesService
+    private readonly filesService: FilesService,
   ) {
     this.accessSecret = this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
     this.refreshSecret = this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
@@ -161,7 +161,7 @@ export class AuthService {
           id: true,
           email: true,
           name: true,
-          avatars:true,
+          avatars: true,
           createdAt: true,
         },
       });
@@ -171,14 +171,14 @@ export class AuthService {
       const userDto = toDto(user, ReadUserProfileDto);
 
       if (avatars?.mini_avatar) {
-        const avatarUrl = await this.filesService.findOne(avatars.mini_avatar, userId)
-        userDto.avatars = avatarUrl.url
+        const avatarUrl = await this.filesService.findOne(avatars.mini_avatar, userId);
+        userDto.avatars = avatarUrl.url;
       }
       if (!user) {
         throw new UserNotFoundException();
       }
 
-      return userDto
+      return userDto;
     } catch (error) {
       if (error instanceof UserNotFoundException) throw error;
       this.logger.error(`login() | error: ${(error as Error).message}`);

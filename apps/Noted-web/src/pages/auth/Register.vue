@@ -68,51 +68,29 @@ async function onSubmit() {
     <Card style="width: 50%">
       <template #title>
         <div class="title-container">
-          <img
-            src="../../public//images/logo/noted-min-light.png"
-            alt="Logo"
-            class="reg-logo"
-          >
+          <img src="../../public//images/logo/noted-min-light.png" alt="Logo" class="reg-logo" />
           <span class="title-text">Sign in to your account</span>
         </div>
       </template>
       <template #content>
-        <form
-          class="reg-form"
-          @submit.prevent="onSubmit"
-        >
+        <form class="reg-form" @submit.prevent="onSubmit">
           <div class="auth-comp">
-            <InputText
-              v-model="name"
-              type="name"
-              placeholder="Name"
-            />
+            <InputText v-model="name" type="name" placeholder="Name" />
           </div>
           <div class="auth-comp">
-            <InputText
-              v-model="email"
-              type="email"
-              placeholder="Email"
-            />
+            <InputText v-model="email" type="email" placeholder="Email" />
           </div>
 
           <div class="auth-comp">
             <PasswordForm v-model:password="password" />
           </div>
-          <Button
-            type="submit"
-            label="Register"
-            :loading="isLoading"
-            class="w-full"
-            icon="pi pi-user"
-          />
+          <Button type="submit" label="Register" :loading="isLoading" class="w-full" icon="pi pi-user" />
           <Button
             type="button"
             label="Already have an account? Sign In"
             icon="pi pi-angle-left"
             severity="secondary"
-            @click="router.push({ name: 'login' })"
-          />
+            @click="router.push({ name: 'login' })" />
         </form>
       </template>
     </Card>

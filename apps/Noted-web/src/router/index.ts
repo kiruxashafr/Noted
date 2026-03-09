@@ -12,7 +12,13 @@ const router = createRouter({
         {
           path: "",
           name: "home-dashboard",
+          component: () => import("../pages/blocks/ListContainer.vue"),
+        },
+        {
+          path: "note/:id",
+          name: "note",
           component: () => import("../pages/blocks/ContainerPage.vue"),
+          props: true,
         },
       ],
     },
@@ -40,10 +46,10 @@ const router = createRouter({
       meta: { isGuest: true },
     },
     {
-    path: '/:pathMatch(.*)*',
-    name: 'not-found',
-    component: () => import('../pages/not-found/NotFound.vue')
-    }
+      path: "/:pathMatch(.*)*",
+      name: "not-found",
+      component: () => import("../pages/not-found/NotFound.vue"),
+    },
   ],
 });
 

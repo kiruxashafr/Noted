@@ -14,26 +14,14 @@ const visible = defineModel<boolean>("visible");
 </script>
 <template>
   <div class="card flex justify-center">
-    <Drawer
-      v-model:visible="visible"
-      :modal="false"
-      :dismissable="false"
-    >
+    <Drawer v-model:visible="visible" :modal="false" :dismissable="false">
       <template #closeicon>
-        <i
-          class="pi my-sidebar-icon"
-          style="font-size: 20px; color: #949aa1"
-        />
+        <i class="pi my-sidebar-icon" style="font-size: 20px; color: #949aa1" />
       </template>
       <template #header>
-        <div
-          class="user-card"
-          @click="router.push({ name: 'home-dashboard' })"
-        >
+        <div class="user-card" @click="router.push({ name: 'home-dashboard' })">
           <i class="pi pi-chevron-left" />
-          <div class="user-profile">
-            Вернуться в приложение
-          </div>
+          <div class="user-profile">Вернуться в приложение</div>
         </div>
       </template>
       <Button
@@ -41,8 +29,7 @@ const visible = defineModel<boolean>("visible");
         icon="pi pi-user"
         class="nav-button"
         :class="{ 'active-route': isHomeActive }"
-        @click="router.push({ name: 'setting-account' })"
-      />
+        @click="router.push({ name: 'setting-account' })" />
     </Drawer>
   </div>
 </template>

@@ -25,19 +25,26 @@ export interface DeleteBlockRequest {
   blockId: string;
 }
 
+  export interface UpdateBlockRequest {
+    blockId: string;
+    blockType: BlockType;
+    meta: BlockMeta;
+    order?: number
+  }
+
 export interface DeleteAccessRequest {
   accessId: string;
 }
 
 export interface PageTitle {
-  id: string
-  title: string
-  updatedAt: Date
+  id: string;
+  title: string;
+  updatedAt: Date;
 }
 
 //Container
 export interface ContainerMetaContent {
-  title: string;
+  title?: string;
 }
 
 export enum ContainerMetaKeys {
@@ -46,11 +53,11 @@ export enum ContainerMetaKeys {
 
 //Text
 export interface TextMetaContent {
-  json: Record<string, unknown>;
+  payload: Record<string, unknown>;
 }
 
 export enum TextMetaKeys {
-  Json = "json",
+  Payload = "payload",
 }
 
 export interface BlockWithPath extends Block {

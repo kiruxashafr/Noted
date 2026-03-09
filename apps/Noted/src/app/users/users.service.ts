@@ -32,7 +32,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly filesService: FilesService,
     private readonly queueService: PhotoQueueService,
-    private readonly notificationGateway: NotificationGateway
+    private readonly notificationGateway: NotificationGateway,
   ) {}
 
   async updateAvatar(
@@ -85,8 +85,8 @@ export class UsersService {
       });
 
       if (event.socketId) {
-        const fileData = await this.filesService.findOne(event.newFileId, event.userId)
-        this.notificationGateway.server.to(event.socketId).emit(NotificationEvent.PHOTO_EDIT, fileData)        
+        const fileData = await this.filesService.findOne(event.newFileId, event.userId);
+        this.notificationGateway.server.to(event.socketId).emit(NotificationEvent.PHOTO_EDIT, fileData);
       }
 
       this.logger.log(
@@ -100,9 +100,9 @@ export class UsersService {
   @OnEvent(PhotoEvent.PHOTO_CONVERSION_FAILED)
   async handleAvatarConversionFail(event: PhotoConversionFailedEvent) {
     this.logger.error(`handleAvatarConversionFail() | heic convert fail for user ${event.userId}`);
-      if (event.socketId) {
-        this.notificationGateway.server.to(event.socketId).emit(NotificationEvent.PHOTO_EDIT, "upload_error")
-      }
+    if (event.socketId) {
+      this.notificationGateway.server.to(event.socketId).emit(NotificationEvent.PHOTO_EDIT, "upload_error");
+    }
   }
 
   async updateUser(userId: string, dto: UpdateUserDto) {
