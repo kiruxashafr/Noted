@@ -70,7 +70,7 @@ export class BlocksService {
     }
   }
 
-  async upadateBlock(userId: string, dto: UpdateBlockDto) {
+async updateBlock(userId: string, dto: UpdateBlockDto) { 
     try {
       await this.checkBlockAccess(userId, dto.blockId, BlockPermission.EDIT);
 
@@ -82,7 +82,6 @@ export class BlocksService {
       }
 
       const oldMeta = (currentBlock.meta as Record<string, unknown>) || {};
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const newMeta = (dto.meta as Record<string, any>) || {};
       const updatedMeta = {
         ...oldMeta,
@@ -91,14 +90,21 @@ export class BlocksService {
 
       await this.validateBlockMeta(dto.blockType, updatedMeta);
 
-      const updatedBlock = await this.prisma.block.update({
-        where: { id: dto.blockId },
-        data: {
-          meta: updatedMeta,
-          order: dto.order ?? currentBlock.order,
-          updatedAt: new Date(),
-        },
-      });
+      const [updatedBlock] = await this.prisma.$queryRawUnsafe<BlockWithPath[]>(
+        `UPDATE "blocks" 
+         SET meta = $1, 
+             "order" = $2, 
+             updated_at = NOW() 
+         WHERE id = $3 
+         RETURNING *, path::text`,
+        JSON.stringify(updatedMeta),
+        dto.order ?? currentBlock.order,
+        dto.blockId,
+      );
+
+      if (!updatedBlock) {
+        throw new BadRequestException("Failed to update block: block not found after update");
+      }
 
       this.logger.log(`updateBlock() | user ${userId} updated block ${dto.blockId}`);
       return updatedBlock;

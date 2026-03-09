@@ -45,25 +45,22 @@ onBeforeUnmount(() => editor.value?.destroy());
   <div class="text-block group relative">
     <div class="p-2 border-round transition-colors hover:bg-gray-100 cursor-text min-h-[2rem]">
       <editor-content :editor="editor" />
-      
-      <span 
-        v-if="editor && editor.isEmpty" 
-        class="text-400 italic pointer-events-none absolute top-2 left-2"
-      >
-        Начните писать...
-      </span>
     </div>
 
-    <div class="absolute -left-5 top-3 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab">
-      <i class="pi pi-ellipsis-v text-400"></i>
-    </div>
+    <div class="divider" />
   </div>
 </template>
 
 <style>
-/* Чтобы клик по пустой области фокусировал редактор */
 .tiptap {
   min-height: 1.5rem;
   outline: none;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background-color: #3f3f46;
+  margin: 2rem 0;
 }
 </style>

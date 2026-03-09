@@ -23,7 +23,7 @@ export class BlocksController {
   @Patch("block")
   @UseGuards(JwtAuthGuard)
   async updateBlock(@Req() req: Request, @Body() dto: UpdateBlockDto) {
-    return this.blocksServise.upadateBlock(req.user.sub, dto);
+    return this.blocksServise.updateBlock(req.user.sub, dto);
   }
 
   @Post("access")

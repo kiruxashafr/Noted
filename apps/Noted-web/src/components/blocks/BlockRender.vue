@@ -40,23 +40,17 @@ watch(
 </script>
 
 <template>
-  <div v-if="block" class="block-item mb-2">
-<template v-if="block.type === 'TEXT'">
-  <TextBlock 
-    v-model="(block.meta as unknown as TextMetaContent)" 
-    :block="block" 
-  />
-</template>
-
-    <template v-else-if="block.type === 'CONTAINER'">
-      <router-link :to="`/container/${block.id}`" class="no-underline text-900">
-        <div class="p-3 border-1 border-300 border-round hover:surface-100 transition-colors cursor-pointer flex align-items-center gap-3">
-          <i class="pi pi-folder text-primary text-xl"></i>
-          <span class="font-medium">
-             {{ (block.meta as any)?.title || 'Без названия' }}
-          </span>
-        </div>
-      </router-link>
+  <div
+    v-if="block"
+    class="block-item mb-2"
+  >
+    <template v-if="block.type === 'TEXT'">
+      <TextBlock 
+        v-model="(block.meta as unknown as TextMetaContent)" 
+        :block="block" 
+      />
     </template>
+
+
   </div>
 </template>
