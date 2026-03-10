@@ -76,7 +76,7 @@ const isHomeActive = computed(() => {
           @click="router.push({ name: 'home-dashboard' })" />
       </div>
       <div class="containers-list">
-        Страницы:
+        <text style="padding-left: 5px;">Страницы:</text>
         <div
           v-for="page in containerStore.containersTitle"
           :key="page.id"
@@ -106,9 +106,13 @@ const isHomeActive = computed(() => {
 }
 
 .active-route {
-  background: var(--neutral-active);
-  color: white;
+  background: var(--neutral-active) !important;
   border-radius: 8px;
+}
+
+.active-route :deep(*) {
+  color: white !important;
+  font-weight: 700 !important;
 }
 
 .user-profile {
@@ -150,18 +154,17 @@ const isHomeActive = computed(() => {
   background-color: transparent !important;
   width: 100%;
   justify-content: flex-start;
-  padding-left: 0px;
+  padding-left: 5px;
 }
 
-.nav-button:hover {
-  background-color: var(--neutral-active) !important;
-}
 
 .containers-list {
   display: flex;
   flex-direction: column;
   font-weight: 700;
+  gap: 5px;
 }
+
 
 :deep(.p-card-subtitle) {
   display: none;
@@ -170,9 +173,5 @@ const isHomeActive = computed(() => {
 :deep(.p-card-title) {
   font-size: 1rem;
   font-weight: 200;
-}
-
-:deep(.p-card-body) {
-  padding-left: 0px;
 }
 </style>

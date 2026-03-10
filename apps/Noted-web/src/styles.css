@@ -72,6 +72,10 @@ svg {
   border: none !important;
 }
 
+.p-drawer-content {
+  padding: 0 1rem 1rem 1rem !important;
+}
+
 .p-drawer-close-button {
   background-color: transparent !important;
 }
@@ -88,10 +92,6 @@ svg {
 
 .nav-button {
   color: rgba(255, 255, 255, 0.527) !important;
-}
-
-.active-route {
-  color: white !important;
 }
 
 .my-sidebar-icon {
