@@ -1,17 +1,10 @@
 <script setup lang="ts">
-import { useRouter } from "vue-router";
 import ContainerTitle from "../../components/blocks/ContainerTitle.vue";
 import { useContainerStore } from "../../stores/container.store";
+import CreateContainerButton from "../../components/buttons/CreateContainerButton.vue";
 
-const router = useRouter()
 const containerStore = useContainerStore();
 
-const handlePageClick = (id: string) => {
-  router.push({ 
-    name: "note",
-    params: { id } 
-  });
-};
 </script>
 <template>
   <div class="pages">
@@ -23,8 +16,8 @@ const handlePageClick = (id: string) => {
       :key="page.id"
       :title="page.title"
       :updated-at="page.updatedAt"
-      @click="handlePageClick(page.id)"
        />
+      <CreateContainerButton />
   </div>
 </template>
 <style scoped>

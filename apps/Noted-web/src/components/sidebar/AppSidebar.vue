@@ -6,6 +6,7 @@ import { useAuthStore } from "../../stores/auth.store";
 import { useRoute, useRouter } from "vue-router";
 import ContainerTitle from "../blocks/ContainerTitle.vue";
 import { useContainerStore } from "../../stores/container.store";
+import CreateContainerButton from "../buttons/CreateContainerButton.vue";
 
 const menu = ref();
 const authStore = useAuthStore();
@@ -49,6 +50,7 @@ const visible = defineModel<boolean>("visible");
 const isHomeActive = computed(() => {
   return route.name === "home-dashboard";
 });
+
 </script>
 <template>
   <div class="card flex justify-center">
@@ -75,12 +77,19 @@ const isHomeActive = computed(() => {
       </div>
       <div class="containers-list">
         Страницы:
-        <ContainerTitle
+        <div
           v-for="page in containerStore.containersTitle"
-          :id="page.id"
           :key="page.id"
-          :title="page.title"
-          :updated-at="page.updatedAt" />
+          class="container-wrapper"
+          :class="{ 'active-route': route.name === 'note' && route.params.id === page.id }"
+        >
+          <ContainerTitle
+            :id="page.id"
+            :title="page.title"
+            :updated-at="page.updatedAt" 
+          />
+        </div>
+        <CreateContainerButton />
       </div>
     </Drawer>
   </div>
@@ -97,7 +106,7 @@ const isHomeActive = computed(() => {
 }
 
 .active-route {
-  background: #2196f3;
+  background: var(--neutral-active);
   color: white;
   border-radius: 8px;
 }

@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import $api from "../api/instance";
-import { BlockWithPath, PageTitle } from "@noted/types/block.types";
+import { BlockWithPath, CreateBlockRequest, PageTitle } from "@noted/types/block.types";
 import { ref } from "vue";
 import { useToast } from "primevue/usetoast";
 

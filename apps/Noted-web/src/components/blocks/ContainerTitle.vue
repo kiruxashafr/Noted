@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
+
+
+const router = useRouter()
+
 defineProps({
   id: {
     type: String,
@@ -13,10 +18,20 @@ defineProps({
     required: true,
   },
 });
+
+const handlePageClick = (id: string) => {
+  router.push({ 
+    name: "note",
+    params: { id } 
+  });
+};
 </script>
 
 <template>
-  <Card style="background-color: transparent; box-shadow: none; gap: 1px">
+  <Card 
+  style="background-color: transparent; box-shadow: none; gap: 1px"
+  @click="handlePageClick(id)"
+  >
     <template #title>
       <i class="pi pi-file" />
       {{ title }}
