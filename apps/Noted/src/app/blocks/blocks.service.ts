@@ -279,6 +279,22 @@ async updateBlock(userId: string, dto: UpdateBlockDto) {
     }
   }
 
+  async getContainer(userId: string, containerId: string) {
+    try {
+      const container = await this.prisma.$queryRaw<BlockWithPath>`
+        SELECT b.*
+        FROM blocks b
+        WHERE b.id = ${containerId}
+        AND b.type = 'CONTAINER'
+    `;
+      return container;
+    } catch (error) {
+      if (error instanceof FailedToFindBlockException) throw error;
+      this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
+      throw new BadRequestException();
+    }
+  }
+
   async getChildBlocks(userId: string, blockId: string) {
     try {
       await this.checkBlockAccess(userId, blockId, BlockPermission.VIEW);

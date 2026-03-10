@@ -21,6 +21,38 @@ export const useBlockStore = defineStore(
       });
     };
 
+    async function getContainer(containerId: string) {
+      try {
+        const { data } = await $api.get<BlockWithPath[]>("/api/blocks/container", {
+          params: { containerId }
+        });
+
+        upsertItems(data)
+        return data;
+      } catch (error) {
+        toast.add({
+          severity: "error",
+          summary: "Ошибка",
+          detail: "Не удалось получить страницу",
+          life: 3000,
+        });
+        throw error; 
+      }
+    }
+
+async function getPage(containerId: string) {
+  try {
+    const container = await getContainer(containerId);
+    if (container) {
+      await getChildBlocks(container[0].id);
+      return container; 
+    }
+  } catch (e) {
+    console.error("Ошибка в getPage:", e);
+    return null;
+  }
+}
+
     async function getChildBlocks(blockId: string) {
       try {
         const { data } = await $api.get<BlockWithPath[]>("/api/blocks/child", { 
@@ -36,6 +68,8 @@ export const useBlockStore = defineStore(
         });
       }
     }
+
+
       
     async function createBlock(createData: CreateBlockRequest) {
       try {
@@ -52,25 +86,21 @@ export const useBlockStore = defineStore(
     }
 
     async function updateBlock(updateData: UpdateBlockRequest) {
-      // 1. Сохраняем копию для отката (Optimistic UI)
       const previousBlocks = [...blocks.value];
       const index = blocks.value.findIndex((b) => b.id === updateData.blockId);
 
       if (index !== -1) {
-        // 2. Мгновенно обновляем локально
         blocks.value[index] = { 
           ...blocks.value[index], 
-          meta: updateData.meta as any, // Приведение к any для совместимости с JsonValue
+          meta: updateData.meta as any, 
           order: updateData.order ?? blocks.value[index].order
         };
       }
 
       try {
-        // 3. Запрос в фоне. Теперь бэкенд вернет актуальный BlockWithPath
         const { data } = await $api.patch<BlockWithPath>("/api/blocks/block", updateData);
         upsertItems([data]);
       } catch (error) {
-        // 4. В случае ошибки возвращаем как было
         blocks.value = previousBlocks;
         toast.add({ 
           severity: "error", 
@@ -84,6 +114,8 @@ export const useBlockStore = defineStore(
     return {
       blocks,
       getChildBlocks,
+      getContainer,
+      getPage,
       updateBlock,
       createBlock
     };

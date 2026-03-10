@@ -35,6 +35,23 @@ export const useContainerStore = defineStore(
       }
     }
 
+    async function getContainer(containerId:string) {
+      try {
+        const { data } = await $api.get<BlockWithPath>("/api/blocks/container", {
+          params: {containerId}
+        });
+
+        containers.value.push(data)
+      } catch (error) {
+        toast.add({
+          severity: "error",
+          summary: "Ошибка",
+          detail: "Не удалось получить страницу",
+          life: 3000,
+        });
+      }
+    }
+
     async function getContainers() {
       try {
         const { data } = await $api.get<BlockWithPath[]>("/api/blocks/page/title");

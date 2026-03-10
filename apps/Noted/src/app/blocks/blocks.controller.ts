@@ -9,6 +9,7 @@ import { CreateAccessDto } from "./dto/create-access.dto";
 import { UpdateBlockDto } from "./dto/update-block.dto";
 import { UpdateAccessDto } from "./dto/update-access.dto";
 import { DeleteAccessDto } from "./dto/delete-access.dto";
+import { GetContainerDto } from "./dto/get-container.dto";
 
 @Controller("blocks")
 export class BlocksController {
@@ -44,11 +45,17 @@ export class BlocksController {
     return this.blocksServise.getUserPages(req.user.sub);
   }
 
-@Get("child")
-@UseGuards(JwtAuthGuard)
-async getChildBlocks(@Req() req: Request, @Query() dto: GetChildBlocksDto) {
-  return this.blocksServise.getChildBlocks(req.user.sub, dto.blockId);
-}
+  @Get("container")
+  @UseGuards(JwtAuthGuard)
+  async getContainer(@Req() req: Request, @Query() dto: GetContainerDto) {
+    return this.blocksServise.getContainer(req.user.sub, dto.containerId);
+  }
+
+  @Get("child")
+  @UseGuards(JwtAuthGuard)
+  async getChildBlocks(@Req() req: Request, @Query() dto: GetChildBlocksDto) {
+    return this.blocksServise.getChildBlocks(req.user.sub, dto.blockId);
+  }
 
   @Get("access/my")
   @UseGuards(JwtAuthGuard)

@@ -9,8 +9,7 @@ const blockStore = useBlockStore();
 const props = defineProps<{ id: string }>();
 
 const load = (id: string) => {
-  containerStore.getContainers();
-  blockStore.getChildBlocks(id);
+  blockStore.getPage(id);
 };
 
 const addTextBlock = async () => {
