@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import BlockAccordion from '../accordeon/BlockAccordion.vue';
+import ContainerAccordion from '../accordion/ContainerAccordion.vue';
 
 
 const router = useRouter()
@@ -41,7 +41,7 @@ const handlePageClick = (id: string) => {
       <div>Обновлен: {{ updatedAt?.toLocaleString() }}</div>
     </template>
     <template #content>
-      <BlockAccordion :block-id="id" />
+      <ContainerAccordion :block-id="id" />
     </template>
   </Card>
 </template>

@@ -5,7 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 import ContainerTitle from "../blocks/ContainerTitle.vue";
 
 import CreateContainerButton from "../buttons/CreateContainerButton.vue";
-import UserAccordion from "../accordeon/UserAccordion.vue";
+import UserAccordion from "../accordion/UserAccordion.vue";
 import { useBlockStore } from "../../stores/block.store";
 
 const blockStore = useBlockStore()

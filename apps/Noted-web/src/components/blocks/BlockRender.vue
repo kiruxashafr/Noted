@@ -4,6 +4,7 @@ import { useBlockStore } from '../../stores/block.store';
 import { debounce } from 'lodash-es';
 import TextBlock from './TextBlock.vue';
 import { TextMetaContent } from '@noted/types';
+import BlockAccordion from '../accordion/BlockAccordion.vue';
 
 
 const props = defineProps<{
@@ -42,15 +43,33 @@ watch(
 <template>
   <div
     v-if="block"
-    class="block-item mb-2"
+    class="block"
   >
     <template v-if="block.type === 'TEXT'">
-      <TextBlock 
-        v-model="(block.meta as unknown as TextMetaContent)" 
-        :block="block" 
-      />
+      <div class="block-content">
+        <TextBlock 
+          v-model="(block.meta as unknown as TextMetaContent)" 
+          :block="block" 
+        />
+      </div>
     </template>
 
-
+    <BlockAccordion :block-id="props.blockId" />
   </div>
+
 </template>
+<style scoped>
+.block {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+
+.block-content {
+  width: 95%;
+}
+</style>

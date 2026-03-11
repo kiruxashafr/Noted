@@ -46,8 +46,6 @@ onBeforeUnmount(() => editor.value?.destroy());
     <div class="p-2 border-round transition-colors hover:bg-gray-100 cursor-text min-h-[2rem]">
       <editor-content :editor="editor" />
     </div>
-
-    <div class="divider" />
   </div>
 </template>
 
@@ -57,10 +55,5 @@ onBeforeUnmount(() => editor.value?.destroy());
   outline: none;
 }
 
-.divider {
-  width: 100%;
-  height: 1px;
-  background-color: #3f3f46;
-  margin: 2rem 0;
-}
+
 </style>

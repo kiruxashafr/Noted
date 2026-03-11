@@ -1,8 +1,9 @@
 import { defineStore } from "pinia";
 import $api from "../api/instance";
-import { BlockWithPath, CreateBlockRequest, PageTitle, UpdateBlockRequest } from "@noted/types/block.types";
+import { BlockMeta, BlockWithPath, CreateBlockRequest, PageTitle, UpdateBlockRequest } from "@noted/types/block.types";
 import { ref } from "vue";
 import { useToast } from "primevue/usetoast";
+import { BlockType } from "generated/prisma/enums";
 
 export const useBlockStore = defineStore(
   "block",
@@ -71,7 +72,15 @@ export const useBlockStore = defineStore(
       }
     }
 
-    async function createBlock(createData: CreateBlockRequest) {
+    type CreateBlockDTO = Omit<CreateBlockRequest, 'order'>;
+
+      async function createBlock({ blockType, meta, parentId }: CreateBlockDTO) {
+        const createData: CreateBlockRequest = {
+          blockType,
+          meta,
+          order: findMaxOrder() + 100,
+          parentId
+        }
       try {
         const { data } = await $api.post<BlockWithPath>("/api/blocks/block", createData);
         upsertItems([data]);
@@ -137,14 +146,43 @@ export const useBlockStore = defineStore(
       }
     }
 
-    async function deleteBlock(blockId: string) {
+    async function deleteContainer(blockId: string) {
       try {
-        await $api.delete("/api/blocks/page/title", {params: {blockId}});
-        blocks.value = blocks.value.filter(block => block.id !== blockId)
+        await $api.delete("/api/blocks/block", {params: {blockId}});
+        containersTitle.value = containersTitle.value.filter(block => block.id !== blockId)
+        toast.add({ 
+          severity: "success", 
+          summary: "Успешно", 
+          detail: "<Блок удален>",
+          life: 3000 
+        });
       } catch (error) {
         console.error("Ошибка при загрузке заголовков:", error);
       }
     }
+
+    async function deleteBlock(blockId: string) {
+      try {
+        await $api.delete("/api/blocks/block", {params: {blockId}});
+        blocks.value = blocks.value.filter(block => block.id !== blockId)
+        toast.add({ 
+          severity: "success", 
+          summary: "Успешно", 
+          detail: "<Блок удален>",
+          life: 3000 
+        });
+      } catch (error) {
+        console.error("Ошибка при загрузке заголовков:", error);
+      }
+    }
+
+    const findMaxOrder = () => {
+      if (blocks.value.length === 0) return 0;
+
+      return blocks.value.reduce(
+        (max, b) => Math.max(max, b.order || 0), 0
+      );
+    };
 
     return {
       blocks,
@@ -153,6 +191,7 @@ export const useBlockStore = defineStore(
       getContainer,
       getPage,
       deleteBlock,
+      deleteContainer,
       updateBlock,
       createBlock,
       createContainer,

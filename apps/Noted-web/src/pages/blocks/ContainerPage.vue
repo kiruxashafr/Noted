@@ -15,7 +15,6 @@ const addTextBlock = async () => {
   await blockStore.createBlock({
     blockType: 'TEXT',
     parentId: props.id,
-    order: childBlocks.value.length + 1,
     meta: {
       payload: { 
         type: 'doc', 
@@ -38,29 +37,22 @@ const title = computed(() => {
 });
 
 const childBlocks = computed(() => {
-  return blockStore.blocks.filter(block => {
-    if (!block.path) return false;
-    
-    const segments = block.path.split('.');
-    const parentId = props.id;
-    const parentIndex = segments.indexOf(parentId);
-    
-    return parentIndex !== -1 && segments.length === parentIndex + 2;
-  });
-});
+  return [...blockStore.blocks]
+    .filter(block => block.id !== props.id)
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+})
 </script>
 
 <template>
-  <div class="p-4 max-w-3xl mx-auto">
-    <div v-if="currentPage">
+  <div class="page">
+    <div v-if="currentPage" class="container">
       <h1
         class="text-4xl font-bold mb-6"
-        style="margin-bottom: 30px;"
       >
         {{ title }}
       </h1>
       
-      <div class="flex flex-column gap-4">
+      <div class="block-container">
         <BlockRender
           v-for="block in childBlocks" 
           :key="block.id" 
@@ -69,7 +61,6 @@ const childBlocks = computed(() => {
       </div>
 
       <div 
-        class="mt-4 p-3 border-round border-dashed border-2 border-300 text-500 hover:text-primary hover:border-primary cursor-pointer transition-colors flex align-items-center justify-content-center gap-2"
         style="cursor: pointer;"
         @click="addTextBlock"
       >
@@ -87,3 +78,23 @@ const childBlocks = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.block-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.container{
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.page {
+  width: 100%;
+  max-width: 800px;
+}
+</style>
