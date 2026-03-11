@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import $api from "../api/instance";
-import { BlockWithPath, CreateBlockRequest, UpdateBlockRequest } from "@noted/types/block.types";
+import { BlockWithPath, CreateBlockRequest, PageTitle, UpdateBlockRequest } from "@noted/types/block.types";
 import { ref } from "vue";
 import { useToast } from "primevue/usetoast";
 
@@ -9,6 +9,7 @@ export const useBlockStore = defineStore(
   () => {
     const toast = useToast();
     const blocks = ref<BlockWithPath[]>([]);
+    const containersTitle = ref<PageTitle[]>([]);
 
     const upsertItems = (items: BlockWithPath[]) => {
       items.forEach((newItem) => {
@@ -41,7 +42,7 @@ export const useBlockStore = defineStore(
     }
 
     async function getPage(containerId: string) {
-      localStorage.clear()
+      blocks.value = []
       try {
         const container = await getContainer(containerId);
         if (container) {
@@ -70,12 +71,24 @@ export const useBlockStore = defineStore(
       }
     }
 
-
-      
     async function createBlock(createData: CreateBlockRequest) {
       try {
         const { data } = await $api.post<BlockWithPath>("/api/blocks/block", createData);
         upsertItems([data]);
+      } catch (error) {
+        toast.add({
+          severity: "error",
+          summary: "Ошибка",
+          detail: "Не удалось создать блок",
+          life: 3000,
+        });
+      }  
+    }
+
+    async function createContainer(createData:CreateBlockRequest) {
+      try {
+        const { data } = await $api.post<BlockWithPath>("/api/blocks/block", createData);
+        await getContainerTitle()
       } catch (error) {
         toast.add({
           severity: "error",
@@ -112,19 +125,44 @@ export const useBlockStore = defineStore(
       }
     }
 
+    async function getContainerTitle() {
+      try {
+        const { data } = await $api.get<PageTitle[]>("/api/blocks/page/title");
+        containersTitle.value = data.map((item) => ({
+          ...item,
+          updatedAt: new Date(item.updatedAt),
+        }));
+      } catch (error) {
+        console.error("Ошибка при загрузке заголовков:", error);
+      }
+    }
+
+    async function deleteBlock(blockId: string) {
+      try {
+        await $api.delete("/api/blocks/page/title", {params: {blockId}});
+        blocks.value = blocks.value.filter(block => block.id !== blockId)
+      } catch (error) {
+        console.error("Ошибка при загрузке заголовков:", error);
+      }
+    }
+
     return {
       blocks,
+      containersTitle,
       getChildBlocks,
       getContainer,
       getPage,
+      deleteBlock,
       updateBlock,
-      createBlock
+      createBlock,
+      createContainer,
+      getContainerTitle
     };
   },
   {
     persist: {
       storage: localStorage,
-      pick: ["blocks"],
+      pick: ["blocks", "containersTitle"],
     },
   },
 );

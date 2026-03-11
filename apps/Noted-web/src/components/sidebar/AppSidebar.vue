@@ -3,11 +3,12 @@ import Drawer from "primevue/drawer";
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ContainerTitle from "../blocks/ContainerTitle.vue";
-import { useContainerStore } from "../../stores/container.store";
+
 import CreateContainerButton from "../buttons/CreateContainerButton.vue";
 import UserAccordion from "../accordeon/UserAccordion.vue";
+import { useBlockStore } from "../../stores/block.store";
 
-const containerStore = useContainerStore();
+const blockStore = useBlockStore()
 const router = useRouter();
 const route = useRoute();
 const visible = defineModel<boolean>("visible");
@@ -47,7 +48,7 @@ const isHomeActive = computed(() => {
           Страницы:
         </text>
         <div
-          v-for="page in containerStore.containersTitle"
+          v-for="page in blockStore.containersTitle"
           :key="page.id"
           class="container-wrapper"
           :class="{ 'active-route': route.name === 'note' && route.params.id === page.id }"

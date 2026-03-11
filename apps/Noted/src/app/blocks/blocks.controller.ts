@@ -71,7 +71,7 @@ export class BlocksController {
 
   @Delete("block")
   @UseGuards(JwtAuthGuard)
-  async deleteBlock(@Req() req: Request, @Body() dto: DeleteBlockDto) {
+  async deleteBlock(@Req() req: Request, @Query() dto: DeleteBlockDto) {
     return this.blocksServise.deleteBlock(req.user.sub, dto.blockId);
   }
 

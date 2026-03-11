@@ -46,13 +46,13 @@ const showTemplate = () => {
     header: "Внимание!",
     message: "Пожалуйста подтвердите что хотите удалить свой аккаунт",
     rejectProps: {
-      label: "Cancel",
+      label: "Отмена",
       icon: "pi pi-times",
       outlined: true,
       size: "small",
     },
     acceptProps: {
-      label: "Delete",
+      label: "Удалить",
       icon: "pi pi-check",
       size: "small",
     },
@@ -224,6 +224,7 @@ const showTemplate = () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  align-items: center;
 }
 
 .username-input {

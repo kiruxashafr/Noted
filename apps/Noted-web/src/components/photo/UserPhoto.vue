@@ -135,7 +135,6 @@ const firstLetter = computed(() => {
   z-index: 1;
 }
 
-/* Анимация для спиннера */
 .pi-spinner {
   animation: spin 1s linear infinite;
   color: var(--primary-color);

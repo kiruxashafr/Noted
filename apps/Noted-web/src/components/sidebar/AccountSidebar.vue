@@ -54,6 +54,13 @@ const visible = defineModel<boolean>("visible");
   justify-content: center;
 }
 
+
+
+.active-route :deep(*) {
+  color: white !important;
+  font-weight: 700 !important;
+}
+
 .nav-button {
   background-color: transparent !important;
   width: 100%;

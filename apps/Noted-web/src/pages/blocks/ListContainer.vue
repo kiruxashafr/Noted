@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import ContainerTitle from "../../components/blocks/ContainerTitle.vue";
-import { useContainerStore } from "../../stores/container.store";
 import CreateContainerButton from "../../components/buttons/CreateContainerButton.vue";
+import { useBlockStore } from "../../stores/block.store";
 
-const containerStore = useContainerStore();
+const blockStore = useBlockStore();
 
 </script>
 <template>
@@ -11,13 +11,13 @@ const containerStore = useContainerStore();
     <h1>Домашняя страница</h1>
 
     <ContainerTitle
-      v-for="page in containerStore.containersTitle"
+      v-for="page in blockStore.containersTitle"
       :id="page.id"
       :key="page.id"
       :title="page.title"
       :updated-at="page.updatedAt"
-       />
-      <CreateContainerButton />
+    />
+    <CreateContainerButton />
   </div>
 </template>
 <style scoped>

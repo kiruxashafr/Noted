@@ -3,13 +3,13 @@ import { RouterView } from "vue-router";
 import Toast from "primevue/toast";
 import { onMounted } from "vue";
 import { useSocketStore } from "../stores/socket.store";
-import { useContainerStore } from "../stores/container.store";
+import { useBlockStore } from "../stores/block.store";
 
-const containerStore = useContainerStore();
+const blockStore = useBlockStore();
 const socketStore = useSocketStore();
 
 onMounted(() => {
-  containerStore.getContainerTitle();
+  blockStore.getContainerTitle();
   socketStore.connect();
 });
 </script>

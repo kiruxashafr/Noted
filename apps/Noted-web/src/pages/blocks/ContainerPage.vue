@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue';
-import { useContainerStore } from '../../stores/container.store';
+
 import { useBlockStore } from '../../stores/block.store';
 import BlockRender from '../../components/blocks/BlockRender.vue';
 
-const containerStore = useContainerStore();
 const blockStore = useBlockStore();
 const props = defineProps<{ id: string }>();
 
@@ -30,7 +29,7 @@ onMounted(() => load(props.id));
 watch(() => props.id, (newId) => load(newId));
 
 const currentPage = computed(() => 
-  containerStore.containersTitle.find(c => c.id === props.id)
+  blockStore.containersTitle.find(c => c.id === props.id)
 );
 
 const title = computed(() => {
@@ -71,12 +70,12 @@ const childBlocks = computed(() => {
 
       <div 
         class="mt-4 p-3 border-round border-dashed border-2 border-300 text-500 hover:text-primary hover:border-primary cursor-pointer transition-colors flex align-items-center justify-content-center gap-2"
+        style="cursor: pointer;"
         @click="addTextBlock"
       >
         <i class="pi pi-plus" />
         <span>Добавить текстовый блок</span>
       </div>
-      
     </div>
     
     <div
