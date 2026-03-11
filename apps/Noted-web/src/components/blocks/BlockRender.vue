@@ -56,7 +56,6 @@ watch(
 
     <BlockAccordion :block-id="props.blockId" />
   </div>
-
 </template>
 <style scoped>
 .block {

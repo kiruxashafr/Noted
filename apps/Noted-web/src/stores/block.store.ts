@@ -1,9 +1,8 @@
 import { defineStore } from "pinia";
 import $api from "../api/instance";
-import { BlockMeta, BlockWithPath, CreateBlockRequest, PageTitle, UpdateBlockRequest } from "@noted/types/block.types";
+import { BlockWithPath, CreateBlockRequest, PageTitle, UpdateBlockRequest } from "@noted/types/block.types";
 import { ref } from "vue";
 import { useToast } from "primevue/usetoast";
-import { BlockType } from "generated/prisma/enums";
 
 export const useBlockStore = defineStore(
   "block",
@@ -108,6 +107,41 @@ export const useBlockStore = defineStore(
       }  
     }
 
+async function updateContainerTitle(containerId: string, newTitle: string) {
+      const titleIndex = containersTitle.value.findIndex((c) => c.id === containerId);
+      if (titleIndex !== -1) {
+        containersTitle.value[titleIndex].title = newTitle;
+      }
+
+      const blockIndex = blocks.value.findIndex((b) => b.id === containerId);
+      if (blockIndex !== -1) {
+        const currentMeta = (blocks.value[blockIndex].meta || {}) as Record<string, any>;
+        
+        blocks.value[blockIndex].meta = { 
+          ...currentMeta, 
+          title: newTitle 
+        };
+      }
+      const updateData: UpdateBlockRequest = {
+        blockId: containerId,
+        blockType: "CONTAINER",
+        meta: { title: newTitle }
+      }
+
+      try {
+        await $api.patch("/api/blocks/block", updateData);
+      } catch (error) {
+        console.error("Ошибка при обновлении заголовка:", error);
+        toast.add({
+          severity: "error",
+          summary: "Ошибка",
+          detail: "Не удалось сохранить название",
+          life: 3000,
+        });
+      }
+    }
+    
+
     async function updateBlock(updateData: UpdateBlockRequest) {
       const previousBlocks = [...blocks.value];
       const index = blocks.value.findIndex((b) => b.id === updateData.blockId);
@@ -195,7 +229,8 @@ export const useBlockStore = defineStore(
       updateBlock,
       createBlock,
       createContainer,
-      getContainerTitle
+      getContainerTitle,
+      updateContainerTitle
     };
   },
   {
