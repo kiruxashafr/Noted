@@ -2,15 +2,15 @@
 import FileUpload, { type FileUploadUploaderEvent } from "primevue/fileupload";
 import { useToast } from "primevue/usetoast";
 import { useSocketStore } from "../../stores/socket.store";
-import { useAvatarUpload } from "../../composables/useAvatarUpload";
 import { useAuthStore } from "../../stores/auth.store";
 import { NotificationEvent } from "@noted/types";
 import { computed, ref } from "vue";
+import { useAccountStore } from "../../stores/account.store";
 
 const toast = useToast();
 const socketStore = useSocketStore();
 const authStore = useAuthStore();
-const { uploadAvatar, isPending, error } = useAvatarUpload();
+const accountStore = useAccountStore()
 
 const imageError = ref(false);
 
@@ -35,7 +35,7 @@ const handleUpload = async (event: FileUploadUploaderEvent) => {
   }
 
   try {
-    await uploadAvatar(file);
+    await accountStore.upladAvatar(file);
   } catch (e: any) {
     const msg = e.response?.data?.message || "Ошибка загрузки";
     toast.add({ severity: "error", summary: "Ошибка", detail: msg, life: 5000 });
@@ -78,7 +78,7 @@ socketStore.on(NotificationEvent.PHOTO_EDIT, uploadDone);
       <img
         :src="authStore.user?.avatars"
         class="avatar-photo"
-        :class="{ 'photo-blur': isPending }"
+        :class="{ 'photo-blur': accountStore.isPending }"
         alt="Avatar"
         @error="handleImageError"
       >
@@ -88,18 +88,18 @@ socketStore.on(NotificationEvent.PHOTO_EDIT, uploadDone);
           mode="basic"
           name="avatar"
           accept="image/*"
-          :choose-icon="isPending ? 'pi pi-spin pi-spinner' : 'pi pi-pencil'"
-          :choose-label="isPending ? 'Загрузка...' : 'Изменить'"
+          :choose-icon="accountStore.isPending ? 'pi pi-spin pi-spinner' : 'pi pi-pencil'"
+          :choose-label="accountStore.isPending ? 'Загрузка...' : 'Изменить'"
           custom-upload
           auto
-          :disabled="isPending"
+          :disabled="accountStore.isPending"
           class="p-button-sm p-button-rounded shadow-2"
           @uploader="handleUpload"
         />
       </div>
 
       <div
-        v-if="isPending"
+        v-if="accountStore.isPending"
         class="loading-overlay"
       >
         <i
@@ -112,11 +112,11 @@ socketStore.on(NotificationEvent.PHOTO_EDIT, uploadDone);
     <div
       v-else
       class="avatar-placeholder"
-      :class="{ 'loading-state': isPending }"
+      :class="{ 'loading-state': accountStore.isPending }"
     >
       <div class="placeholder-content">
         <div
-          v-if="isPending"
+          v-if="accountStore.isPending"
           class="spinner-container"
         >
           <i
@@ -140,7 +140,7 @@ socketStore.on(NotificationEvent.PHOTO_EDIT, uploadDone);
         </template>
 
         <FileUpload
-          v-if="!isPending"
+          v-if="!accountStore.isPending"
           mode="basic"
           name="avatar"
           accept="image/*"
@@ -156,9 +156,9 @@ socketStore.on(NotificationEvent.PHOTO_EDIT, uploadDone);
     </div>
 
     <small
-      v-if="error && !imageError"
+      v-if="accountStore.error && !imageError"
       class="p-error"
-    >{{ error }}</small>
+    >{{ accountStore.error }}</small>
   </div>
 </template>
 

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useAccount } from "../../composables/useAccount";
 import { useAuthStore } from "../../stores/auth.store";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import Dialog from "primevue/dialog";
 import PasswordForm from "../../components/auth/PasswordForm.vue";
 import AvatarUploader from "../../components/user/AvatarUploader.vue";
+import { useAccountStore } from "../../stores/account.store";
 
-const { deleteAccount, updateAccount } = useAccount();
+const accountStore = useAccountStore()
 const authStore = useAuthStore();
 const confirm = useConfirm();
 const oldEmail = ref(authStore.user?.email);
@@ -19,11 +19,11 @@ const editPasswordVisible = ref(false);
 const newPassword = ref("");
 const updatePassword = computed(() => ({ password: newPassword.value }));
 const handleUpdatePassword = async () => {
-  await updateAccount(updatePassword.value);
+  await accountStore.updateAccount(updatePassword.value);
 };
 const updateName = computed(() => ({ name: newName.value }));
 const handleUpdateName = async () => {
-  await updateAccount(updateName.value);
+  await accountStore.updateAccount(updateName.value);
   if (authStore.user) {
     authStore.user.name = newName.value;
     oldName.value = newName.value;
@@ -32,7 +32,7 @@ const handleUpdateName = async () => {
 };
 const updateEmail = computed(() => ({ email: newEmail.value }));
 const handleUpdateEmail = async () => {
-  await updateAccount(updateEmail.value);
+  await accountStore.updateAccount(updateEmail.value);
   if (authStore.user) {
     authStore.user.email = newEmail.value;
     oldEmail.value = newEmail.value;
@@ -57,7 +57,7 @@ const showTemplate = () => {
       size: "small",
     },
     accept: () => {
-      deleteAccount();
+      accountStore.deleteAccount();
     },
     reject: () => {},
   });
