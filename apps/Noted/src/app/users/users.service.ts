@@ -69,10 +69,10 @@ export class UsersService {
       });
 
       const currentAvatars: UserAvatar = (user?.avatars as object) || {};
-
-      await this.filesService.deleteFile(currentAvatars.mini_avatar, event.userId);
-      await this.filesService.deleteFile(currentAvatars.original, event.userId);
-
+      if (user.avatars) {
+        await this.filesService.deleteFile(currentAvatars.mini_avatar, event.userId);
+        await this.filesService.deleteFile(currentAvatars.original, event.userId);
+      }
       const updatedAvatar = {
         [UserAvatarKeys.ORIGINAL]: event.originalFileId,
         [UserAvatarKeys.MINI_AVATAR]: event.newFileId,

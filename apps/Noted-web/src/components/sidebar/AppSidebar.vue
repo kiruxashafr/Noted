@@ -1,50 +1,15 @@
 <script setup lang="ts">
 import Drawer from "primevue/drawer";
-import Menu from "primevue/menu";
-import { computed, ref } from "vue";
-import { useAuthStore } from "../../stores/auth.store";
+import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ContainerTitle from "../blocks/ContainerTitle.vue";
 import { useContainerStore } from "../../stores/container.store";
 import CreateContainerButton from "../buttons/CreateContainerButton.vue";
+import UserAccordion from "../accordeon/UserAccordion.vue";
 
-const menu = ref();
-const authStore = useAuthStore();
 const containerStore = useContainerStore();
 const router = useRouter();
 const route = useRoute();
-const userName = ref(authStore.user?.name);
-const items = ref([
-  {
-    label: "Options",
-    items: [
-      {
-        label: "Изменить профиль",
-        icon: "pi pi-pencil",
-        command: () => {
-          router.push({ name: "setting-account" });
-        },
-      },
-      {
-        label: "Выход",
-        icon: "pi pi-sign-out",
-        command: () => {
-          onLogout();
-        },
-      },
-    ],
-  },
-]);
-
-const onLogout = () => {
-  authStore.logout();
-  router.push({ name: "login" });
-};
-
-const openProfile = (event: any) => {
-  menu.value.toggle(event);
-};
-
 const visible = defineModel<boolean>("visible");
 
 const isHomeActive = computed(() => {
@@ -54,18 +19,19 @@ const isHomeActive = computed(() => {
 </script>
 <template>
   <div class="card flex justify-center">
-    <Drawer v-model:visible="visible" :modal="false" :dismissable="false">
+    <Drawer
+      v-model:visible="visible"
+      :modal="false"
+      :dismissable="false"
+    >
       <template #closeicon>
-        <i class="pi my-sidebar-icon" style="font-size: 20px; color: #949aa1" />
+        <i
+          class="pi my-sidebar-icon"
+          style="font-size: 20px; color: #949aa1"
+        />
       </template>
       <template #header>
-        <div class="user-card" @click="openProfile">
-          <div class="user-avatar">
-            {{ useAuthStore().user?.name?.charAt(0).toUpperCase() }}
-          </div>
-          <div class="user-profile">{{ userName }}<i class="pi pi-angle-down" /></div>
-          <Menu id="overlay_menu" ref="menu" :model="items" :popup="true" />
-        </div>
+        <UserAccordion />
       </template>
       <div class="nav-buttons">
         <Button
@@ -73,10 +39,13 @@ const isHomeActive = computed(() => {
           icon="pi pi-home"
           class="nav-button"
           :class="{ 'active-route': isHomeActive }"
-          @click="router.push({ name: 'home-dashboard' })" />
+          @click="router.push({ name: 'home-dashboard' })"
+        />
       </div>
       <div class="containers-list">
-        <text style="padding-left: 5px;">Страницы:</text>
+        <text style="padding-left: 5px;">
+          Страницы:
+        </text>
         <div
           v-for="page in containerStore.containersTitle"
           :key="page.id"

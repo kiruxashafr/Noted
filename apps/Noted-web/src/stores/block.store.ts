@@ -40,18 +40,19 @@ export const useBlockStore = defineStore(
       }
     }
 
-async function getPage(containerId: string) {
-  try {
-    const container = await getContainer(containerId);
-    if (container) {
-      await getChildBlocks(container[0].id);
-      return container; 
+    async function getPage(containerId: string) {
+      localStorage.clear()
+      try {
+        const container = await getContainer(containerId);
+        if (container) {
+          await getChildBlocks(container[0].id);
+          return container; 
+        }
+      } catch (e) {
+        console.error("Ошибка при получении страницы:", e);
+        return null;
+      }
     }
-  } catch (e) {
-    console.error("Ошибка в getPage:", e);
-    return null;
-  }
-}
 
     async function getChildBlocks(blockId: string) {
       try {

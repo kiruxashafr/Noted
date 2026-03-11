@@ -65,7 +65,7 @@ const showTemplate = () => {
 </script>
 <template>
   <section class="settings-section">
-    <div class="form-row row">
+    <div class="photo-row row">
       <div class="label-wrapper">
         <label>Фото профиля</label>
         <span class="label-hint">
@@ -76,7 +76,10 @@ const showTemplate = () => {
         <AvatarUploader />
       </div>
     </div>
-    <form style="width: 100%" @submit.prevent="handleUpdateName">
+    <form
+      style="width: 100%"
+      @submit.prevent="handleUpdateName"
+    >
       <div class="form-row row">
         <div class="label-wrapper">
           <label for="username">Имя пользователя</label>
@@ -85,26 +88,57 @@ const showTemplate = () => {
           </span>
         </div>
         <div class="input-wrapper">
-          <InputText id="username" v-model="newName" :default-value="oldName" class="username-input" />
-          <Button v-if="newName !== ''" type="submit" label="Изменить имя" class="submit-button" />
+          <InputText
+            id="username"
+            v-model="newName"
+            :default-value="oldName"
+            class="username-input"
+          />
+          <Button
+            v-if="newName !== ''"
+            type="submit"
+            label="Изменить имя"
+            class="submit-button"
+          />
         </div>
       </div>
     </form>
-    <form style="width: 100%" @submit.prevent="handleUpdateEmail">
+    <form
+      style="width: 100%"
+      @submit.prevent="handleUpdateEmail"
+    >
       <div class="form-row">
         <div class="label-wrapper">
           <label for="username">Email пользователя</label>
           <span class="label-hint"> Почта по которой осуществляется вход в аккаунт </span>
         </div>
         <div class="input-wrapper">
-          <InputText id="username" v-model="newEmail" :default-value="oldEmail" class="username-input" />
-          <Button v-if="newEmail !== ''" type="submit" label="Изменить Email" class="submit-button" />
+          <InputText
+            id="username"
+            v-model="newEmail"
+            :default-value="oldEmail"
+            class="username-input"
+          />
+          <Button
+            v-if="newEmail !== ''"
+            type="submit"
+            label="Изменить Email"
+            class="submit-button"
+          />
         </div>
       </div>
     </form>
     <div style="display: flex; gap: 15px; width: 100%; justify-content: flex-start">
-      <Button label="Сменить пароль" class="delete-button" @click="editPasswordVisible = !editPasswordVisible" />
-      <Button label="Удалить мой аккаунт" class="delete-button" @click="showTemplate()" />
+      <Button
+        label="Сменить пароль"
+        class="delete-button"
+        @click="editPasswordVisible = !editPasswordVisible"
+      />
+      <Button
+        label="Удалить мой аккаунт"
+        class="delete-button"
+        @click="showTemplate()"
+      />
       <ConfirmDialog group="templating">
         <template #message="slotProps">
           <div class="flex flex-col items-center w-full gap-4 border-b border-surface-200 dark:border-surface-700">
@@ -112,9 +146,17 @@ const showTemplate = () => {
           </div>
         </template>
       </ConfirmDialog>
-      <Dialog v-model:visible="editPasswordVisible" modal header="Изменить пароль">
+      <Dialog
+        v-model:visible="editPasswordVisible"
+        modal
+        header="Изменить пароль"
+      >
         <PasswordForm v-model:password="newPassword" />
-        <Button label="Изменить пароль" style="margin-top: 15px" @click="handleUpdatePassword()" />
+        <Button
+          label="Изменить пароль"
+          style="margin-top: 15px"
+          @click="handleUpdatePassword()"
+        />
       </Dialog>
     </div>
   </section>
@@ -133,6 +175,13 @@ const showTemplate = () => {
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   align-items: start;
+}
+
+.photo-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: center;
 }
 
 .label-wrapper {
@@ -189,11 +238,18 @@ const showTemplate = () => {
   margin-top: 2rem;
 }
 
-/* Мобильная версия */
 @media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;
     gap: 1rem;
+  }
+
+  .input-wrapper {
+    align-items: center;
+  }
+
+  .photo-row {
+    grid-template-columns: 1fr;
   }
 
   .submit-button {
