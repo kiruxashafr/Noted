@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue';
-import { useBlockStore } from '../../stores/block.store';
-import BlockRender from '../../components/blocks/BlockRender.vue';
+import { computed, onMounted, watch } from "vue";
+import { useBlockStore } from "../../stores/block.store";
+import BlockRender from "../../components/blocks/BlockRender.vue";
 
 const blockStore = useBlockStore();
 const props = defineProps<{ id: string }>();
@@ -13,11 +13,11 @@ const load = (id: string) => {
 const onTitleBlur = (e: FocusEvent) => {
   const el = e.currentTarget as HTMLElement;
   const newTitle = el.innerText.trim();
-  
+
   if (newTitle && newTitle !== title.value) {
     blockStore.updateContainerTitle(props.id, newTitle);
   } else if (!newTitle) {
-    el.innerText = title.value; 
+    el.innerText = title.value;
   }
 };
 
@@ -27,33 +27,32 @@ const onTitleEnter = (e: KeyboardEvent) => {
 
 const addTextBlock = async () => {
   await blockStore.createBlock({
-    blockType: 'TEXT',
+    blockType: "TEXT",
     parentId: props.id,
     meta: {
-      payload: { 
-        type: 'doc', 
-        content: [{ type: 'paragraph' }] 
-      } 
-    }
+      payload: {
+        type: "doc",
+        content: [{ type: "paragraph" }],
+      },
+    },
   });
 };
 
 onMounted(() => load(props.id));
-watch(() => props.id, (newId) => load(newId));
-
-const currentPage = computed(() => 
-  blockStore.containersTitle.find(c => c.id === props.id)
+watch(
+  () => props.id,
+  newId => load(newId),
 );
 
+const currentPage = computed(() => blockStore.containersTitle.find(c => c.id === props.id));
+
 const title = computed(() => {
-  return currentPage.value?.title || 'Без названия';
+  return currentPage.value?.title || "Без названия";
 });
 
 const childBlocks = computed(() => {
-  return [...blockStore.blocks]
-    .filter(block => block.id !== props.id)
-    .sort((a, b) => (a.order || 0) - (b.order || 0))
-})
+  return [...blockStore.blocks].filter(block => block.id !== props.id).sort((a, b) => (a.order || 0) - (b.order || 0));
+});
 </script>
 
 <template>
@@ -64,28 +63,20 @@ const childBlocks = computed(() => {
         contenteditable="true"
         spellcheck="false"
         @blur="onTitleBlur"
-        @keydown.enter.prevent="onTitleEnter"
-      >
+        @keydown.enter.prevent="onTitleEnter">
         {{ title }}
       </h1>
-      
+
       <div class="block-container">
-        <BlockRender
-          v-for="block in childBlocks" 
-          :key="block.id" 
-          :block-id="block.id" 
-        />
+        <BlockRender v-for="block in childBlocks" :key="block.id" :block-id="block.id" />
       </div>
 
-      <div 
-        style="cursor: pointer;"
-        @click="addTextBlock"
-      >
+      <div style="cursor: pointer" @click="addTextBlock">
         <i class="pi pi-plus" />
         <span>Добавить текстовый блок</span>
       </div>
     </div>
-    
+
     <div v-else class="flex align-items-center gap-2">
       <i class="pi pi-spin pi-spinner" />
       <span>Загрузка страницы...</span>
@@ -105,7 +96,7 @@ h1[contenteditable]:focus {
   width: 100%;
 }
 
-.container{
+.container {
   display: flex;
   flex-direction: column;
   gap: 15px;

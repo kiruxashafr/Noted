@@ -10,7 +10,7 @@ import { useAccountStore } from "../../stores/account.store";
 const toast = useToast();
 const socketStore = useSocketStore();
 const authStore = useAuthStore();
-const accountStore = useAccountStore()
+const accountStore = useAccountStore();
 
 const imageError = ref(false);
 
@@ -71,17 +71,13 @@ socketStore.on(NotificationEvent.PHOTO_EDIT, uploadDone);
 
 <template>
   <div class="flex flex-column align-items-center gap-3">
-    <div
-      v-if="hasAvatar"
-      class="avatar-wrapper"
-    >
+    <div v-if="hasAvatar" class="avatar-wrapper">
       <img
         :src="authStore.user?.avatars"
         class="avatar-photo"
         :class="{ 'photo-blur': accountStore.isPending }"
         alt="Avatar"
-        @error="handleImageError"
-      >
+        @error="handleImageError" />
 
       <div class="avatar-overlay">
         <FileUpload
@@ -94,48 +90,26 @@ socketStore.on(NotificationEvent.PHOTO_EDIT, uploadDone);
           auto
           :disabled="accountStore.isPending"
           class="p-button-sm p-button-rounded shadow-2"
-          @uploader="handleUpload"
-        />
+          @uploader="handleUpload" />
       </div>
 
-      <div
-        v-if="accountStore.isPending"
-        class="loading-overlay"
-      >
-        <i
-          class="pi pi-spin pi-spinner"
-          style="font-size: 2rem"
-        />
+      <div v-if="accountStore.isPending" class="loading-overlay">
+        <i class="pi pi-spin pi-spinner" style="font-size: 2rem" />
       </div>
     </div>
 
-    <div
-      v-else
-      class="avatar-placeholder"
-      :class="{ 'loading-state': accountStore.isPending }"
-    >
+    <div v-else class="avatar-placeholder" :class="{ 'loading-state': accountStore.isPending }">
       <div class="placeholder-content">
-        <div
-          v-if="accountStore.isPending"
-          class="spinner-container"
-        >
-          <i
-            class="pi pi-spin pi-spinner"
-            style="font-size: 3rem; color: var(--primary-color)"
-          />
-          <p class="text-secondary">
-            Загрузка...
-          </p>
+        <div v-if="accountStore.isPending" class="spinner-container">
+          <i class="pi pi-spin pi-spinner" style="font-size: 3rem; color: var(--primary-color)" />
+          <p class="text-secondary">Загрузка...</p>
         </div>
-        
+
         <template v-else>
-          <i
-            class="pi pi-user"
-            style="font-size: 4rem; color: var(--surface-400)"
-          />
-          
+          <i class="pi pi-user" style="font-size: 4rem; color: var(--surface-400)" />
+
           <p class="text-secondary">
-            {{ imageError ? 'Не удалось загрузить фото' : 'Фото профиля отсутствует' }}
+            {{ imageError ? "Не удалось загрузить фото" : "Фото профиля отсутствует" }}
           </p>
         </template>
 
@@ -150,15 +124,11 @@ socketStore.on(NotificationEvent.PHOTO_EDIT, uploadDone);
           auto
           class="p-button-sm p-button-rounded"
           :class="{ 'p-button-warning': imageError }"
-          @uploader="handleUpload"
-        />
+          @uploader="handleUpload" />
       </div>
     </div>
 
-    <small
-      v-if="accountStore.error && !imageError"
-      class="p-error"
-    >{{ accountStore.error }}</small>
+    <small v-if="accountStore.error && !imageError" class="p-error">{{ accountStore.error }}</small>
   </div>
 </template>
 
@@ -219,7 +189,6 @@ socketStore.on(NotificationEvent.PHOTO_EDIT, uploadDone);
   display: flex;
   align-items: center;
   justify-content: center;
-
 }
 
 .avatar-placeholder.loading-state {
@@ -241,6 +210,4 @@ socketStore.on(NotificationEvent.PHOTO_EDIT, uploadDone);
   align-items: center;
   gap: 0.5rem;
 }
-
-
 </style>

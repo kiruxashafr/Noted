@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { useAuthStore } from '../../stores/auth.store';
+import { computed, ref } from "vue";
+import { useAuthStore } from "../../stores/auth.store";
 
 const authStore = useAuthStore();
 const imageError = ref(false);
-const imageLoading = ref(true); 
-
-
+const imageLoading = ref(true);
 
 const handleImageLoad = () => {
   imageLoading.value = false;
@@ -24,48 +22,32 @@ const handleImageSrcChange = () => {
 };
 
 const firstLetter = computed(() => {
-  return authStore.user?.name?.charAt(0).toUpperCase() || '?';
+  return authStore.user?.name?.charAt(0).toUpperCase() || "?";
 });
 </script>
 
 <template>
   <div class="photo-container">
-    <div
-      v-if="authStore.user?.avatars"
-      class="avatar-wrapper"
-    >
-      <div
-        v-if="imageLoading"
-        class="avatar-loading"
-      >
-        <i
-          class="pi pi-spin pi-spinner"
-          style="font-size: 1.2rem"
-        />
+    <div v-if="authStore.user?.avatars" class="avatar-wrapper">
+      <div v-if="imageLoading" class="avatar-loading">
+        <i class="pi pi-spin pi-spinner" style="font-size: 1.2rem" />
       </div>
-      
-      <img 
+
+      <img
         :src="authStore.user?.avatars"
         class="avatar-photo"
-        :class="{ 'hidden': imageLoading }"
+        :class="{ hidden: imageLoading }"
         alt="Avatar"
         @load="handleImageLoad"
         @error="handleImageError"
-        @srcchange="handleImageSrcChange"
-      >
-      
-      <div
-        v-if="imageError"
-        class="avatar-placeholder error-placeholder"
-      >
+        @srcchange="handleImageSrcChange" />
+
+      <div v-if="imageError" class="avatar-placeholder error-placeholder">
         {{ firstLetter }}
       </div>
     </div>
 
-    <div
-      v-else
-      class="avatar-placeholder"
-    >
+    <div v-else class="avatar-placeholder">
       {{ firstLetter }}
     </div>
   </div>
@@ -141,7 +123,11 @@ const firstLetter = computed(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

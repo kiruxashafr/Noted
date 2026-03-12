@@ -3,6 +3,7 @@ import { ref, watch } from "vue";
 import { z } from "zod";
 
 const passwordModel = defineModel<string>("password");
+const isValid = defineModel<boolean>("isValid", { default: false });
 
 const confirmPassword = ref("");
 const errors = ref<{ password?: string; confirm?: string }>({});
@@ -35,8 +36,10 @@ const validate = () => {
       password: formatted.password?._errors[0],
       confirm: formatted.confirm?._errors[0],
     };
+    isValid.value = false
   } else {
     errors.value = {};
+    isValid.value = true
   }
 };
 
@@ -47,6 +50,8 @@ watch(passwordModel, () => {
 watch(confirmPassword, () => {
   validate();
 });
+
+validate()
 </script>
 
 <template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useAuthStore } from "../../stores/auth.store";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
@@ -8,36 +8,27 @@ import PasswordForm from "../../components/auth/PasswordForm.vue";
 import AvatarUploader from "../../components/user/AvatarUploader.vue";
 import { useAccountStore } from "../../stores/account.store";
 
-const accountStore = useAccountStore()
+const accountStore = useAccountStore();
 const authStore = useAuthStore();
 const confirm = useConfirm();
-const oldEmail = ref(authStore.user?.email);
-const newEmail = ref("");
-const oldName = ref(authStore.user?.name);
-const newName = ref("");
 const editPasswordVisible = ref(false);
-const newPassword = ref("");
-const updatePassword = computed(() => ({ password: newPassword.value }));
+const isPasswordValid = ref(false);
+
+const name = ref(authStore.user?.name || "");
+const email = ref(authStore.user?.email || "");
+const password = ref("");
+
 const handleUpdatePassword = async () => {
-  await accountStore.updateAccount(updatePassword.value);
+  await accountStore.updateAccount({password: password.value})
 };
-const updateName = computed(() => ({ name: newName.value }));
 const handleUpdateName = async () => {
-  await accountStore.updateAccount(updateName.value);
-  if (authStore.user) {
-    authStore.user.name = newName.value;
-    oldName.value = newName.value;
-    newName.value = "";
-  }
+  if (name.value === authStore.user?.name) return;
+  await accountStore.updateAccount({name: name.value})
 };
-const updateEmail = computed(() => ({ email: newEmail.value }));
+
 const handleUpdateEmail = async () => {
-  await accountStore.updateAccount(updateEmail.value);
-  if (authStore.user) {
-    authStore.user.email = newEmail.value;
-    oldEmail.value = newEmail.value;
-    newEmail.value = "";
-  }
+  if (email.value === authStore.user?.email) return;
+  await accountStore.updateAccount({email: email.value})
 };
 
 const showTemplate = () => {
@@ -90,12 +81,12 @@ const showTemplate = () => {
         <div class="input-wrapper">
           <InputText
             id="username"
-            v-model="newName"
-            :default-value="oldName"
+            v-model="name"
+            :default-value="name"
             class="username-input"
           />
           <Button
-            v-if="newName !== ''"
+            v-if="name !== authStore.user?.name"
             type="submit"
             label="Изменить имя"
             class="submit-button"
@@ -115,12 +106,12 @@ const showTemplate = () => {
         <div class="input-wrapper">
           <InputText
             id="username"
-            v-model="newEmail"
-            :default-value="oldEmail"
+            v-model="email"
+            :default-value="email"
             class="username-input"
           />
           <Button
-            v-if="newEmail !== ''"
+            v-if="email !== authStore.user?.email"
             type="submit"
             label="Изменить Email"
             class="submit-button"
@@ -151,11 +142,12 @@ const showTemplate = () => {
         modal
         header="Изменить пароль"
       >
-        <PasswordForm v-model:password="newPassword" />
+        <PasswordForm v-model:password="password" v-model:is-valid="isPasswordValid" />
         <Button
           label="Изменить пароль"
           style="margin-top: 15px"
           @click="handleUpdatePassword()"
+          :disabled="!isPasswordValid"
         />
       </Dialog>
     </div>

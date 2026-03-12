@@ -4,7 +4,6 @@ import CreateContainerButton from "../../components/buttons/CreateContainerButto
 import { useBlockStore } from "../../stores/block.store";
 
 const blockStore = useBlockStore();
-
 </script>
 <template>
   <div class="pages">
@@ -15,8 +14,7 @@ const blockStore = useBlockStore();
       :id="page.id"
       :key="page.id"
       :title="page.title"
-      :updated-at="page.updatedAt"
-    />
+      :updated-at="page.updatedAt" />
     <CreateContainerButton />
   </div>
 </template>

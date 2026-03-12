@@ -25,12 +25,12 @@ export interface DeleteBlockRequest {
   blockId: string;
 }
 
-  export interface UpdateBlockRequest {
-    blockId: string;
-    blockType: BlockType;
-    meta: BlockMeta;
-    order?: number
-  }
+export interface UpdateBlockRequest {
+  blockId: string;
+  blockType: BlockType;
+  meta: BlockMeta;
+  order?: number;
+}
 
 export interface DeleteAccessRequest {
   accessId: string;

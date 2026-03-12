@@ -8,7 +8,7 @@ import CreateContainerButton from "../buttons/CreateContainerButton.vue";
 import UserAccordion from "../accordion/UserAccordion.vue";
 import { useBlockStore } from "../../stores/block.store";
 
-const blockStore = useBlockStore()
+const blockStore = useBlockStore();
 const router = useRouter();
 const route = useRoute();
 const visible = defineModel<boolean>("visible");
@@ -16,20 +16,12 @@ const visible = defineModel<boolean>("visible");
 const isHomeActive = computed(() => {
   return route.name === "home-dashboard";
 });
-
 </script>
 <template>
   <div class="card flex justify-center">
-    <Drawer
-      v-model:visible="visible"
-      :modal="false"
-      :dismissable="false"
-    >
+    <Drawer v-model:visible="visible" :modal="false" :dismissable="false">
       <template #closeicon>
-        <i
-          class="pi my-sidebar-icon"
-          style="font-size: 20px; color: #949aa1"
-        />
+        <i class="pi my-sidebar-icon" style="font-size: 20px; color: #949aa1" />
       </template>
       <template #header>
         <UserAccordion />
@@ -40,24 +32,16 @@ const isHomeActive = computed(() => {
           icon="pi pi-home"
           class="nav-button"
           :class="{ 'active-route': isHomeActive }"
-          @click="router.push({ name: 'home-dashboard' })"
-        />
+          @click="router.push({ name: 'home-dashboard' })" />
       </div>
       <div class="containers-list">
-        <text style="padding-left: 5px;">
-          Страницы:
-        </text>
+        <text style="padding-left: 5px"> Страницы: </text>
         <div
           v-for="page in blockStore.containersTitle"
           :key="page.id"
           class="container-wrapper"
-          :class="{ 'active-route': route.name === 'note' && route.params.id === page.id }"
-        >
-          <ContainerTitle
-            :id="page.id"
-            :title="page.title"
-            :updated-at="page.updatedAt" 
-          />
+          :class="{ 'active-route': route.name === 'note' && route.params.id === page.id }">
+          <ContainerTitle :id="page.id" :title="page.title" :updated-at="page.updatedAt" />
         </div>
         <CreateContainerButton />
       </div>
@@ -127,14 +111,12 @@ const isHomeActive = computed(() => {
   padding-left: 5px;
 }
 
-
 .containers-list {
   display: flex;
   flex-direction: column;
   font-weight: 700;
   gap: 5px;
 }
-
 
 :deep(.p-card-subtitle) {
   display: none;

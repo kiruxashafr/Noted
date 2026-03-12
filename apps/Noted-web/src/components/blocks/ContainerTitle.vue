@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
-import ContainerAccordion from '../accordion/ContainerAccordion.vue';
+import { useRouter } from "vue-router";
+import ContainerAccordion from "../accordion/ContainerAccordion.vue";
 
-
-const router = useRouter()
+const router = useRouter();
 
 defineProps({
   id: {
@@ -21,18 +20,15 @@ defineProps({
 });
 
 const handlePageClick = (id: string) => {
-  router.push({ 
+  router.push({
     name: "note",
-    params: { id } 
+    params: { id },
   });
 };
 </script>
 
 <template>
-  <Card 
-  style="background-color: transparent; box-shadow: none; gap: 1px"
-  @click="handlePageClick(id)"
-  >
+  <Card style="background-color: transparent; box-shadow: none; gap: 1px" @click="handlePageClick(id)">
     <template #title>
       <i class="pi pi-file" />
       {{ title }}

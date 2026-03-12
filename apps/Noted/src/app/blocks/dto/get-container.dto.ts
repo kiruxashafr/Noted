@@ -4,5 +4,3 @@ export class GetContainerDto {
   @IsNotEmpty()
   containerId: string;
 }
-
-

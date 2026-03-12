@@ -39,24 +39,13 @@ const onLogout = () => {
 const openProfile = (event: any) => {
   menu.value.toggle(event);
 };
-
 </script>
 <template>
-  <div
-    class="user-card"
-    @click="openProfile"
-  >
+  <div class="user-card" @click="openProfile">
     <UserPhoto />
 
-    <div class="user-profile">
-      {{ userName }}<i class="pi pi-angle-down" />
-    </div>
-    <Menu
-      id="overlay_menu"
-      ref="menu"
-      :model="items"
-      :popup="true"
-    />
+    <div class="user-profile">{{ userName }}<i class="pi pi-angle-down" /></div>
+    <Menu id="overlay_menu" ref="menu" :model="items" :popup="true" />
   </div>
 </template>
 <style scoped>

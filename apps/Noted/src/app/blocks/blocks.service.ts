@@ -70,7 +70,7 @@ export class BlocksService {
     }
   }
 
-async updateBlock(userId: string, dto: UpdateBlockDto) { 
+  async updateBlock(userId: string, dto: UpdateBlockDto) {
     try {
       await this.checkBlockAccess(userId, dto.blockId, BlockPermission.EDIT);
 
@@ -280,7 +280,7 @@ async updateBlock(userId: string, dto: UpdateBlockDto) {
   }
 
   async getContainer(userId: string, containerId: string) {
-    this.checkBlockAccess(userId, containerId, "VIEW")
+    this.checkBlockAccess(userId, containerId, "VIEW");
     try {
       const container = await this.prisma.$queryRaw<BlockWithPath>`
         SELECT b.*
