@@ -2,25 +2,13 @@
 import { computed, onMounted, watch } from "vue";
 import { useBlockStore } from "../../stores/block.store";
 import BlockRender from "../../components/blocks/BlockRender.vue";
+import CreateBlockAccordion from "../../components/accordion/CreateBlockAccordion.vue";
 
 const blockStore = useBlockStore();
 const props = defineProps<{ id: string }>();
 
 const load = (id: string) => {
   blockStore.getPage(id);
-};
-
-const addTextBlock = async () => {
-  await blockStore.createBlock({
-    blockType: "TEXT",
-    parentId: props.id,
-    meta: {
-      payload: {
-        type: "doc",
-        content: [{ type: "paragraph" }],
-      },
-    },
-  });
 };
 
 onMounted(() => load(props.id));
@@ -60,11 +48,7 @@ const childBlocks = computed(() => {
           :block-id="block.id"
         />
       </div>
-
-      <div style="cursor: pointer" @click="addTextBlock" class="add-button">
-        <i class="pi pi-plus" />
-        <span>Добавить текстовый блок</span>
-      </div>
+      <CreateBlockAccordion :parent-id="props.id" />
     </div>
 
     <div v-else class="flex align-items-center gap-2">
