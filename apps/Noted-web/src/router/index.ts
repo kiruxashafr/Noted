@@ -1,5 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { authMiddleware } from "./guard/auth.guard";
+import MainLayout from "../layouts/MainLayout.vue";
+import Login from "../pages/auth/Login.vue";
+import Register from "../pages/auth/Register.vue";
+import AccountSettings from "../pages/setting/AccountSettings.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -7,7 +11,7 @@ const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: () => import("../layouts/MainLayout.vue"),
+      component: MainLayout,
       children: [
         {
           path: "",
@@ -30,19 +34,19 @@ const router = createRouter({
         {
           path: "account",
           name: "setting-account",
-          component: () => import("../pages/setting/AccountSettings.vue"),
+          component: AccountSettings,
         },
       ],
     },
     {
       path: "/register",
       name: "register",
-      component: () => import("../pages/auth/Register.vue"),
+      component: Register,
     },
     {
       path: "/login",
       name: "login",
-      component: () => import("../pages/auth/Login.vue"),
+      component: Login,
       meta: { isGuest: true },
     },
     {

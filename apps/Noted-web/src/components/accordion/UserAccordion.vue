@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Menu from "primevue/menu";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useAuthStore } from "../../stores/auth.store";
 import { useRouter } from "vue-router";
 import UserPhoto from "../photo/UserPhoto.vue";
@@ -11,7 +11,7 @@ const { t } = useI18n();
 const menu = ref();
 const authStore = useAuthStore();
 const router = useRouter();
-const userName = ref(authStore.user?.name);
+const userName = computed(() => authStore.user?.name)
 
 const items = ref([
   {
