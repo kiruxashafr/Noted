@@ -3,7 +3,7 @@ import { IsNotEmpty } from "class-validator";
 
 export class TextBlockMetaDto implements TextMetaContent {
   @IsNotEmpty()
-  json!: Record<string, unknown>;
+  payload!: Record<string, unknown>;
 }
 
 export class ContainerBlockMetaDto implements ContainerMetaContent {

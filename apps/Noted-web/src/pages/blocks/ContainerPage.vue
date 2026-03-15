@@ -1,0 +1,99 @@
+<script setup lang="ts">
+import { computed, onMounted, watch } from "vue";
+import { useBlockStore } from "../../stores/block.store";
+import BlockRender from "../../components/blocks/BlockRender.vue";
+import CreateBlockAccordion from "../../components/accordion/CreateBlockAccordion.vue";
+import { useI18n } from "vue-i18n";
+
+const blockStore = useBlockStore();
+const props = defineProps<{ id: string }>();
+const { t } = useI18n();
+
+const load = (id: string) => {
+  blockStore.getPage(id);
+};
+
+onMounted(() => load(props.id));
+watch(
+  () => props.id,
+  newId => load(newId),
+);
+
+const currentPage = computed(() => 
+  blockStore.containersTitle.find(c => c.id === props.id)
+);
+
+const title = computed(() => 
+  currentPage.value?.title || "Без названия"
+);
+
+const childBlocks = computed(() => {
+  return [...blockStore.blocks]
+    .filter(block => block.id !== props.id)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+});
+</script>
+
+<template>
+  <div class="page">
+    <div v-if="currentPage" class="container">
+      <InputText
+        v-model="title"
+        :placeholder="t('common.new-page')"
+        class="borderless-title"
+        @change="blockStore.updateContainerTitle(props.id, title)"
+      />
+      <div class="block-container">
+        <BlockRender
+          v-for="block in childBlocks"
+          :key="block.id"
+          :block-id="block.id"
+        />
+      </div>
+      <CreateBlockAccordion :parent-id="props.id" />
+    </div>
+
+    <div v-else class="flex align-items-center gap-2">
+      <i class="pi pi-spin pi-spinner" />
+      <span>{{ t("common.loading") }} {{ t("common.page").toLowerCase() }}...</span>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.block-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.page {
+  width: 100%;
+  max-width: 800px;
+}
+
+.borderless-title {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;              
+  outline: none !important;           
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  line-height: 1.2;    
+  font-size: 2rem;
+  font-weight: bold;                
+}
+
+.borderless-title:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+</style>

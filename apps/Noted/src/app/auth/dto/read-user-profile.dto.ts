@@ -1,7 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { AccountResponse } from "@noted/types";
 import { Expose } from "class-transformer";
+import { IsOptional } from "class-validator";
 
-export class ReadUserProfileDto {
+export class ReadUserProfileDto implements AccountResponse {
   @ApiProperty({
     description: "User id",
     example: "user_123",
@@ -22,6 +24,10 @@ export class ReadUserProfileDto {
   })
   @Expose()
   name: string;
+
+  @Expose()
+  @IsOptional()
+  avatars: string;
 
   @ApiProperty({
     description: "Account creation date",

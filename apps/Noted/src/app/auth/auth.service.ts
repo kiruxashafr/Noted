@@ -25,6 +25,8 @@ import {
   UserNotFoundException,
 } from "@noted/common/errors/domain_exception/domain-exception";
 import { getInternalErrorCode, getPrismaModelName, isPrismaError } from "@noted/common/db/prisma-error.utils";
+import { FilesService } from "../files/files.service";
+import { UserAvatar } from "@noted/types";
 
 @Injectable()
 export class AuthService {
@@ -39,6 +41,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly filesService: FilesService,
   ) {
     this.accessSecret = this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
     this.refreshSecret = this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
@@ -158,15 +161,24 @@ export class AuthService {
           id: true,
           email: true,
           name: true,
+          avatars: true,
           createdAt: true,
         },
       });
 
+      const avatars = user.avatars as unknown as UserAvatar;
+
+      const userDto = toDto(user, ReadUserProfileDto);
+
+      if (avatars?.mini_avatar) {
+        const avatarUrl = await this.filesService.findOne(avatars.mini_avatar, userId);
+        userDto.avatars = avatarUrl.url;
+      }
       if (!user) {
         throw new UserNotFoundException();
       }
 
-      return toDto(user, ReadUserProfileDto);
+      return userDto;
     } catch (error) {
       if (error instanceof UserNotFoundException) throw error;
       this.logger.error(`login() | error: ${(error as Error).message}`);
@@ -196,24 +208,27 @@ export class AuthService {
   }
 
   setRefreshTokenCookie(res: Response, refreshToken: string): void {
-    const refreshMaxAge = this.jwtRefreshTokenTTL;
-
+    const isDevelopment = isDev(this.configService);
+    const refreshMaxAge = this.jwtRefreshTokenTTL * 1000;
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      domain: this.cookieDomain,
+      path: "/",
       maxAge: refreshMaxAge,
-      secure: !isDev(this.configService),
-      sameSite: isDev(this.configService) ? "none" : "lax",
+      secure: !isDevelopment,
+      sameSite: isDevelopment ? "lax" : "none",
+      domain: isDevelopment ? undefined : this.cookieDomain,
     });
   }
 
   clearRefreshTokenCookie(res: Response): void {
+    const isDevelopment = isDev(this.configService);
     res.cookie("refreshToken", "", {
-      httpOnly: true,
-      domain: this.cookieDomain,
       expires: new Date(0),
-      secure: !isDev(this.configService),
-      sameSite: isDev(this.configService) ? "none" : "lax",
+      httpOnly: true,
+      path: "/",
+      secure: !isDevelopment,
+      sameSite: isDevelopment ? "lax" : "none",
+      domain: isDevelopment ? undefined : this.cookieDomain,
     });
   }
 

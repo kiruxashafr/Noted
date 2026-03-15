@@ -13,7 +13,7 @@ import { PhotoQueueService } from "../photo-queue/photo-queue.service";
 
 import { PhotoJobData } from "../photo-queue/interface/photo-job-data.interface";
 import { PHOTO_PROFILES } from "../shared/photo-profiles";
-import { UserAvatar, UserAvatarKeys } from "@noted/types";
+import { NotificationEvent, UserAvatar, UserAvatarKeys } from "@noted/types";
 import {
   DuplicateValueException,
   EmailAlreadyExistsException,
@@ -22,6 +22,7 @@ import {
   UserNotFoundException,
 } from "@noted/common/errors/domain_exception/domain-exception";
 import { getInternalErrorCode, getPrismaModelName, isPrismaError } from "@noted/common/db/prisma-error.utils";
+import { NotificationGateway } from "../notification/notification.gateway";
 
 @Injectable()
 export class UsersService {
@@ -31,6 +32,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly filesService: FilesService,
     private readonly queueService: PhotoQueueService,
+    private readonly notificationGateway: NotificationGateway,
   ) {}
 
   async updateAvatar(
@@ -67,12 +69,11 @@ export class UsersService {
       });
 
       const currentAvatars: UserAvatar = (user?.avatars as object) || {};
-
-      await this.filesService.deleteFile(currentAvatars.mini_avatar, event.userId);
-      await this.filesService.deleteFile(currentAvatars.original, event.userId);
-
+      if (user.avatars) {
+        await this.filesService.deleteFile(currentAvatars.mini_avatar, event.userId);
+        await this.filesService.deleteFile(currentAvatars.original, event.userId);
+      }
       const updatedAvatar = {
-        ...currentAvatars,
         [UserAvatarKeys.ORIGINAL]: event.originalFileId,
         [UserAvatarKeys.MINI_AVATAR]: event.newFileId,
       };
@@ -82,6 +83,11 @@ export class UsersService {
           avatars: updatedAvatar,
         },
       });
+
+      if (event.socketId) {
+        const fileData = await this.filesService.findOne(event.newFileId, event.userId);
+        this.notificationGateway.server.to(event.socketId).emit(NotificationEvent.PHOTO_EDIT, fileData);
+      }
 
       this.logger.log(
         `handleAvatarConverted() | Edited avatar updated for user ${event.userId} with new file ${event.newFileId}`,
@@ -94,6 +100,9 @@ export class UsersService {
   @OnEvent(PhotoEvent.PHOTO_CONVERSION_FAILED)
   async handleAvatarConversionFail(event: PhotoConversionFailedEvent) {
     this.logger.error(`handleAvatarConversionFail() | heic convert fail for user ${event.userId}`);
+    if (event.socketId) {
+      this.notificationGateway.server.to(event.socketId).emit(NotificationEvent.PHOTO_EDIT, "upload_error");
+    }
   }
 
   async updateUser(userId: string, dto: UpdateUserDto) {
@@ -139,6 +148,8 @@ export class UsersService {
         id: userId,
       },
     });
+    this.logger.log(`deleteUser() | User ${userId} deleted succesfully`);
+    return;
   }
 
   private handleAccountConstraintError(error: unknown): never {

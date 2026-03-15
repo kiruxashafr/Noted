@@ -310,7 +310,8 @@ export class FilesService implements OnModuleInit {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.$metadata?.httpStatusCode === 404) {
-        this.logger.log(`ensureBucketExists() | Bucket "${this.bucket}" not found. Creating...`);
+        this.logger.log(`Bucket "${this.bucket}" not found. Initializing setup...`);
+
         await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }));
 
         const policy = {
@@ -325,12 +326,18 @@ export class FilesService implements OnModuleInit {
             },
           ],
         };
+
         await this.s3.send(
           new PutBucketPolicyCommand({
             Bucket: this.bucket,
             Policy: JSON.stringify(policy),
           }),
         );
+
+        this.logger.log(`Bucket "${this.bucket}" created and policy set to PUBLIC`);
+      } else {
+        this.logger.error(`Error checking S3 bucket: ${error.message}`);
+        throw error;
       }
     }
   }
