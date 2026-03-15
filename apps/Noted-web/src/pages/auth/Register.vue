@@ -4,7 +4,9 @@ import { useAuthStore } from "../../stores/auth.store";
 import { useRouter } from "vue-router";
 import { useToast } from "primevue/usetoast";
 import PasswordForm from "../../components/auth/PasswordForm.vue";
+import { useI18n } from "vue-i18n";
 
+const { t } = useI18n();
 const authStore = useAuthStore();
 const router = useRouter();
 const toast = useToast();
@@ -12,22 +14,20 @@ const toast = useToast();
 const name = ref("");
 const password = ref("");
 const email = ref("");
-const errorMessage = ref("");
 const isLoading = ref(false);
 
 async function onSubmit() {
-  if (!email.value || !name.value) {
+  if (!email.value || !name.value || !password.value) {
     toast.add({
       severity: "warn",
-      summary: "Внимание",
-      detail: "Заполните все поля",
+      summary: t("notification.warning"),
+      detail: t("auth.register.fill-all-fields"),
       life: 3000,
     });
     return;
   }
 
   isLoading.value = true;
-  errorMessage.value = "";
 
   try {
     await authStore.register({
@@ -38,64 +38,68 @@ async function onSubmit() {
 
     toast.add({
       severity: "success",
-      summary: "Успешно",
-      detail: "Вы Зарегистрированы!",
+      summary: t("notification.success"),
+      detail: t("auth.register.success"),
       life: 3000,
     });
     router.push({ name: "home-dashboard" });
   } catch (error: any) {
-    if (error.response.status == 409) {
-      toast.add({
-        severity: "error",
-        summary: "Emails alraedy exist",
-        life: 3000,
-      });
-    } else {
-      toast.add({
-        severity: "error",
-        summary: "Sign up error",
-        detail: `${errorMessage.value}`,
-        life: 3000,
-      });
+    let msg = t("auth.register.error-title");
+    if (error?.response?.status === 409) {
+      msg = t("auth.register.email-exists");
     }
+    toast.add({
+      severity: "error",
+      summary: t("notification.error"),
+      detail: msg,
+      life: 3000,
+    });
   } finally {
     isLoading.value = false;
   }
 }
 </script>
+
 <template>
   <section class="register-container">
     <Card style="width: 50%">
       <template #title>
         <div class="title-container">
-          <img src="../../public//images/logo/noted-min-light.png" alt="Logo" class="reg-logo" />
-          <span class="title-text">Sign in to your account</span>
+          <img src="../../public/images/logo/noted-min-light.png" alt="Logo" class="reg-logo" />
+          <span class="title-text">{{ t("auth.register.title") }}</span>
         </div>
       </template>
       <template #content>
         <form class="reg-form" @submit.prevent="onSubmit">
           <div class="auth-comp">
-            <InputText v-model="name" type="name" placeholder="Name" />
+            <InputText v-model="name" :placeholder="t('auth.register.name-placeholder')" />
           </div>
           <div class="auth-comp">
-            <InputText v-model="email" type="email" placeholder="Email" />
+            <InputText v-model="email" type="email" :placeholder="t('auth.register.email-placeholder')" />
           </div>
-
           <div class="auth-comp">
             <PasswordForm v-model:password="password" />
           </div>
-          <Button type="submit" label="Register" :loading="isLoading" class="w-full" icon="pi pi-user" />
+          <Button
+            type="submit"
+            :label="t('auth.sign-up')"
+            :loading="isLoading"
+            class="w-full"
+            icon="pi pi-user"
+          />
           <Button
             type="button"
-            label="Already have an account? Sign In"
+            :label="t('auth.already-have-account')"
             icon="pi pi-angle-left"
             severity="secondary"
-            @click="router.push({ name: 'login' })" />
+            @click="router.push({ name: 'login' })"
+          />
         </form>
       </template>
     </Card>
   </section>
 </template>
+
 <style scoped>
 .register-container {
   display: flex;

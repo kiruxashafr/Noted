@@ -1,0 +1,102 @@
+{
+    "auth": {
+        "sign-in-to-account": "Sign in to your account",
+        "sign-in": "Sign In",
+        "new-user?": "New user?",
+        "sign-up": "Sign Up",
+        "already-have-account": "Already have an account? Sign In",
+        "password": {
+            "label": "Password",
+            "confirm": "Confirm Password",
+            "placeholder": "Password",
+            "confirm-placeholder": "Confirm your password",
+            "validation": {
+                "min": "Minimum 8 characters",
+                "lowercase": "Must include a lowercase letter",
+                "uppercase": "Must include an uppercase letter",
+                "digit": "Must include a digit",
+                "special": "Must include a special character",
+                "mismatch": "Passwords do not match"
+            }
+        },
+        "register": {
+            "title": "Registration",
+            "name-placeholder": "Name",
+            "email-placeholder": "Email",
+            "fill-all-fields": "Please fill in all fields",
+            "success": "Registration successful!",
+            "error-title": "Registration Error",
+            "email-exists": "A user with this email already exists"
+        },
+        "login": {
+            "title": "Login",
+            "email-placeholder": "Email",
+            "password-placeholder": "Password",
+            "fill-all-fields": "Please fill in all fields",
+            "success": "Successfully logged in",
+            "incorrect-credentials": "Invalid email or password",
+            "or": "OR"
+        }
+    },
+    "user-menu": {
+        "options": "Options",
+        "edit-profile": "Edit Profile",
+        "logout": "Logout"
+    },
+    "block-menu": {
+        "delete-block": "Delete block",
+        "delete-container": "Delete container"
+    },
+    "create-block": {
+        "add-block": "Add block",
+        "text": "Text"
+    },
+    "common": {
+        "app-name": "Noted",
+        "home": "Home Page",
+        "pages": "Pages",
+        "new-page": "New Page",
+        "updated": "Updated",
+        "profile": "Profile",
+        "back-to-app": "Back to App",
+        "avatar": {
+            "add": "Add Photo",
+            "change": "Change",
+            "uploading": "Uploading...",
+            "error": "Failed to load image",
+            "no-photo": "No profile photo",
+            "upload-success": "Avatar updated",
+            "upload-error": "Upload failed"
+        },
+        "loading": "Loading...",
+        "page-not-found": "Page Not Found",
+        "not-found-desc": "Oops! It looks like the path you followed leads nowhere.",
+        "back-to-home": "Back to Home",
+        "go-back": "Go Back",
+        "settings": {
+            "title": "Account Settings",
+            "profile-photo": "Profile Photo",
+            "photo-hint": "Your image will be displayed in comments and notes. Hover over the photo to change it.",
+            "name": "Name",
+            "name-hint": "This can be your real name or a nickname — how you would like people to address you.",
+            "email": "Email",
+            "email-hint": "The email address used to log into your account.",
+            "change-name": "Change Name",
+            "change-email": "Change Email",
+            "change-password": "Change Password",
+            "delete-account": "Delete my account",
+            "delete-confirm-header": "Warning!",
+            "delete-confirm-message": "Please confirm that you want to delete your account.",
+            "delete-confirm-cancel": "Cancel",
+            "delete-confirm-delete": "Delete"
+        }
+    },
+    "notification": {
+        "connection": {
+            "waiting": "Waiting for server connection..."
+        },
+        "success": "Success",
+        "warning": "Warning",
+        "error": "Error"
+    }
+}

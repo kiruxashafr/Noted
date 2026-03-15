@@ -4,24 +4,28 @@ import { ref } from "vue";
 import { useAuthStore } from "../../stores/auth.store";
 import { useRouter } from "vue-router";
 import UserPhoto from "../photo/UserPhoto.vue";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const menu = ref();
 const authStore = useAuthStore();
 const router = useRouter();
 const userName = ref(authStore.user?.name);
+
 const items = ref([
   {
-    label: "Options",
+    label: t("user-menu.options"),
     items: [
       {
-        label: "Изменить профиль",
+        label: t("user-menu.edit-profile"),
         icon: "pi pi-pencil",
         command: () => {
           router.push({ name: "setting-account" });
         },
       },
       {
-        label: "Выход",
+        label: t("user-menu.logout"),
         icon: "pi pi-sign-out",
         command: () => {
           onLogout();
@@ -40,14 +44,18 @@ const openProfile = (event: any) => {
   menu.value.toggle(event);
 };
 </script>
+
 <template>
   <div class="user-card" @click="openProfile">
     <UserPhoto />
 
-    <div class="user-profile">{{ userName }}<i class="pi pi-angle-down" /></div>
+    <div class="user-profile">
+      {{ userName }}<i class="pi pi-angle-down" />
+    </div>
     <Menu id="overlay_menu" ref="menu" :model="items" :popup="true" />
   </div>
 </template>
+
 <style scoped>
 .user-card {
   display: flex;

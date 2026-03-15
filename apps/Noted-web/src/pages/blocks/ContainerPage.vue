@@ -3,9 +3,11 @@ import { computed, onMounted, watch } from "vue";
 import { useBlockStore } from "../../stores/block.store";
 import BlockRender from "../../components/blocks/BlockRender.vue";
 import CreateBlockAccordion from "../../components/accordion/CreateBlockAccordion.vue";
+import { useI18n } from "vue-i18n";
 
 const blockStore = useBlockStore();
 const props = defineProps<{ id: string }>();
+const { t } = useI18n();
 
 const load = (id: string) => {
   blockStore.getPage(id);
@@ -37,7 +39,7 @@ const childBlocks = computed(() => {
     <div v-if="currentPage" class="container">
       <InputText
         v-model="title"
-        placeholder="Введите название страницы"
+        :placeholder="t('common.new-page')"
         class="borderless-title"
         @change="blockStore.updateContainerTitle(props.id, title)"
       />
@@ -53,7 +55,7 @@ const childBlocks = computed(() => {
 
     <div v-else class="flex align-items-center gap-2">
       <i class="pi pi-spin pi-spinner" />
-      <span>Загрузка страницы...</span>
+      <span>{{ t("common.loading") }} {{ t("common.page").toLowerCase() }}...</span>
     </div>
   </div>
 </template>

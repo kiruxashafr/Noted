@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import Drawer from "primevue/drawer";
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
+const {t} = useI18n()
 
 const isHomeActive = computed(() => {
   return route.name === "setting-account";
@@ -21,15 +23,17 @@ const visible = defineModel<boolean>("visible");
       <template #header>
         <div class="user-card" @click="router.push({ name: 'home-dashboard' })">
           <i class="pi pi-chevron-left" />
-          <div class="user-profile">Вернуться в приложение</div>
+          <div class="user-profile">{{ t('common.back-to-app') }}</div>
         </div>
       </template>
+
       <Button
-        label="Профиль"
+        :label="t('common.profile')"
         icon="pi pi-user"
         class="nav-button"
         :class="{ 'active-route': isHomeActive }"
-        @click="router.push({ name: 'setting-account' })" />
+        @click="router.push({ name: 'setting-account' })"
+      />
     </Drawer>
   </div>
 </template>

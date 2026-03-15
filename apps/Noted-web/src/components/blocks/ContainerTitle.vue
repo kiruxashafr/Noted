@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 import ContainerAccordion from "../accordion/ContainerAccordion.vue";
+import { useI18n } from "vue-i18n";
 
 const router = useRouter();
+const { t } = useI18n();
 
 defineProps({
   id: {
@@ -34,7 +36,9 @@ const handlePageClick = (id: string) => {
       {{ title }}
     </template>
     <template #subtitle>
-      <div>Обновлен: {{ updatedAt?.toLocaleString() }}</div>
+      <div>
+        {{ t('common.updated') }}: {{ updatedAt?.toLocaleString() }}
+      </div>
     </template>
     <template #content>
       <ContainerAccordion :block-id="id" />

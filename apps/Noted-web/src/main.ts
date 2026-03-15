@@ -14,6 +14,7 @@ import Card from "primevue/card";
 import Password from "primevue/password";
 import Divider from "primevue/divider";
 import Toast from "primevue/toast";
+import i18n from "./i18n";
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -23,6 +24,7 @@ app.use(pinia);
 app.use(ConfirmationService);
 app.use(router);
 app.use(ToastService);
+app.use(i18n)
 app.use(PrimeVue, {
   theme: {
     preset: Aura,

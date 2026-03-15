@@ -7,10 +7,12 @@ import ContainerTitle from "../blocks/ContainerTitle.vue";
 import CreateContainerButton from "../buttons/CreateContainerButton.vue";
 import UserAccordion from "../accordion/UserAccordion.vue";
 import { useBlockStore } from "../../stores/block.store";
+import { useI18n } from "vue-i18n";
 
 const blockStore = useBlockStore();
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
 const visible = defineModel<boolean>("visible");
 
 const isHomeActive = computed(() => {
@@ -28,14 +30,18 @@ const isHomeActive = computed(() => {
       </template>
       <div class="nav-buttons">
         <Button
-          label="Домашняя страница"
+          :label="t('common.home')"
           icon="pi pi-home"
           class="nav-button"
           :class="{ 'active-route': isHomeActive }"
-          @click="router.push({ name: 'home-dashboard' })" />
+          @click="router.push({ name: 'home-dashboard' })"
+        />
       </div>
+
       <div class="containers-list">
-        <text style="padding-left: 5px"> Страницы: </text>
+        <div style="padding-left: 5px; font-weight: 600;">
+          {{ t('common.pages') }}:
+        </div>
         <div
           v-for="page in blockStore.containersTitle"
           :key="page.id"

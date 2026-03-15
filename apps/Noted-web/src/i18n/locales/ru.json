@@ -1,0 +1,102 @@
+{
+    "auth": {
+        "sign-in-to-account": "Войдите в ваш аккаунт",
+        "sign-in": "Войти",
+        "new-user?": "Новый пользователь?",
+        "sign-up": "Зарегистрироваться",
+        "already-have-account": "У вас уже есть аккаунт? Войти",
+        "password": {
+            "label": "Пароль",
+            "confirm": "Подтверждение пароля",
+            "placeholder": "Пароль",
+            "confirm-placeholder": "Подтвердите пароль",
+            "validation": {
+                "min": "Минимум 8 символов",
+                "lowercase": "Должна быть строчная буква",
+                "uppercase": "Должна быть заглавная буква",
+                "digit": "Должна быть цифра",
+                "special": "Должен быть спецсимвол",
+                "mismatch": "Пароли не совпадают"
+            }
+        },
+        "register": {
+            "title": "Регистрация",
+            "name-placeholder": "Имя",
+            "email-placeholder": "Email",
+            "fill-all-fields": "Заполните все поля",
+            "success": "Вы зарегистрированы!",
+            "error-title": "Ошибка регистрации",
+            "email-exists": "Пользователь с таким email уже существует"
+        },
+        "login": {
+            "title": "Вход",
+            "email-placeholder": "Email",
+            "password-placeholder": "Пароль",
+            "fill-all-fields": "Заполните все поля",
+            "success": "Вы вошли в систему",
+            "incorrect-credentials": "Неверный email или пароль",
+            "or": "ИЛИ"
+        }
+    },
+    "user-menu": {
+        "options": "Опции",
+        "edit-profile": "Изменить профиль",
+        "logout": "Выход"
+    },
+    "block-menu": {
+        "delete-block": "Удалить блок",
+        "delete-container": "Удалить контейнер"
+    },
+    "create-block": {
+        "add-block": "Добавить блок",
+        "text": "Текст"
+    },
+    "common": {
+        "app-name": "Noted",
+        "home": "Домашняя страница",
+        "pages": "Страницы",
+        "new-page": "Новая страница",
+        "updated": "Обновлен",
+        "profile": "Профиль",
+        "back-to-app": "Вернуться в приложение",
+        "avatar": {
+            "add": "Добавить фото",
+            "change": "Изменить",
+            "uploading": "Загрузка...",
+            "error": "Не удалось загрузить изображение",
+            "no-photo": "Фото профиля отсутствует",
+            "upload-success": "Аватар обновлен",
+            "upload-error": "Ошибка загрузки"
+        },
+        "loading": "Загрузка...",
+        "page-not-found": "Страница не найдена",
+        "not-found-desc": "Упс! Похоже, путь, по которому вы прошли, ведет в никуда.",
+        "back-to-home": "Вернуться на главную",
+        "go-back": "Вернуться назад",
+        "settings": {
+            "title": "Настройки аккаунта",
+            "profile-photo": "Фото профиля",
+            "photo-hint": "Ваше изображение будет отображаться в комментариях и заметках. Наведите на фото, чтобы изменить его.",
+            "name": "Имя",
+            "name-hint": "Это может быть ваше настоящее имя или псевдоним — как бы вы хотели, чтобы люди обращались к вам",
+            "email": "Email",
+            "email-hint": "Почта, по которой осуществляется вход в аккаунт",
+            "change-name": "Изменить имя",
+            "change-email": "Изменить Email",
+            "change-password": "Сменить пароль",
+            "delete-account": "Удалить мой аккаунт",
+            "delete-confirm-header": "Внимание!",
+            "delete-confirm-message": "Пожалуйста подтвердите, что хотите удалить свой аккаунт",
+            "delete-confirm-cancel": "Отмена",
+            "delete-confirm-delete": "Удалить"
+        }
+    },
+    "notification": {
+        "connection": {
+            "waiting": "Ожидайте подключения к серверу..."
+        },
+        "success": "Успешно",
+        "warning": "Внимание",
+        "error": "Ошибка"
+    }
+}

@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import ContainerTitle from "../../components/blocks/ContainerTitle.vue";
 import CreateContainerButton from "../../components/buttons/CreateContainerButton.vue";
 import { useBlockStore } from "../../stores/block.store";
 
+const { t } = useI18n();
 const blockStore = useBlockStore();
 </script>
+
 <template>
   <div class="pages">
-    <h1>Домашняя страница</h1>
+    <h1>{{ t("common.home") }}</h1>
 
     <ContainerTitle
       v-for="page in blockStore.containersTitle"

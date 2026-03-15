@@ -1,3 +1,8 @@
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+</script>
 <template>
   <div class="not-found-container">
     <Card class="not-found-card shadow-4">
@@ -13,25 +18,27 @@
 
       <template #content>
         <div class="text-center">
-          <h2 class="text-900 font-medium mb-3">Страница не найдена</h2>
-          <p class="text-600 line-height-3 mb-5">Упс! Похоже, путь, по которому вы прошли, ведет в никуда.</p>
+          <h2 class="text-900 font-medium mb-3">{{ t("common.page-not-found") }}</h2>
+          <p class="text-600 line-height-3 mb-5">{{ t("common.not-found-desc") }}</p>
         </div>
       </template>
 
       <template #footer>
         <div class="buttons">
           <Button
-            label="Вернуться на главную"
+            :label="t('common.back-to-home')"
             icon="pi pi-home"
             class="w-full p-button-raised"
-            @click="$router.push('/')" />
+            @click="$router.push('/')"
+          />
           <Button
-            label="Вернуться назад"
+            :label="t('common.go-back')"
             icon="pi pi-arrow-left"
             severity="secondary"
             variant="text"
             class="w-full"
-            @click="$router.back()" />
+            @click="$router.back()"
+          />
         </div>
       </template>
     </Card>
