@@ -2,11 +2,13 @@
 import { useRouter } from "vue-router";
 import ContainerAccordion from "../accordion/ContainerAccordion.vue";
 import { useI18n } from "vue-i18n";
+import { useTimeAgo } from "../../composables/useTimeAgo";
 
 const router = useRouter();
 const { t } = useI18n();
+const { format} = useTimeAgo();
 
-defineProps({
+const props = defineProps({
   id: {
     type: String,
     required: true,
@@ -16,7 +18,7 @@ defineProps({
     required: true,
   },
   updatedAt: {
-    type: Date,
+    type: [Date, String],
     required: true,
   },
 });
@@ -27,6 +29,7 @@ const handlePageClick = (id: string) => {
     params: { id },
   });
 };
+
 </script>
 
 <template>
@@ -37,7 +40,7 @@ const handlePageClick = (id: string) => {
     </template>
     <template #subtitle>
       <div>
-        {{ t('common.updated') }}: {{ updatedAt?.toLocaleString() }}
+        {{ t('common.updated') }}: {{ format(props.updatedAt) }}
       </div>
     </template>
     <template #content>
