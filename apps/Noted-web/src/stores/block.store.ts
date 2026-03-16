@@ -51,7 +51,6 @@ export const useBlockStore = defineStore(
         }
       } catch (e) {
         console.error("Ошибка при получении страницы:", e);
-        return null;
       }
     }
 

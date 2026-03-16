@@ -1,6 +1,7 @@
 // auth.guard.ts
 import { NavigationGuardNext, RouteLocationNormalized } from "vue-router";
 import { useAuthStore } from "../../stores/auth.store";
+import { computed } from "vue";
 
 export async function authMiddleware(
   to: RouteLocationNormalized,
@@ -8,7 +9,7 @@ export async function authMiddleware(
   next: NavigationGuardNext,
 ) {
   const authStore = useAuthStore();
-  const token = localStorage.getItem("access_token");
+  const token = authStore.token
 
   const publicPages = ["/login", "/register"];
   const isPublic = publicPages.includes(to.path);

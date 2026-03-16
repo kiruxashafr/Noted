@@ -2,13 +2,16 @@ import axios from "axios";
 import { useAuthStore } from "../stores/auth.store";
 import router from "../router";
 
+
+
 const $api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
 });
 
 $api.interceptors.request.use(config => {
-  const token = localStorage.getItem("access_token");
+  const authStore = useAuthStore();
+  const token = authStore.token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -28,7 +31,7 @@ $api.interceptors.response.use(
       try {
         await authStore.refresh();
 
-        const newToken = localStorage.getItem("access_token");
+        const newToken = authStore.token;
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
         return $api(originalRequest);

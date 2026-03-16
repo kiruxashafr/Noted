@@ -1,62 +1,62 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { z } from "zod";
+import { useForm } from "vee-validate";
+import { toTypedSchema } from "@vee-validate/zod";
+
+const { t } = useI18n();
+
+const validationSchema = computed(() => {
+  return toTypedSchema(
+    z.object({
+      password: z
+        .string()
+        .min(8, t('auth.password.validation.min'))
+        .regex(/[a-z]/, t('auth.password.validation.lowercase'))
+        .regex(/[A-Z]/, t('auth.password.validation.uppercase'))
+        .regex(/\d/, t('auth.password.validation.digit'))
+        .regex(/[\W_]/, t('auth.password.validation.special')),
+      confirm: z.string().min(1, t('auth.password.validation.required')),
+    })
+    .refine(data => data.password === data.confirm, {
+      message: t('auth.password.validation.mismatch'),
+      path: ["confirm"],
+    })
+  );
+});
+
+const { errors, defineField, meta, values } = useForm({
+  validationSchema,
+  initialValues: {
+    password: "",
+    confirm: "",
+  },
+});
+
+const [password] = defineField("password");
+const [confirmPassword] = defineField("confirm");
 
 const passwordModel = defineModel<string>("password");
 const isValid = defineModel<boolean>("isValid", { default: false });
 
-const { t } = useI18n();
-const confirmPassword = ref("");
-const errors = ref<{ password?: string; confirm?: string }>({});
+watch(() => values.password, (val) => {
+  passwordModel.value = val;
+});
 
-const passwordSchema = z
-  .object({
-    password: z
-      .string()
-      .min(8, t('auth.validation.password.min'))
-      .regex(/[a-z]/, t('auth.validation.password.lowercase'))
-      .regex(/[A-Z]/, t('auth.validation.password.uppercase'))
-      .regex(/\d/, t('auth.validation.password.digit'))
-      .regex(/[\W_]/, t('auth.validation.password.special')),
-    confirm: z.string(),
-  })
-  .refine(data => data.password === data.confirm, {
-    message: t('auth.validation.password.mismatch'),
-    path: ["confirm"],
-  });
-
-const validate = () => {
-  const result = passwordSchema.safeParse({
-    password: passwordModel.value,
-    confirm: confirmPassword.value,
-  });
-
-  if (!result.success) {
-    const formatted = result.error.format();
-    errors.value = {
-      password: formatted.password?._errors[0],
-      confirm: formatted.confirm?._errors[0],
-    };
-    isValid.value = false;
-  } else {
-    errors.value = {};
-    isValid.value = true;
-  }
-};
-
-watch(passwordModel, () => validate(), { immediate: true });
-watch(confirmPassword, () => validate(), { immediate: true });
+watch(() => meta.value.valid, (valid) => {
+  isValid.value = valid;
+}, { immediate: true });
 </script>
 
 <template>
   <div class="password-form">
     <Password
-      v-model="passwordModel"
+      v-model="password"
       type="password"
       :placeholder="t('auth.password.placeholder')"
       :feedback="false"
-      @input="validate"
+      :class="{ 'p-invalid': errors.password }"
     />
     <span v-if="errors.password" class="error">{{ errors.password }}</span>
 
@@ -65,6 +65,7 @@ watch(confirmPassword, () => validate(), { immediate: true });
       type="password"
       :placeholder="t('auth.password.confirm-placeholder')"
       :feedback="false"
+      :class="{ 'p-invalid': errors.confirm }"
     />
     <span v-if="errors.confirm" class="error">{{ errors.confirm }}</span>
   </div>
@@ -84,5 +85,9 @@ watch(confirmPassword, () => validate(), { immediate: true });
   color: red;
   font-size: 12px;
   margin-top: -10px;
+}
+
+.p-invalid {
+  border-color: red !important;
 }
 </style>

@@ -7,7 +7,7 @@ import axios from "axios";
 export const useAuthStore = defineStore(
   "auth",
   () => {
-    const token = ref<string | null>(localStorage.getItem("access_token"));
+    const token = ref<string | null>();
     const user = ref<AccountResponse | null>(null);
 
     const isLogged = computed(() => !!token.value);
@@ -16,7 +16,6 @@ export const useAuthStore = defineStore(
       const { data } = await $api.post<TokenResponse>("/api/auth/login", credentials);
 
       token.value = data.accessToken;
-      localStorage.setItem("access_token", data.accessToken);
 
       await getMe();
       return true;
@@ -32,7 +31,6 @@ export const useAuthStore = defineStore(
           },
         );
         token.value = response.data.accessToken;
-        localStorage.setItem("access_token", response.data.accessToken);
       } catch (err) {
         logout();
         throw err;
@@ -43,7 +41,6 @@ export const useAuthStore = defineStore(
       const { data } = await $api.post<TokenResponse>("/api/auth/register", credentials);
 
       token.value = data.accessToken;
-      localStorage.setItem("access_token", data.accessToken);
 
       await getMe();
       return true;
