@@ -33,7 +33,7 @@ watch(
 
     debouncedUpdate(newMeta);
   },
-  { deep: true },
+  { deep: true }
 );
 </script>
 
