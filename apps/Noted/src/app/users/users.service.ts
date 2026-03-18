@@ -69,7 +69,7 @@ export class UsersService {
       });
 
       const currentAvatars: UserAvatar = (user?.avatars as object) || {};
-      if (user.avatars) {
+      if (currentAvatars.mini_avatar && currentAvatars.original) {
         await this.filesService.deleteFile(currentAvatars.mini_avatar, event.userId);
         await this.filesService.deleteFile(currentAvatars.original, event.userId);
       }

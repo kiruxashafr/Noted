@@ -16,7 +16,6 @@ export const useAuthStore = defineStore(
       const { data } = await $api.post<TokenResponse>("/api/auth/login", credentials);
 
       token.value = data.accessToken;
-
       await getMe();
       return true;
     }
