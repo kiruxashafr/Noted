@@ -8,3 +8,15 @@ export interface RegisterRequest {
   email: string;
   password: string;
 }
+
+export interface TokenResponse {
+  accessToken: string;
+}
+
+export interface AccountResponse {
+  id: string;
+  email: string;
+  name: string;
+  avatars?: string;
+  createdAt: Date;
+}

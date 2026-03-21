@@ -10,6 +10,7 @@ import {
   ContainerMetaContent,
   ContainerMetaKeys,
   BlockWithPath,
+  PageTitle,
 } from "@noted/types";
 import { BlockPermission, BlockType } from "generated/prisma/enums";
 import { plainToInstance } from "class-transformer";
@@ -69,7 +70,7 @@ export class BlocksService {
     }
   }
 
-  async upadateBlock(userId: string, dto: UpdateBlockDto) {
+  async updateBlock(userId: string, dto: UpdateBlockDto) {
     try {
       await this.checkBlockAccess(userId, dto.blockId, BlockPermission.EDIT);
 
@@ -81,7 +82,6 @@ export class BlocksService {
       }
 
       const oldMeta = (currentBlock.meta as Record<string, unknown>) || {};
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const newMeta = (dto.meta as Record<string, any>) || {};
       const updatedMeta = {
         ...oldMeta,
@@ -90,14 +90,21 @@ export class BlocksService {
 
       await this.validateBlockMeta(dto.blockType, updatedMeta);
 
-      const updatedBlock = await this.prisma.block.update({
-        where: { id: dto.blockId },
-        data: {
-          meta: updatedMeta,
-          order: dto.order ?? currentBlock.order,
-          updatedAt: new Date(),
-        },
-      });
+      const [updatedBlock] = await this.prisma.$queryRawUnsafe<BlockWithPath[]>(
+        `UPDATE "blocks" 
+         SET meta = $1, 
+             "order" = $2, 
+             updated_at = NOW() 
+         WHERE id = $3 
+         RETURNING *, path::text`,
+        JSON.stringify(updatedMeta),
+        dto.order ?? currentBlock.order,
+        dto.blockId,
+      );
+
+      if (!updatedBlock) {
+        throw new BadRequestException("Failed to update block: block not found after update");
+      }
 
       this.logger.log(`updateBlock() | user ${userId} updated block ${dto.blockId}`);
       return updatedBlock;
@@ -134,7 +141,7 @@ export class BlocksService {
     const textBlockMeta = dto.meta as TextMetaContent;
 
     const meta: TextMetaContent = {
-      [TextMetaKeys.Json]: textBlockMeta.json,
+      [TextMetaKeys.Payload]: textBlockMeta.payload,
     };
     const createBlock: CreateBlockDto = {
       blockType: dto.blockType,
@@ -239,15 +246,14 @@ export class BlocksService {
 
   async findPageTitle(userId: string) {
     try {
-      const pages = await this.prisma.$queryRaw<{ id: string; title: string }[]>`
+      const pages: PageTitle[] = await this.prisma.$queryRaw<{ id: string; title: string; updatedAt: Date }[]>`
       SELECT b.id, 
-      b.meta->>${ContainerMetaKeys.Title} as title
+      b.meta->>${ContainerMetaKeys.Title} as title,
+      b.updated_at as "updatedAt"
       FROM blocks b
-      INNER JOIN block_accesses ba ON b.id = ba.block_id
-      WHERE ba.user_id = ${userId}
-      AND b.type = 'PAGE'
-      AND "is_active" = true
-      AND ("expires_at" IS NULL OR "expires_at" > NOW())
+      WHERE b.owner_id = ${userId}
+      AND b.type = 'CONTAINER'
+      ORDER BY b.updated_at DESC
 `;
       return pages;
     } catch (error) {
@@ -262,13 +268,27 @@ export class BlocksService {
       const pages = await this.prisma.$queryRaw<BlockWithPath[]>`
         SELECT b.*
         FROM blocks b
-        INNER JOIN block_accesses ba ON b.id = ba.block_id
-        WHERE ba.user_id = ${userId}
-        AND b.type = 'PAGE'
-        AND "is_active" = true
-        AND ("expires_at" IS NULL OR "expires_at" > NOW())
+        WHERE b.owner_id = ${userId}
+        AND b.type = 'CONTAINER'
     `;
       return pages;
+    } catch (error) {
+      if (error instanceof FailedToFindBlockException) throw error;
+      this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);
+      throw new BadRequestException();
+    }
+  }
+
+  async getContainer(userId: string, containerId: string) {
+    this.checkBlockAccess(userId, containerId, "VIEW");
+    try {
+      const container = await this.prisma.$queryRaw<BlockWithPath>`
+        SELECT b.*
+        FROM blocks b
+        WHERE b.id = ${containerId}
+        AND b.type = 'CONTAINER'
+    `;
+      return container;
     } catch (error) {
       if (error instanceof FailedToFindBlockException) throw error;
       this.logger.error(`applyChildAccessCheck() | ${(error as Error).message}`, (error as Error).stack);

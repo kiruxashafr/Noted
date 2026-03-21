@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { BlocksService } from "./blocks.service";
 import { CreateBlockDto } from "./dto/create-block.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt.guards";
@@ -9,6 +9,7 @@ import { CreateAccessDto } from "./dto/create-access.dto";
 import { UpdateBlockDto } from "./dto/update-block.dto";
 import { UpdateAccessDto } from "./dto/update-access.dto";
 import { DeleteAccessDto } from "./dto/delete-access.dto";
+import { GetContainerDto } from "./dto/get-container.dto";
 
 @Controller("blocks")
 export class BlocksController {
@@ -23,7 +24,7 @@ export class BlocksController {
   @Patch("block")
   @UseGuards(JwtAuthGuard)
   async updateBlock(@Req() req: Request, @Body() dto: UpdateBlockDto) {
-    return this.blocksServise.upadateBlock(req.user.sub, dto);
+    return this.blocksServise.updateBlock(req.user.sub, dto);
   }
 
   @Post("access")
@@ -44,9 +45,15 @@ export class BlocksController {
     return this.blocksServise.getUserPages(req.user.sub);
   }
 
+  @Get("container")
+  @UseGuards(JwtAuthGuard)
+  async getContainer(@Req() req: Request, @Query() dto: GetContainerDto) {
+    return this.blocksServise.getContainer(req.user.sub, dto.containerId);
+  }
+
   @Get("child")
   @UseGuards(JwtAuthGuard)
-  async getChildBlocks(@Req() req: Request, @Body() dto: GetChildBlocksDto) {
+  async getChildBlocks(@Req() req: Request, @Query() dto: GetChildBlocksDto) {
     return this.blocksServise.getChildBlocks(req.user.sub, dto.blockId);
   }
 
@@ -64,7 +71,7 @@ export class BlocksController {
 
   @Delete("block")
   @UseGuards(JwtAuthGuard)
-  async deleteBlock(@Req() req: Request, @Body() dto: DeleteBlockDto) {
+  async deleteBlock(@Req() req: Request, @Query() dto: DeleteBlockDto) {
     return this.blocksServise.deleteBlock(req.user.sub, dto.blockId);
   }
 
